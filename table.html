@@ -107,6 +107,18 @@ label.f{display:grid;gap:3px;font-size:12px;color:var(--muted)}
 .pp .ava img{width:30px;height:30px}
 details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 .credit{font-size:11px;color:var(--muted);margin-top:18px}
+.csov{position:fixed;inset:0;z-index:50;background:#000}
+.csov iframe{width:100%;height:100%;border:0;display:block}
+#csClose{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 12px);z-index:2;opacity:.8}
+#handov{background:var(--bg)}
+.hand-box{position:absolute;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr);padding-top:env(safe-area-inset-top,0px)}
+.hand-bar{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:var(--panel)}
+.hand-view{overflow:auto}
+.hand-view img{display:block;max-width:none;margin:0 auto}
+.lobby{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;background:rgba(5,8,9,.88);padding:16px}
+.lobby.gm{inset:10px 10px auto auto;width:min(340px,calc(100% - 70px));background:none;padding:0;display:block}
+.lcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;max-width:440px;width:100%;max-height:100%;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.lrow{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
 @media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,56fr) minmax(0,44fr)}
   aside.panel{border-left:0;border-top:1px solid var(--line)}
@@ -124,6 +136,7 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
     <span class="chip hide-m" id="mapChip">—</span>
     <span class="chip round" id="roundChip" hidden>Раунд 1</span>
     <span class="sp"></span>
+    <button class="chip" id="btnMaps" type="button" hidden>🗺 Карты</button>
     <div class="peers" id="peers"></div>
     <span class="chip" id="roleChip">…</span>
   </header>
@@ -141,6 +154,7 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
       </div>
       <div class="hint" id="hint" hidden></div>
       <div class="banner" id="banner" hidden></div>
+      <div class="lobby" id="lobby" hidden></div>
       <div class="zoom">
         <button type="button" id="zoomOut" title="Отдалить">−</button>
         <button type="button" id="zoomIn" title="Приблизить">+</button>
@@ -153,6 +167,8 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
     </aside>
   </div>
 </div>
+<div class="csov" id="csov" hidden><iframe id="csFrame" title="Катсцена" allow="autoplay; fullscreen"></iframe><button class="btn" id="csClose" type="button">✕ Закрыть</button></div>
+<div class="csov" id="handov" hidden></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
@@ -226,7 +242,7 @@ const fire=p=>{(dl.get(p)||[]).forEach(f=>f());(cl.get(colOf(p))||[]).forEach(f=
 const fireAll=()=>{dl.forEach(s=>s.forEach(f=>f()));cl.forEach(s=>s.forEach(f=>f()))};
 const addL=(m,k,f)=>{if(!m.has(k))m.set(k,new Set());m.get(k).add(f);return()=>m.get(k).delete(f)};
 const isPrivate=p=>p.startsWith('gm/');
-const okPath=p=>typeof p==='string'&&/^(tokens|chars|log|maps)\/[A-Za-z0-9_\-]{1,40}$|^game\/state$/.test(p);
+const okPath=p=>typeof p==='string'&&/^(tokens|chars|log|maps|ready)\/[A-Za-z0-9_\-]{1,40}$|^game\/state$/.test(p);
 function applyOp(op,p,d){if(op==='set')docs.set(p,clone(d));else if(op==='update'){if(!docs.has(p))return false;docs.set(p,merge(docs.get(p),clone(d)))}else if(op==='del')docs.delete(p);else return false;fire(p);return true}
 
 /* сеть */
@@ -278,7 +294,7 @@ else if(isOwner){
       conn.on('data',m=>{const c=conns.get(conn.peer);if(!c||!m||typeof m!=='object')return;
         if(m.t==='hello'){c.id=String(m.id||'').slice(0,40)||conn.peer;c.name=String(m.name||'Игрок').slice(0,30);bcastPeers();deliverEv('joined',{name:c.name},c.id)}
         else if(m.t==='w'){if(!okPath(m.p))return;if(!applyOp(m.op,m.p,m.d))return;persist();bcast({t:'doc',p:m.p,d:docs.has(m.p)?docs.get(m.p):null})}
-        else if(m.t==='ev'&&typeof m.topic==='string'&&m.topic!=='fogreset'){deliverEv(m.topic,m.data,c.id);bcast({t:'ev',topic:m.topic,data:m.data,from:c.id})}
+        else if(m.t==='ev'&&typeof m.topic==='string'&&m.topic!=='fogreset'&&m.topic!=='cutscene'){deliverEv(m.topic,m.data,c.id);bcast({t:'ev',topic:m.topic,data:m.data,from:c.id})}
         else if(m.t==='pres'&&m.pres&&typeof m.pres==='object'){c.pres=m.pres;bcastPeers()}});
       conn.on('close',()=>{conns.delete(conn.peer);bcastPeers()});conn.on('error',()=>{})})};
   open();
@@ -308,8 +324,8 @@ function dbErr(e){if(e&&e.code==='invalid_argument'&&!readOnly){readOnly=true;sh
 function showBanner(t){$('banner').textContent=t;$('banner').hidden=!t}
 
 /* ================= состояние ================= */
-const S={state:null,tokens:{},maps:{},chars:{},log:[],gm:{},gmlog:[]};
-const DEF_STATE={map:'03-grot-bochek',combat:{on:false,round:1,turn:null},fog:true,grid:true};
+const S={state:null,tokens:{},maps:{},chars:{},log:[],gm:{},gmlog:[],ready:{}};
+const DEF_STATE={map:'03-grot-bochek',combat:{on:false,round:1,turn:null},fog:true,grid:true,started:false,handouts:[]};
 const st=()=>merge(DEF_STATE,S.state||{});
 const tokList=()=>Object.values(S.tokens);
 function mapInfo(id=st().map){const b=MAPS.find(m=>m.id===id);const d=S.maps[id]||{};
@@ -321,7 +337,7 @@ const ftPx=m=>cellPx(m)/5;
 
 /* демо-данные, только когда общий стол недоступен */
 if(!LIVE){
-  await store.set('game/state',{...DEF_STATE});
+  await store.set('game/state',{...DEF_STATE,started:true,handouts:['01-region']});
   const demo=[['Ари (пример)','pc','#3f7fc0',620,500,18,18,15,60,0,'local'],['Борин (пример)','pc','#c0603f',580,560,22,24,16,60,0,null],['Тамси','npc','#3fb3a6',660,560,21,21,14,0,0,null]];
   for(const [n,k,c,x,y,hp,mx,ac,dv,li,ow] of demo){const id=store.newId('tokens');await store.set('tokens/'+id,{name:n,kind:k,img:{'Ари (пример)':'h-elf-woman','Борин (пример)':'h-dwarf'}[n]||null,color:c,x,y,size:1,map:'03-grot-bochek',hp,hpMax:mx,hpTemp:0,ac,dv,light:k==='npc'?20:li,owner:ow,hidden:false,cond:[],inCombat:false,init:null});
     await store.set('chars/'+id,{cls:k==='pc'?'Воин':'Плут',lvl:2,str:14,dex:14,con:14,int:10,wis:12,cha:10,prof:2,speed:30,attacks:[['Длинный меч',5,'1d8+3'],['Лёгкий арбалет',4,'1d8+2']],inv:[['Зелье лечения',1,.5],['Факел',5,1]],gp:25,sp:0,cp:0,notes:''})}
@@ -333,6 +349,7 @@ store.watchDoc('game/state',d=>{const prev=S.state&&S.state.map;S.state=d;if(pre
 store.watchCol('tokens',a=>{S.tokens=Object.fromEntries(a.map(t=>[t.id,t]));lightDirty=true;changed()});
 store.watchCol('maps',a=>{S.maps=Object.fromEntries(a.map(m=>[m.id,m]));lightDirty=true;changed()});
 store.watchCol('chars',a=>{S.chars=Object.fromEntries(a.map(c=>[c.id,c]));changed('panel')});
+store.watchCol('ready',a=>{S.ready=Object.fromEntries(a.map(r=>[r.id,r]));changed('panel')});
 store.watchCol('log',a=>{S.log=a.reverse();changed('panel')},{order:'ts',dir:'desc',limit:80});
 if(isOwner){store.watchCol('gm',a=>{S.gm=Object.fromEntries(a.filter(d=>d.id.startsWith('mon_')).map(d=>[d.id.slice(4),d]));S.gmlog=a.filter(d=>d.id.startsWith('roll_'));changed('panel')})}
 
@@ -341,7 +358,8 @@ const peerDrag=new Map(),pings=[];let peersList=[];
 if(room){
   room.on('ping',m=>{const d=m.data||{};if(typeof d.x==='number'&&d.map===st().map){pings.push({x:d.x,y:d.y,t:performance.now(),me:m.isMe});requestDraw()}});
   room.on('fogreset',()=>{explored.clear();lightDirty=true;requestDraw()});
-  room.onPeers(ch=>{peersList=ch.peers;peerDrag.clear();for(const p of ch.peers){if(!p.sameTab&&p.presence&&p.presence.drag)peerDrag.set(p.peer,p.presence.drag)}renderPeers();requestDraw()});
+  room.onPeers(ch=>{peersList=ch.peers;peerDrag.clear();for(const p of ch.peers){if(!p.sameTab&&p.presence&&p.presence.drag)peerDrag.set(p.peer,p.presence.drag)}renderPeers();renderLobby();requestDraw()});
+  room.on('cutscene',m=>{const d=m.data||{};if(d.stop)closeCut();else if(typeof d.id==='string')openCut(d.id)});
 }
 async function renderPeers(){const el=$('peers');const ids=[...new Set(peersList.map(p=>p.by).filter(Boolean))];if(!user||!ids.length){el.replaceChildren();return}
   const ps=await user.profiles(ids);el.replaceChildren(...ids.slice(0,8).map(id=>{const i=document.createElement('img');i.src=ps[id].avatarUrl;i.alt=ps[id].name||'Игрок';i.title=ps[id].name||'Игрок';return i}))}
@@ -546,7 +564,46 @@ function changed(what){if(what!=='panel'){requestDraw()}renderHeader();renderPan
 function renderPane(force){const a=document.activeElement;if(!force&&a&&pane.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){paneDirty=true;return}paneDirty=false;
   const sc=pane.scrollTop;const f={combat:paneCombat,hero:paneHero,inv:paneInv,dice:paneDice,gm:paneGM,ai:paneAI}[tab]||paneCombat;pane.replaceChildren(...[f()].flat());if(!force)pane.scrollTop=sc;
   resolveNames([...tokList().map(t=>t.owner),...S.log.map(l=>l.by)])}
-function renderHeader(){const s=st(),m=mapInfo();$('mapChip').textContent=m.name;$('roundChip').hidden=!s.combat.on;$('roundChip').textContent='Раунд '+s.combat.round;
+/* ---- катсцены за столом: Мастер запускает, видят все ---- */
+const CUTS=[['intro','Пролог'],['c1','1. Голос из моря'],['c2','2. Отплытие «Цапли»'],['c3','3. Отлив'],['c4','4. Купол на дне'],['c5','5. Спуск в Ис-Мерин'],['c6','6. Певчая на троне'],['c7','7. Рассвет'],['c8','8. Город поднимается']];
+function openCut(id){if(!CUTS.some(x=>x[0]===id))return;$('csFrame').src=id==='intro'?'cs/intro.html#embed':'cs/cutscenes.html#embed-'+id;$('csov').hidden=false;$('csClose').textContent=isOwner?'✕ Закончить у всех':'✕ Закрыть'}
+function closeCut(){$('csov').hidden=true;$('csFrame').src='about:blank'}
+window.addEventListener('message',e=>{if(e.source===$('csFrame').contentWindow&&e.data&&e.data.t==='cs-done')setTimeout(closeCut,1200)});
+$('csClose').onclick=()=>{if(isOwner&&room)room.emit('cutscene',{stop:true}).catch(()=>{});closeCut()};
+async function showCutAll(id){if(room)await room.emit('cutscene',{id}).catch(()=>openCut(id));else openCut(id);post({kind:'sys',text:'🎬 Катсцена: '+CUTS.find(x=>x[0]===id)[1]})}
+
+/* ---- лобби: игроки жмут «Готово», Мастер — «Начать» ---- */
+let lobbyIntro=true,lobbyForce=false;
+function lobbyIds(){const fromRoom=isOwner?peersList.map(p=>p.by).filter(id=>id&&id!==myId):[];
+  return[...new Set([...fromRoom,...Object.keys(S.ready),...tokList().filter(t=>t.kind==='pc'&&t.owner).map(t=>t.owner),...(isOwner?[]:[myId])])].filter(id=>id&&!(isOwner&&id===myId))}
+function renderLobby(){const el=$('lobby');const s=st();if(!el)return;if(s.started){el.hidden=true;return}el.hidden=false;el.className='lobby'+(isOwner?' gm':'');
+  const ids=lobbyIds();resolveNames(ids);const isReady=id=>!!(S.ready[id]&&S.ready[id].ready);const heroOf=id=>tokList().find(t=>t.owner===id&&t.kind==='pc');
+  const rows=ids.map(id=>h('div',{class:'lrow'},h('span',{},(id===myId?'Вы':(names[id]||'Игрок'))+(heroOf(id)?' · '+heroOf(id).name:'')),h('b',{style:`color:${isReady(id)?'var(--ok)':'var(--muted)'};white-space:nowrap`},isReady(id)?'✓ готов':'готовится…')));
+  if(isOwner){const n=ids.filter(isReady).length,all=ids.length>0&&n===ids.length;
+    const pro=h('input',{type:'checkbox',checked:lobbyIntro,onchange:e=>{lobbyIntro=e.target.checked}});
+    el.replaceChildren(h('div',{class:'lcard'},h('h3',{},'Лобби · игра не начата'),h('p',{class:'small muted'},ids.length?`Готовы ${n} из ${ids.length}. Игроки видят экран ожидания, вы можете готовить карту.`:'Игроки ещё не подключились — пошлите им приглашение.'),...rows,
+      h('label',{class:'row small',style:'margin-top:8px'},pro,'Начать с пролога (видят все)'),
+      h('button',{class:'btn pri',type:'button',style:'margin-top:8px;width:100%',disabled:readOnly,onclick:()=>{if(!all&&!lobbyForce){lobbyForce=true;toast('Не все готовы. Нажмите «Начать игру» ещё раз, чтобы начать без них.');return}startGame()}},'▶ Начать игру')))}
+  else{const me=isReady(myId),hero=myToken();
+    el.replaceChildren(h('div',{class:'lcard'},h('h3',{},'Скоро начнём'),h('p',{class:'muted'},'Подготовьте героя. Когда будете готовы — нажмите «Готово». Игру начнёт Мастер.'),
+      h('p',{class:'small'},hero?`Ваш герой: ${hero.name}`:'Сначала выберите или создайте героя во вкладке «Герой» (на телефоне — внизу экрана).'),...rows,
+      h('button',{class:'btn pri',type:'button',style:'margin-top:12px;width:100%;padding:12px',disabled:readOnly||!myId,onclick:()=>store.set('ready/'+myId,{ready:!me,hero:hero?hero.name:'',ts:Date.now()})},me?'Я ещё не готов':'✓ Готово')))}}
+async function startGame(){lobbyForce=false;await store.set('game/state',{...st(),started:true});await post({kind:'sys',text:'▶ Игра началась!'});if(lobbyIntro)showCutAll('intro')}
+async function toLobby(){await store.set('game/state',{...st(),started:false});for(const id of Object.keys(S.ready))await store.del('ready/'+id)}
+
+/* ---- карты отряда: что Мастер выдал, игроки открывают в любой момент ---- */
+let handIdx=0,handZ=1;
+function handSrc(id){const b=MAPS.find(m=>m.id===id);if(b)return b.src.replace('maps/','maps/player/');return mapInfo(id).src}
+function renderHand(){const ids=st().handouts||[];if(!ids.length){$('handov').hidden=true;return}handIdx=Math.min(handIdx,ids.length-1);const id=ids[handIdx];
+  const sel=h('select',{'aria-label':'Карта',onchange:e=>{handIdx=Number(e.target.value);handZ=1;renderHand()}},...ids.map((x,i)=>h('option',{value:i,selected:i===handIdx},mapInfo(x).name)));
+  $('handov').replaceChildren(h('div',{class:'hand-box'},h('div',{class:'hand-bar'},h('b',{},'🗺 Карты отряда'),sel,
+    h('button',{class:'btn sm',type:'button','aria-label':'Отдалить',onclick:()=>{handZ=Math.max(.5,handZ/1.25);renderHand()}},'−'),h('button',{class:'btn sm',type:'button','aria-label':'Приблизить',onclick:()=>{handZ=Math.min(5,handZ*1.25);renderHand()}},'+'),
+    h('span',{style:'flex:1'}),h('button',{class:'btn',type:'button',onclick:()=>{$('handov').hidden=true}},'✕ Закрыть')),
+    h('div',{class:'hand-view'},h('img',{src:handSrc(id),alt:mapInfo(id).name,style:`width:${Math.round(handZ*100)}%`}))))}
+$('btnMaps').onclick=()=>{renderHand();$('handov').hidden=false};
+async function toggleHandout(id,on){const s=st();const cur=s.handouts||[];const next=on?[...new Set([...cur,id])]:cur.filter(x=>x!==id);await store.set('game/state',{...s,handouts:next});if(on)post({kind:'sys',text:'🗺 Отряд получил карту: '+mapInfo(id).name})}
+
+function renderHeader(){const s=st(),m=mapInfo();const ho=(s.handouts||[]).length;$('btnMaps').hidden=!ho;$('btnMaps').textContent='🗺 Карты'+(ho>1?` (${ho})`:'');if(!$('handov').hidden)renderHand();renderLobby();$('mapChip').textContent=m.name;$('roundChip').hidden=!s.combat.on;$('roundChip').textContent='Раунд '+s.combat.round;
   $('roleChip').textContent=isOwner?(preview?'Мастер · глазами: '+(previewTok&&S.tokens[previewTok]?S.tokens[previewTok].name:'все герои'):'Мастер'):'Игрок';$('roleChip').className='chip'+(isOwner?' gm':'');$('tools').hidden=!isOwner}
 
 /* ---- БОЙ ---- */
@@ -689,6 +746,13 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   out.push(h('h3',{},'Глазами игрока'),h('select',{'aria-label':'Смотреть глазами',style:'width:100%',onchange:e=>{const v=e.target.value;setPreview(v!=='',v==='all'?null:v)}},
     h('option',{value:'',selected:!preview},'Выкл — я вижу всё'),h('option',{value:'all',selected:preview&&!previewTok},'Все герои вместе'),...heroes.map(t=>h('option',{value:t.id,selected:preview&&previewTok===t.id},t.name+(t.owner&&names[t.owner]?' · '+names[t.owner]:'')))),
     h('p',{class:'small muted'},'Показывает карту без секретов, свет, туман и только тех существ, кого видит выбранный герой. Кнопка 👁 на карте включает и выключает этот режим.'));
+  out.push(h('h3',{},'Игра'),s.started?h('div',{class:'row'},h('span',{class:'small muted'},'Игра идёт.'),h('button',{class:'btn sm',type:'button',onclick:toLobby},'Вернуть всех в лобби (новая сессия)'))
+    :h('div',{class:'row'},h('span',{class:'small muted'},'Игра не начата — игроки в лобби.'),h('button',{class:'btn sm pri',type:'button',onclick:startGame},'▶ Начать игру')));
+  out.push(h('h3',{},'Катсцены'),h('p',{class:'small muted'},'Откроются на весь экран у всех за столом, со звуком и голосом.'),
+    h('div',{class:'row'},...CUTS.map(([id,n])=>h('button',{class:'btn sm',type:'button',onclick:()=>showCutAll(id)},'🎬 '+n))));
+  const hs=s.handouts||[];const allMaps=[...MAPS.map(x=>[x.id,x.name]),...Object.values(S.maps).filter(x=>x.asset||x.data).map(x=>[x.id,x.name||'Своя карта'])];
+  out.push(h('h3',{},'Карты отряда'),h('p',{class:'small muted'},'Отмеченные карты игроки открывают кнопкой «🗺 Карты» в шапке — в версии без секретов.'),
+    h('div',{class:'grid2'},...allMaps.map(([id,n])=>h('label',{class:'row small'},h('input',{type:'checkbox',checked:hs.includes(id),onchange:e=>toggleHandout(id,e.target.checked)}),n))));
   out.push(h('h3',{},'Карта'));
   const all=[...MAPS.map(x=>[x.id,x.name]),...Object.values(S.maps).filter(x=>x.asset||x.data).map(x=>[x.id,x.name||'Своя карта'])];
   out.push(h('select',{'aria-label':'Карта',style:'width:100%',onchange:e=>{store.set('game/state',{...s,map:e.target.value})}},...all.map(([id,n])=>h('option',{value:id,selected:id===s.map},n))));

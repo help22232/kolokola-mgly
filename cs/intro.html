@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+</head>
+<body>
+<title>Пролог Солёной Мглы</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: кинозал — тёмная сцена 16:9 по центру, под ней пульт с тремя кнопками и короткая инструкция. Один тёмный образ, без светлой темы: это экран для показа. */
+:root{
+  --bg:#06090a; --panel:#0d1415; --ink:#dfe8e4; --muted:#8a9b98; --line:#1f2c2e;
+  --sea:#8fd1c4; --brass:#d9b36c; --danger:#e58a80;
+  --f-display:"Alegreya SC", Georgia, "Times New Roman", serif;
+  --f-body:"Alegreya", Georgia, "Times New Roman", serif;
+  --f-mono:"IBM Plex Mono", Consolas, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:18px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 64px;display:grid;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 20px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--sea)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4.4vw,44px);line-height:1.1;margin:4px 0 0;text-wrap:balance}
+header a{font-family:var(--f-mono);font-size:13px;color:var(--sea)}
+.stage{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:100%}
+.stage:fullscreen{border:0;border-radius:0;display:flex;align-items:center;justify-content:center}
+.stage:fullscreen canvas{object-fit:contain}
+.play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:transparent;border:0;cursor:pointer;color:var(--ink)}
+.play span{display:inline-flex;align-items:center;gap:12px;font-family:var(--f-display);font-size:clamp(18px,2.6vw,28px);padding:14px 28px;border:1px solid rgba(143,209,196,.6);border-radius:999px;background:rgba(4,10,11,.72);backdrop-filter:blur(4px)}
+.play:hover span,.play:focus-visible span{background:rgba(20,44,44,.85);outline:none}
+.play:focus-visible{outline:2px solid var(--sea);outline-offset:-4px}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--sea)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+button.btn{font-family:var(--f-mono);font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 16px;cursor:pointer}
+button.btn:hover,button.btn:focus-visible{border-color:var(--sea);outline:none}
+button.btn.rec{border-color:rgba(229,138,128,.55);color:var(--danger)}
+button.btn:disabled{opacity:.45;cursor:default}
+.time{font-family:var(--f-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:auto}
+.status{font-family:var(--f-mono);font-size:13px;color:var(--brass);min-height:1.4em;margin:0}
+.notes{border-top:1px solid var(--line);padding-top:14px;color:var(--muted);max-width:70ch}
+.notes p{margin:6px 0}
+.notes b{color:var(--ink);font-weight:400}
+body.embed{background:#000;overflow:hidden}
+body.embed .stage{position:fixed;inset:0;width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0;z-index:5}
+body.embed .stage canvas{object-fit:contain}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Колокола Солёной Мглы · пролог · 1:14</div>
+      <h1>Вступление к первой сессии</h1>
+    </div>
+    <a href="https://claude.ai/artifact/Jav5av8LVMQbnhsT3wEeQH" target="_blank" rel="noopener">Сценарий сессии 1 →</a>
+  </header>
+
+  <div class="stage" id="stageWrap">
+    <canvas id="stage" width="1920" height="1080" aria-label="Анимированное вступление к кампании"></canvas>
+    <button class="play" id="playBig" type="button"><span>▶ Смотреть пролог</span></button>
+  </div>
+  <div class="bar" aria-hidden="true"><i id="prog"></i></div>
+
+  <div class="controls">
+    <button class="btn" id="btnPlay" type="button">▶ Смотреть</button>
+    <button class="btn" id="btnFull" type="button">⛶ Полный экран</button>
+    <button class="btn rec" id="btnRec" type="button" hidden>● Записать видеофайл</button>
+    <span class="time" id="time">0:00 / 1:14</span>
+  </div>
+  <p class="status" id="status" role="status"></p>
+
+  <div class="notes">
+    <p><b>Как показать.</b> Подключите ноутбук к телевизору, нажмите «Полный экран», затем «Смотреть». Звук включите погромче: историю рассказывает голос, без субтитров.</p>
+    <p><b>Видеофайл.</b> Кнопка «Записать видеофайл» проигрывает пролог целиком (1 мин 14 сек) и затем предлагает сохранить его как видео. Не сворачивайте вкладку, пока идёт запись.</p>
+  </div>
+</div>
+
+<script src="voice2.js"></script>
+<script>
+(function(){
+const W=1920,H=1080,DUR=74;
+const cv=document.getElementById('stage'),g=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>{x=clamp(x);return x*x*(3-2*x)};
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+
+/* ---------- заготовки ---------- */
+function fogSprite(rgb){const c=mk(256,256),x=c.getContext('2d'),gr=x.createRadialGradient(128,128,0,128,128,128);
+  gr.addColorStop(0,`rgba(${rgb},.55)`);gr.addColorStop(.5,`rgba(${rgb},.18)`);gr.addColorStop(1,`rgba(${rgb},0)`);x.fillStyle=gr;x.fillRect(0,0,256,256);return c}
+const FOGW=fogSprite('205,222,218'),FOGG=fogSprite('110,255,170'),FOGT=fogSprite('90,190,180');
+const FOG=(()=>{const r=rng(7),a=[];for(let i=0;i<46;i++)a.push({x:r()*2700,y:r(),s:500+r()*900,v:10+r()*28,a:.25+r()*.5});return a})();
+function fog(T,y0,y1,alpha,spr=FOGW){g.save();for(const f of FOG){const x=((f.x+T*f.v)%2700)-500,y=y0+(y1-y0)*f.y;g.globalAlpha=alpha*f.a;g.drawImage(spr,x-f.s/2,y-f.s*.3,f.s,f.s*.6)}g.restore()}
+
+const VIG=mk(W,H);{const x=VIG.getContext('2d'),gr=x.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*1.05);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.8)');x.fillStyle=gr;x.fillRect(0,0,W,H)}
+const GRAIN=[0,1,2].map(k=>{const c=mk(220,220),x=c.getContext('2d'),d=x.createImageData(220,220),r=rng(40+k);for(let i=0;i<d.data.length;i+=4){const v=r()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}x.putImageData(d,0,0);return g.createPattern(c,'repeat')});
+
+const CITY=(()=>{const r=rng(3),near=[],far=[];
+  for(let x=-60;x<2000;){const w=60+r()*90;far.push({x,w,h:140+r()*260,t:Math.floor(r()*3)});x+=w+r()*20}
+  for(let x=-40;x<2000;){const w=70+r()*110;if(Math.abs(x+w/2-960)>150)near.push({x,w,h:110+r()*240,t:Math.floor(r()*3)});x+=w+r()*30}
+  return{near,far}})();
+const BUB=(()=>{const r=rng(11),a=[];for(let i=0;i<90;i++)a.push({x:r()*W,v:30+r()*90,o:r()*1200,s:2+r()*6,w:r()*6});return a})();
+const HOUSES=(()=>{const r=rng(5),a=[];for(let i=0;i<15;i++){const x=840+i*72+r()*26;a.push({x,w:52+r()*40,h:46+r()*48,win:r()<.75,ph:r()*6})}return a})();
+
+/* силуэт женщины из воды -> точки */
+const WOMAN=(()=>{const c=mk(400,700),x=c.getContext('2d');x.fillStyle='#fff';x.strokeStyle='#fff';
+  x.beginPath();x.ellipse(200,92,32,40,0,0,7);x.fill();
+  x.beginPath();x.moveTo(168,80);x.bezierCurveTo(130,180,120,260,138,330);x.lineTo(170,300);x.lineTo(172,110);x.fill();
+  x.beginPath();x.moveTo(232,80);x.bezierCurveTo(270,180,280,260,262,330);x.lineTo(230,300);x.lineTo(228,110);x.fill();
+  x.fillRect(186,120,28,40);
+  x.beginPath();x.moveTo(140,165);x.quadraticCurveTo(200,148,260,165);x.lineTo(226,300);x.lineTo(174,300);x.closePath();x.fill();
+  x.beginPath();x.moveTo(174,295);x.bezierCurveTo(130,420,80,560,40,700);x.lineTo(360,700);x.bezierCurveTo(320,560,270,420,226,295);x.fill();
+  x.lineCap='round';x.lineWidth=20;x.beginPath();x.moveTo(150,175);x.quadraticCurveTo(95,250,58,215);x.stroke();
+  x.beginPath();x.moveTo(250,175);x.quadraticCurveTo(305,250,342,215);x.stroke();
+  const d=x.getImageData(0,0,400,700).data,r=rng(21),pts=[];let n=0;
+  while(pts.length<1500&&n<200000){n++;const px=Math.floor(r()*400),py=Math.floor(r()*700);if(d[(py*400+px)*4+3]>128){
+    const s=.74;pts.push({tx:960+(px-200)*s,ty:600-(700-py)*s,sx:960+(r()-.5)*700,sy:600+r()*60,d:r()*2.2,ph:r()*6})}}
+  return pts})();
+
+/* ---------- примитивы ---------- */
+function sky(c1,c2,hy){const gr=g.createLinearGradient(0,0,0,hy);gr.addColorStop(0,c1);gr.addColorStop(1,c2);g.fillStyle=gr;g.fillRect(0,0,W,hy+2)}
+function glow(x,y,r,rgb,a){g.save();g.globalCompositeOperation='lighter';g.globalAlpha=clamp(a);const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(${rgb},1)`);gr.addColorStop(.35,`rgba(${rgb},.35)`);gr.addColorStop(1,`rgba(${rgb},0)`);g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);g.restore()}
+function sea(T,hy,top,bot,line,amp=1){
+  const gr=g.createLinearGradient(0,hy,0,H);gr.addColorStop(0,top);gr.addColorStop(1,bot);g.fillStyle=gr;g.fillRect(0,hy,W,H-hy);
+  g.save();g.strokeStyle=line;g.lineWidth=1.6;
+  for(let i=1;i<34;i++){const k=i/34,y=hy+Math.pow(k,1.8)*(H-hy),a=(2+k*14)*amp;g.globalAlpha=.06+k*.22;g.beginPath();
+    for(let x=-24;x<=W+24;x+=24){const yy=y+Math.sin(x*.004/(.3+k)+T*(.5+k)+i*1.7)*a+Math.sin(x*.011+T*1.2+i)*a*.4;x===-24?g.moveTo(x,yy):g.lineTo(x,yy)}
+    g.stroke()}
+  g.restore()}
+function ring(T,tb,x,y,rgb,speed=650,ry=1){const k=T-tb;if(k<0||k>3)return;g.save();g.globalCompositeOperation='lighter';g.strokeStyle=`rgba(${rgb},${.45*(1-k/3)})`;g.lineWidth=4;g.beginPath();g.ellipse(x,y,k*speed,k*speed*ry,0,0,7);g.stroke();g.restore()}
+function bellShape(cx,top,s){g.beginPath();g.moveTo(cx-10*s,top);g.quadraticCurveTo(cx-14*s,top+4*s,cx-16*s,top+22*s);g.quadraticCurveTo(cx-18*s,top+36*s,cx-26*s,top+42*s);g.lineTo(cx+26*s,top+42*s);g.quadraticCurveTo(cx+18*s,top+36*s,cx+16*s,top+22*s);g.quadraticCurveTo(cx+14*s,top+4*s,cx+10*s,top);g.closePath()}
+function person(x,feet,s,ph,a){const bob=Math.abs(Math.sin(ph))*3*s;feet-=bob;g.save();g.globalAlpha=a;
+  g.fillStyle='#bfcac6';g.strokeStyle='#bfcac6';g.lineCap='round';
+  g.lineWidth=9*s;g.beginPath();g.moveTo(x,feet-60*s);g.lineTo(x+Math.sin(ph)*14*s,feet);g.moveTo(x,feet-60*s);g.lineTo(x-Math.sin(ph)*14*s,feet);g.stroke();
+  g.beginPath();g.moveTo(x-17*s,feet-150*s);g.lineTo(x-28*s,feet-40*s);g.lineTo(x+28*s,feet-40*s);g.lineTo(x+17*s,feet-150*s);g.closePath();g.fill();
+  g.lineWidth=7*s;g.beginPath();g.moveTo(x-16*s,feet-145*s);g.lineTo(x-24*s,feet-85*s);g.moveTo(x+16*s,feet-145*s);g.lineTo(x+24*s,feet-85*s);g.stroke();
+  g.beginPath();g.arc(x,feet-168*s,14*s,0,7);g.fill();g.restore()}
+
+/* ---------- сцены ---------- */
+function s0(T,lt){sky('#03070a','#0f1c1f',620);glow(1340,290,380,'160,190,186',.45);glow(1340,290,60,'220,235,230',.35);
+  sea(T,620,'#0b1719','#020506','#8fb3ad');ring(T,1.5,1340,640,'190,220,214',420,.16);fog(T,360,940,.6)}
+function s1(T,lt){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#0f4448');gr.addColorStop(.42,'#05191d');gr.addColorStop(1,'#010506');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  g.save();g.globalCompositeOperation='lighter';for(let i=0;i<7;i++){const x=260+i*240+Math.sin(T*.3+i)*60,rg=g.createLinearGradient(0,0,0,H*.9);rg.addColorStop(0,'rgba(140,220,210,.11)');rg.addColorStop(1,'rgba(140,220,210,0)');g.fillStyle=rg;g.beginPath();g.moveTo(x-40,0);g.lineTo(x+40,0);g.lineTo(x+260,H);g.lineTo(x-260,H);g.fill()}g.restore();
+  const oy=120-lt*10,base=H-70+oy;
+  g.fillStyle='#072a2f';for(const b of CITY.far){const h=b.h*.75,y=base-60-h;g.fillRect(b.x,y,b.w,h+80);if(b.t===1){g.beginPath();g.moveTo(b.x-4,y);g.lineTo(b.x+b.w/2,y-34);g.lineTo(b.x+b.w+4,y);g.fill()}if(b.t===2){g.beginPath();g.arc(b.x+b.w/2,y,b.w*.36,Math.PI,0);g.fill()}}
+  g.fillStyle='#021215';for(const b of CITY.near){const y=base-b.h;g.fillRect(b.x,y,b.w,b.h+90);if(b.t===1){g.beginPath();g.moveTo(b.x-6,y);g.lineTo(b.x+b.w/2,y-46);g.lineTo(b.x+b.w+6,y);g.fill()}if(b.t===2){g.beginPath();g.arc(b.x+b.w/2,y,b.w*.4,Math.PI,0);g.fill()}
+    g.fillStyle='rgba(120,210,200,.05)';for(let wy=y+24;wy<base-20;wy+=46)for(let wx=b.x+12;wx<b.x+b.w-18;wx+=30)g.fillRect(wx,wy,10,20);g.fillStyle='#021215'}
+  const tx=960,ttop=base-680;g.fillRect(tx-80,ttop+180,160,520);g.fillRect(tx-62,ttop+60,124,140);g.beginPath();g.moveTo(tx-70,ttop+62);g.lineTo(tx,ttop-90);g.lineTo(tx+70,ttop+62);g.fill();
+  g.fillStyle='#0a3a3f';g.beginPath();g.moveTo(tx-38,ttop+190);g.lineTo(tx-38,ttop+110);g.arc(tx,ttop+110,38,Math.PI,0);g.lineTo(tx+38,ttop+190);g.fill();
+  g.fillStyle='#021215';bellShape(tx,ttop+118,1.25);g.fill();glow(tx,ttop+150,120,'90,200,190',.18+.08*Math.sin(T*2));
+  for(const tb of[16.9,17.5,18.1]){ring(T,tb,tx,ttop+150,'120,220,210',520,1);const k=T-tb;if(k>0&&k<1.5)glow(tx,ttop+150,260,'120,230,215',.3*(1-k/1.5))}
+  g.save();g.strokeStyle='rgba(180,240,230,.35)';g.lineWidth=1.5;for(const b of BUB){const y=H-((T*b.v+b.o)%(H+120)),x=b.x+Math.sin(T+b.w)*12;g.beginPath();g.arc(x,y,b.s,0,7);g.stroke()}g.restore();
+  g.save();g.strokeStyle='#03181b';g.lineWidth=7;for(let i=0;i<16;i++){const x=40+i*125;g.beginPath();g.moveTo(x,H);for(let k=1;k<=6;k++)g.lineTo(x+Math.sin(T*.8+i+k*.7)*16*k/3,H-k*32);g.stroke()}g.restore();
+  fog(T,200,1000,.25,FOGT)}
+function s2(T,lt){sky('#050a0e','#1a2a30',700);glow(420,250,300,'150,180,180',.3);
+  sea(T,700,'#0d1a1e','#030607','#7fa6a0');
+  g.save();g.strokeStyle='#060b0d';g.lineWidth=10;g.beginPath();g.moveTo(820,800);g.lineTo(300,840);g.stroke();for(let i=0;i<9;i++){const x=820-i*60,y=800+i*4.6;g.fillStyle='#060b0d';g.fillRect(x-5,y,10,70)}g.restore();
+  glow(560,790,80,'255,170,90',.35+.08*Math.sin(T*5));glow(330,820,60,'255,170,90',.3+.08*Math.sin(T*4+1));
+  g.fillStyle='#04080a';g.beginPath();g.moveTo(700,H);g.bezierCurveTo(900,760,1300,560,1920,500);g.lineTo(1920,H);g.fill();
+  for(const h of HOUSES){const k=(h.x-700)/1220,y=H-(k*k*.15+k*.85)*(H-500)+10+40;g.fillStyle='#070d10';g.fillRect(h.x,y-h.h,h.w,h.h+60);g.beginPath();g.moveTo(h.x-6,y-h.h);g.lineTo(h.x+h.w/2,y-h.h-30);g.lineTo(h.x+h.w+6,y-h.h);g.fill();
+    if(h.win){const a=.55+.35*Math.sin(T*3+h.ph)*Math.sin(T*1.3+h.ph*2);g.fillStyle=`rgba(255,178,92,${clamp(a)})`;g.fillRect(h.x+h.w*.3,y-h.h*.65,10,14);glow(h.x+h.w*.3+5,y-h.h*.65+7,40,'255,170,90',.18)}}
+  g.fillStyle='#070d10';g.fillRect(1700,380,70,140);g.beginPath();g.moveTo(1695,380);g.lineTo(1735,270);g.lineTo(1775,380);g.fill();
+  const k=T-27.1;if(k>0&&k<4){fog(T,420,1000,.35*(1-k/4))}ring(T,27.1,200,720,'200,225,220',700,.12);
+  fog(T,520,1020,.42)}
+function s3(T,lt){sky('#060b0e','#1b2a2c',520);sea(T,520,'#0f1d20','#07100f','#9cc0b8',1.2);
+  const wash=Math.sin(T*.9)*30,sx=y=>1080+wash+(y-560)*.38;
+  const gr=g.createLinearGradient(0,560,0,H);gr.addColorStop(0,'#15150f');gr.addColorStop(1,'#060605');g.fillStyle=gr;g.beginPath();g.moveTo(0,575);g.lineTo(sx(575),575);g.lineTo(sx(H),H);g.lineTo(0,H);g.fill();
+  g.save();g.strokeStyle='rgba(210,230,225,.35)';g.lineWidth=3;g.beginPath();g.moveTo(sx(575),575);g.lineTo(sx(H),H);g.stroke();g.restore();
+  const feet=905,F=[[640,0],[810,1.3],[960,2.6]];
+  for(const [x0,o] of F){const x=x0+lt*44,ph=T*2.4+o,shore=sx(feet),depth=clamp((x-shore)*.9,0,320);
+    g.save();if(depth>0){g.beginPath();g.rect(0,0,W,feet-6);g.clip()}person(x,feet+depth,1.18,ph,.88);g.restore();
+    glow(x,feet-110+depth,120,'190,215,210',.06);
+    if(depth>0&&depth<300){g.save();g.strokeStyle='rgba(210,235,230,.4)';g.lineWidth=2;g.beginPath();g.ellipse(x,feet-6,26+Math.sin(T*3)*3,6,0,0,7);g.stroke();g.restore()}}
+  fog(T,500,1000,.5)}
+function s4(T,lt){sky('#04090b','#122024',640);sea(T,640,'#0c191b','#020506','#7aa69e');
+  g.fillStyle='#030606';g.beginPath();g.moveTo(0,H);g.lineTo(0,560);g.lineTo(280,520);g.lineTo(600,600);g.lineTo(820,720);g.lineTo(1000,H);g.fill();
+  const lx=420;g.fillStyle='#0a1315';g.beginPath();g.moveTo(lx-56,545);g.lineTo(lx-36,165);g.lineTo(lx+36,165);g.lineTo(lx+56,545);g.fill();
+  g.fillStyle='rgba(255,255,255,.035)';for(let i=0;i<4;i++){const y=210+i*85;g.fillRect(lx-50+i*4,y,100-i*8,30)}
+  g.fillStyle='#0a1315';g.fillRect(lx-58,152,116,14);g.fillRect(lx-40,90,6,64);g.fillRect(lx+34,90,6,64);
+  const pulse=.6+.25*Math.sin(T*3.1)+.1*Math.sin(T*7);g.fillStyle=`rgba(80,230,150,${.35*pulse})`;g.fillRect(lx-34,92,68,60);
+  g.beginPath();g.moveTo(lx-48,92);g.lineTo(lx,46);g.lineTo(lx+48,92);g.fillStyle='#0a1315';g.fill();
+  g.save();g.translate(lx,96);g.rotate(Math.sin(T*1.6)*.35);g.fillStyle='#071012';bellShape(0,0,1.05);g.fill();g.restore();
+  glow(lx,122,520,'80,255,160',.22*pulse);glow(lx,122,90,'170,255,200',.35*pulse);
+  for(const [tb] of BELL_NAMED)ring(T,tb,lx,122,'120,255,180',760,.9);
+  fog(T,0,760,.32,FOGG);fog(T,560,1040,.4)}
+function s5(T,lt){sky('#02060a','#0b181c',600);sea(T,600,'#06121a','#010304','#6fb2aa',.35);
+  const p=ease((lt-.5)/6);glow(960,360,460,'70,190,180',.22*p);
+  for(let i=0;i<4;i++){const k=((lt+i*2.2)%8.8)/8.8;g.save();g.strokeStyle=`rgba(160,230,220,${.35*(1-k)})`;g.lineWidth=2;g.beginPath();g.ellipse(960,604,60+k*700,8+k*60,0,0,7);g.stroke();g.restore()}
+  g.save();g.globalCompositeOperation='lighter';
+  for(const q of WOMAN){const e=ease((lt-.6-q.d)/4.2),jx=Math.sin(T*1.7+q.ph)*(3+8*(1-e)),jy=Math.cos(T*1.3+q.ph)*(3+6*(1-e));
+    const x=q.sx+(q.tx-q.sx)*e+jx,y=q.sy+(q.ty-q.sy)*e+jy;g.fillStyle=`rgba(165,238,228,${.18+.42*e})`;g.fillRect(x,y,3,3);
+    if(y<600){g.fillStyle=`rgba(120,210,200,${.1*e})`;g.fillRect(x,600+(600-y)*.55,3,2)}}
+  g.restore();fog(T,350,1000,.35,FOGT)}
+function s6(T,lt){g.fillStyle='#020405';g.fillRect(0,0,W,H);glow(960,520,700,'40,110,105',.25);fog(T,250,1050,.38);
+  ring(T,61,960,540,'200,230,220',900,.35);ring(T,65.3,960,540,'200,230,220',900,.35);
+  const a1=ease((lt-1)/2.2);if(a1>0){g.save();g.globalAlpha=a1;g.textAlign='center';g.fillStyle='#ece2c8';g.shadowColor='rgba(120,220,205,.55)';g.shadowBlur=40;
+    g.font='700 132px "Alegreya SC", Georgia, serif';if('letterSpacing' in g)g.letterSpacing='6px';g.fillText('Колокола Солёной Мглы',W/2,520);g.restore();
+    g.save();g.globalAlpha=a1*.8;g.strokeStyle='#d9b36c';g.lineWidth=2;const w=420*a1;g.beginPath();g.moveTo(W/2-60-w,585);g.lineTo(W/2-60,585);g.moveTo(W/2+60,585);g.lineTo(W/2+60+w,585);g.stroke();g.fillStyle='#d9b36c';bellShape(W/2,562,.9);g.fill();g.restore()}
+  const a2=ease((lt-4)/1.6);if(a2>0){g.save();g.globalAlpha=a2;g.textAlign='center';g.fillStyle='#b9c9c5';g.font='500 38px "Alegreya SC", Georgia, serif';if('letterSpacing' in g)g.letterSpacing='5px';g.fillText('Кампания D&D 5e  ·  двое героев  ·  уровни 2–8',W/2,670);g.restore()}
+  const a3=ease((lt-7)/1.6);if(a3>0){g.save();g.globalAlpha=a3;g.textAlign='center';g.fillStyle='#8fd1c4';g.font='italic 400 46px Alegreya, Georgia, serif';g.fillText('Сессия первая. Туман над Солтхейвеном',W/2,770);g.restore()}}
+
+const SC=[[0,9,s0],[9,19,s1],[19,29,s2],[29,40,s3],[40,50,s4],[50,60,s5],[60,DUR+1,s6]];
+const CAPS=[[1.6,8.4,['Сорок лет назад','море забрало город Ис-Мерин.']],[10.2,18.4,['Он утонул за одну ночь,','вместе с храмом и тремя колоколами.']],
+  [20.4,28.4,['Теперь по ночам из тумана','снова доносится колокольный звон.']],[30.4,39.4,['И жители Солтхейвена один за другим','уходят во сне в море.']],
+  [51.5,59.4,['Она поёт.','И море ей отвечает.']]];
+const WORDS=[[41,'Бронзовый.',430],[44,'Серебряный.',530],[47,'Великий.',630]];
+function cap(T,a,b,lines){if(T<a||T>b)return;const al=Math.min(clamp((T-a)/.9),clamp((b-T)/.9));g.save();g.globalAlpha=al;g.textAlign='center';g.font='italic 400 56px Alegreya, Georgia, serif';g.fillStyle='#e4ece8';g.shadowColor='rgba(0,0,0,.95)';g.shadowBlur=22;
+  const lh=74,y0=H-150-(lines.length-1)*lh;lines.forEach((l,i)=>{const d=clamp((T-a-i*1.4)/.9);g.globalAlpha=al*d;g.fillText(l,W/2,y0+i*lh)});g.restore()}
+
+function frame(T){g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';
+  let s=SC.find(q=>T>=q[0]&&T<q[1])||SC[SC.length-1];const lt=T-s[0];
+  g.save();const z=1+lt*.005;g.translate(W/2,H/2);g.scale(z,z);g.translate(-W/2,-H/2);s[2](T,lt);g.restore();
+  g.drawImage(VIG,0,0);
+  g.save();g.globalCompositeOperation='overlay';g.globalAlpha=.1;g.fillStyle=GRAIN[Math.floor(T*24)%3];g.translate((T*997)%220,(T*613)%220);g.fillRect(-220,-220,W+440,H+440);g.restore();
+  let d=Math.max(0,1-T/1.6,(T-(DUR-2.2))/2.2);for(const b of[9,19,29,40,50,60])d=Math.max(d,1-Math.abs(T-b)/.9);
+  if(d>0){g.fillStyle=`rgba(0,0,0,${clamp(d)})`;g.fillRect(0,0,W,H)}}
+
+/* ---------- звук ---------- */
+let ac=null,t0=0,recDest=null;
+async function decodeVoices(){const V=window.PROLOG_VOICE||{},out={};for(const k in V){try{const bin=atob(V[k]),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);out[k]=await ac.decodeAudioData(u.buffer)}catch(e){}}return out}
+async function buildAudio(){
+  ac=new (window.AudioContext||window.webkitAudioContext)();const VB=await decodeVoices();const now=ac.currentTime+.15;t0=now;
+  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=3;
+  const master=ac.createGain();master.gain.setValueAtTime(0,now);master.gain.linearRampToValueAtTime(.95,now+1.5);master.gain.setValueAtTime(.95,now+DUR-2.5);master.gain.linearRampToValueAtTime(0,now+DUR);
+  master.connect(comp);comp.connect(ac.destination);recDest=ac.createMediaStreamDestination();comp.connect(recDest);
+  const rv=ac.createConvolver(),len=ac.sampleRate*4,ir=ac.createBuffer(2,len,ac.sampleRate);for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)}rv.buffer=ir;
+  const rvg=ac.createGain();rvg.gain.value=.5;rv.connect(rvg);rvg.connect(master);
+  // море
+  const nb=ac.createBuffer(1,ac.sampleRate*4,ac.sampleRate),nd=nb.getChannelData(0);let l=0;for(let i=0;i<nd.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;nd[i]=l*3.2}
+  const ns=ac.createBufferSource();ns.buffer=nb;ns.loop=true;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(700,now);
+  lp.frequency.setValueAtTime(700,now+8.6);lp.frequency.linearRampToValueAtTime(240,now+9.6);lp.frequency.setValueAtTime(240,now+18.4);lp.frequency.linearRampToValueAtTime(700,now+19.4);
+  const sg=ac.createGain();sg.gain.value=.5;const lfo=ac.createOscillator();lfo.frequency.value=.12;const lg=ac.createGain();lg.gain.value=.28;lfo.connect(lg);lg.connect(sg.gain);
+  ns.connect(lp);lp.connect(sg);sg.connect(master);ns.start(now);lfo.start(now);
+  // гул
+  const dr=ac.createGain();dr.gain.setValueAtTime(0,now);dr.gain.linearRampToValueAtTime(.07,now+5);dr.gain.setValueAtTime(.07,now+58);dr.gain.linearRampToValueAtTime(.12,now+61);
+  const dlp=ac.createBiquadFilter();dlp.type='lowpass';dlp.frequency.value=380;dlp.connect(dr);dr.connect(master);
+  for(const [f,t] of[[55,'sine'],[82.4,'sine'],[110.3,'triangle']]){const o=ac.createOscillator();o.type=t;o.frequency.value=f;const og=ac.createGain();og.gain.value=t==='triangle'?.35:1;o.connect(og);og.connect(dlp);o.start(now);o.stop(now+DUR+.5)}
+  // хор
+  const ch=ac.createGain();ch.gain.setValueAtTime(0,now);ch.gain.setValueAtTime(0,now+50);ch.gain.linearRampToValueAtTime(.05,now+56);ch.gain.linearRampToValueAtTime(.075,now+62);
+  const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=820;bp.Q.value=1.1;const clp=ac.createBiquadFilter();clp.type='lowpass';clp.frequency.value=2000;
+  bp.connect(clp);clp.connect(ch);ch.connect(master);ch.connect(rv);
+  const A=[220,261.63,329.63,440],F2=[174.61,220,261.63,349.23];
+  A.forEach((f,i)=>{for(const dt of[-7,6]){const o=ac.createOscillator();o.type='sawtooth';o.detune.value=dt;o.frequency.setValueAtTime(f,now);o.frequency.setValueAtTime(f,now+59.5);o.frequency.linearRampToValueAtTime(F2[i],now+61);
+    const vib=ac.createOscillator();vib.frequency.value=4.6+i*.3;const vg=ac.createGain();vg.gain.value=3;vib.connect(vg);vg.connect(o.detune);o.connect(bp);o.start(now+49);vib.start(now+49);o.stop(now+DUR+.5);vib.stop(now+DUR+.5)}});
+  // колокола
+  function bell(at,f,vol,muffled){const bus=ac.createBiquadFilter();bus.type='lowpass';bus.frequency.value=muffled?700:7000;const bg=ac.createGain();bg.gain.value=vol;bus.connect(bg);bg.connect(master);bg.connect(rv);
+    const R=[.5,1,1.19,1.5,2,2.52,2.66,3.01,4.17],Am=[.6,1,.55,.45,.35,.22,.18,.12,.08];
+    R.forEach((r,i)=>{const o=ac.createOscillator();o.frequency.value=f*r;const e=ac.createGain(),dec=7.5*Math.pow(110/f,.35)/(1+i*.35);
+      e.gain.setValueAtTime(0,at);e.gain.linearRampToValueAtTime(Am[i]*.25,at+.008);e.gain.exponentialRampToValueAtTime(.0001,at+dec);o.connect(e);e.connect(bus);o.start(at);o.stop(at+dec+.1)})}
+  bell(now+1.5,110,.6,true);
+  // «…и тремя колоколами» — три приглушённых удара из-под воды
+  bell(now+16.9,196,.5,true);bell(now+17.5,392,.4,true);bell(now+18.1,98,.6,true);
+  // «…доносится колокольный звон» — звон из тумана
+  bell(now+27.1,110,.9,false);
+  // каждое имя колокола — и сразу его голос
+  for(const [at,f,v] of BELL_NAMED)bell(now+at,f,v,false);
+  // название — и последний удар Великого
+  bell(now+61,55,1.2,false);bell(now+61.02,110,.6,false);bell(now+65.3,55,1.1,false);
+  // голос рассказчика
+  // голос идёт мимо компрессора, чтобы колокола его не «качали»; эхо совсем лёгкое
+  const vhp=ac.createBiquadFilter();vhp.type='highpass';vhp.frequency.value=70;const vg=ac.createGain();vg.gain.value=1;const vs=ac.createGain();vs.gain.value=.08;
+  vhp.connect(vg);vg.connect(ac.destination);vg.connect(recDest);vg.connect(vs);vs.connect(rv);
+  for(const [k,at] of VOICE_AT){if(!VB[k])continue;const s=ac.createBufferSource();s.buffer=VB[k];s.connect(vhp);s.start(now+at)}
+}
+const VOICE_AT=[['01',2.0],['02',10.8],['03',22.4],['04',30.8],['05',40.8],['06',43.8],['07',46.8],['08',52.2],['09',62.2]];
+const BELL_NAMED=[[42.3,196,.8],[45.3,392,.6],[48.3,65.4,1.1]];
+
+/* ---------- управление ---------- */
+let playing=false,startPerf=0,raf=0,rec=null,chunks=[],recExt='webm';
+const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function now(){return ac?ac.currentTime-t0:(performance.now()-startPerf)/1000}
+function loop(){const T=now();if(T>=DUR){finish();return}frame(Math.max(0,T));$('prog').style.width=(clamp(T/DUR)*100)+'%';$('time').textContent=fmt(T)+' / '+fmt(DUR);raf=requestAnimationFrame(loop)}
+function stopAll(){cancelAnimationFrame(raf);if(ac){try{ac.close()}catch(e){}ac=null}playing=false}
+async function play(){stopAll();try{await buildAudio()}catch(e){ac=null;startPerf=performance.now();$('status').textContent='Звук недоступен в этом браузере — показываю без звука.'}
+  if(!ac)startPerf=performance.now();playing=true;$('playBig').hidden=true;$('btnPlay').textContent='↺ Сначала';loop()}
+function finish(){frame(DUR-.01);$('prog').style.width='100%';$('time').textContent=fmt(DUR)+' / '+fmt(DUR);stopAll();$('btnPlay').textContent='▶ Смотреть снова';$('playBig').hidden=false;
+  if(document.body.classList.contains('embed'))try{parent.postMessage({t:'cs-done'},'*')}catch(e){}
+  if(rec&&rec.state!=='inactive')rec.stop()}
+$('playBig').addEventListener('click',play);$('btnPlay').addEventListener('click',()=>{if(rec&&rec.state!=='inactive')return;play()});
+$('btnFull').addEventListener('click',()=>{const el=$('stageWrap');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else if(el.requestFullscreen)el.requestFullscreen().catch(()=>{$('status').textContent='Полный экран здесь недоступен. Откройте страницу в браузере и нажмите F11.'})});
+
+let downloads=null;
+if(window.claude&&window.claude.use){window.claude.use('downloads').then(d=>{downloads=d;if(d&&window.MediaRecorder&&cv.captureStream)$('btnRec').hidden=false}).catch(()=>{})}
+// проигрывает пролог целиком и возвращает записанное видео {blob, ext}
+async function recordBlob(){
+  const types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  const mt=types.find(t=>MediaRecorder.isTypeSupported(t));if(!mt)throw new Error('Этот браузер не умеет записывать видео. Попробуйте Chrome или Edge.');
+  recExt=mt.startsWith('video/mp4')?'mp4':'webm';
+  await play();if(!ac){stopAll();throw new Error('Без звука запись не имеет смысла: браузер не дал включить звук.')}
+  const st=cv.captureStream(30);const at=recDest.stream.getAudioTracks()[0];if(at)st.addTrack(at);
+  chunks=[];rec=new MediaRecorder(st,{mimeType:mt,videoBitsPerSecond:9000000,audioBitsPerSecond:192000});
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  const done=new Promise(res=>{rec.onstop=()=>{rec=null;res({blob:new Blob(chunks,{type:mt}),ext:recExt})}});
+  rec.start(1000);return done}
+window.__prologRecord=recordBlob;
+$('btnRec').addEventListener('click',async()=>{
+  $('btnRec').disabled=true;$('btnPlay').disabled=true;$('status').textContent='Идёт запись… не сворачивайте вкладку (1 мин 14 сек).';
+  let r;try{r=await recordBlob()}catch(e){$('status').textContent=e.message;$('btnRec').disabled=false;$('btnPlay').disabled=false;return}
+  $('btnRec').disabled=false;$('btnPlay').disabled=false;
+  $('status').textContent='Запись готова ('+(r.blob.size/1048576).toFixed(1)+' МБ). Подтвердите сохранение.';
+  try{await downloads.save({filename:'Колокола Солёной Мглы — пролог.'+r.ext,data:r.blob});$('status').textContent='Видео сохранено.'}
+  catch(e){const c=e&&e.code;$('status').textContent=c==='declined'?'Сохранение отменено. Можно записать заново.':c==='rate_limited'?'Окно сохранения уже открыто.':'Не получилось сохранить видео здесь ('+(c||'ошибка')+').'}});
+
+window.__prologFrame=frame;
+(document.fonts&&document.fonts.load?Promise.all([document.fonts.load('700 132px "Alegreya SC"'),document.fonts.load('italic 56px Alegreya')]).catch(()=>{}):Promise.resolve()).then(()=>{if(!playing)frame(68)});
+frame(68);
+// #embed — пролог внутри игрового стола: только сцена, сразу играет
+if(location.hash==='#embed'){document.body.classList.add('embed');(async()=>{await (document.fonts?document.fonts.ready:null);await play();if(ac&&ac.state!=='running'){try{await Promise.race([ac.resume(),new Promise(r=>setTimeout(r,500))])}catch(e){}}
+  if(ac&&ac.state!=='running'){stopAll();frame(68);$('playBig').hidden=false}})()}
+})();
+</script>
+
+</body>
+</html>

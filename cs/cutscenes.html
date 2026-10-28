@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+</head>
+<body>
+<title>Катсцены Солёной Мглы</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: кинозал Мастера — слева список катсцен по сессиям, справа сцена 16:9 и пульт, ниже расписание «когда ставить». Один тёмный образ: это экран для показа. */
+:root{
+  --bg:#06090a; --panel:#0d1415; --ink:#dfe8e4; --muted:#8a9b98; --line:#1f2c2e;
+  --sea:#8fd1c4; --brass:#d9b36c; --danger:#e58a80;
+  --f-display:"Alegreya SC", Georgia, "Times New Roman", serif;
+  --f-body:"Alegreya", Georgia, "Times New Roman", serif;
+  --f-mono:"IBM Plex Mono", Consolas, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:18px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1280px;margin:0 auto;padding-block:28px 72px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 20px;margin-bottom:20px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--sea)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4.4vw,44px);line-height:1.1;margin:4px 0 0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:28px;margin:48px 0 8px;text-wrap:balance}
+header nav{display:flex;flex-wrap:wrap;gap:6px 16px}
+header nav a{font-family:var(--f-mono);font-size:13px;color:var(--sea)}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;align-items:start}
+.list{display:grid;gap:14px}
+.grp{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:4px 0 -6px}
+.cs{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;text-align:left;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink);cursor:pointer;font:inherit}
+.cs:hover,.cs:focus-visible{border-color:var(--sea);outline:none}
+.cs[aria-current="true"]{border-color:var(--sea);background:#122224}
+.cs .n{grid-row:span 2;font-family:var(--f-display);font-size:26px;color:var(--brass);line-height:1;align-self:center;font-variant-numeric:tabular-nums}
+.cs .t{font-family:var(--f-display);font-size:19px;line-height:1.2}
+.cs .w{font-size:14px;color:var(--muted);line-height:1.35}
+.main{min-width:0;display:grid;gap:14px}
+.stage{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:100%}
+.stage:fullscreen{border:0;border-radius:0;display:flex;align-items:center;justify-content:center}
+.stage:fullscreen canvas{object-fit:contain}
+.play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:transparent;border:0;cursor:pointer;color:var(--ink)}
+.play span{display:inline-flex;align-items:center;gap:12px;font-family:var(--f-display);font-size:clamp(17px,2.4vw,26px);padding:12px 26px;border:1px solid rgba(143,209,196,.6);border-radius:999px;background:rgba(4,10,11,.72)}
+.play:hover span,.play:focus-visible span{background:rgba(20,44,44,.85);outline:none}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--sea)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+button.btn{font-family:var(--f-mono);font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 16px;cursor:pointer}
+button.btn:hover,button.btn:focus-visible{border-color:var(--sea);outline:none}
+button.btn.rec{border-color:rgba(229,138,128,.55);color:var(--danger)}
+button.btn:disabled{opacity:.45;cursor:default}
+.time{font-family:var(--f-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:auto}
+.status{font-family:var(--f-mono);font-size:13px;color:var(--brass);min-height:1.4em;margin:0}
+.now{border-left:3px solid var(--brass);padding:4px 0 4px 14px}
+.now .t{font-family:var(--f-display);font-size:22px}
+.now p{margin:4px 0;color:var(--muted)}
+.now b{color:var(--ink);font-weight:400}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:16px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+td.n{font-family:var(--f-display);color:var(--brass);font-size:20px;white-space:nowrap}
+td a{color:var(--sea)}
+.tips{color:var(--muted);max-width:72ch}
+.tips li{margin:4px 0}
+.tips b{color:var(--ink);font-weight:400}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.list{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}.grp{grid-column:1/-1}}
+body.embed{background:#000;overflow:hidden}
+body.embed .stage{position:fixed;inset:0;width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0;z-index:5}
+body.embed .stage canvas{object-fit:contain}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Колокола Солёной Мглы · для показа игрокам</div>
+      <h1>Катсцены кампании</h1>
+    </div>
+    <nav>
+      <a href="https://claude.ai/artifact/KFPe7v3ELXuvDiVh9j2C1Y" target="_blank" rel="noopener">Пролог</a>
+      <a href="https://claude.ai/artifact/Jav5av8LVMQbnhsT3wEeQH" target="_blank" rel="noopener">Сессия 1</a>
+      <a href="https://claude.ai/artifact/ETny2dKu7kAYq4vxx8YjGw" target="_blank" rel="noopener">Сессия 2</a>
+      <a href="https://claude.ai/artifact/RZxCp4enMWE2SsKe4JjNHd" target="_blank" rel="noopener">Сессия 3</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <div class="list" id="list" role="list"></div>
+    <div class="main">
+      <div class="stage" id="stageWrap">
+        <canvas id="stage" width="1920" height="1080" aria-label="Катсцена"></canvas>
+        <button class="play" id="playBig" type="button"><span>▶ Смотреть</span></button>
+      </div>
+      <div class="bar" aria-hidden="true"><i id="prog"></i></div>
+      <div class="controls">
+        <button class="btn" id="btnPlay" type="button">▶ Смотреть</button>
+        <button class="btn" id="btnFull" type="button">⛶ Полный экран</button>
+        <button class="btn rec" id="btnRec" type="button" hidden>● Записать видеофайл</button>
+        <span class="time" id="time">0:00</span>
+      </div>
+      <p class="status" id="status" role="status"></p>
+      <div class="now" id="now"></div>
+    </div>
+  </div>
+
+  <h2>Когда ставить</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>№</th><th>Катсцена</th><th>Сессия</th><th>Момент</th><th>Что делать дальше</th></tr></thead>
+    <tbody id="sched"></tbody>
+  </table></div>
+
+  <h2>Как показывать</h2>
+  <ul class="tips">
+    <li><b>Заранее откройте эту страницу</b> на ноутбуке у телевизора и выберите нужную катсцену. Показ — одна кнопка, игра не прерывается.</li>
+    <li><b>Ставьте катсцену вместо текста «Прочитайте вслух»</b> в отмеченных местах сценария. Сам текст читать уже не нужно — его произносит рассказчик.</li>
+    <li><b>Не показывайте катсцену, если игроки пошли другим путём.</b> Например, «Город поднимается» — только если Великий колокол прозвенел.</li>
+    <li><b>После показа сразу передайте ход игрокам</b> вопросом: «Что вы делаете?» — так кино не отнимает у них инициативу.</li>
+    <li>Нажмите «Полный экран», чтобы спрятать всё лишнее. Звук — погромче.</li>
+  </ul>
+</div>
+
+<script src="voice-cs.js"></script>
+<script>
+(function(){
+const W=1920,H=1080;
+const cv=document.getElementById('stage'),g=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>{x=clamp(x);return x*x*(3-2*x)};
+const lerp=(a,b,k)=>a+(b-a)*k;
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+function mix(c1,c2,k){return 'rgb('+c1.map((v,i)=>Math.round(lerp(v,c2[i],k))).join(',')+')'}
+
+/* ---------- заготовки ---------- */
+function fogSprite(rgb){const c=mk(256,256),x=c.getContext('2d'),gr=x.createRadialGradient(128,128,0,128,128,128);
+  gr.addColorStop(0,`rgba(${rgb},.55)`);gr.addColorStop(.5,`rgba(${rgb},.18)`);gr.addColorStop(1,`rgba(${rgb},0)`);x.fillStyle=gr;x.fillRect(0,0,256,256);return c}
+const FOGW=fogSprite('205,222,218'),FOGG=fogSprite('110,255,170'),FOGT=fogSprite('90,190,180'),FOGD=fogSprite('255,214,170');
+const FOG=(()=>{const r=rng(7),a=[];for(let i=0;i<46;i++)a.push({x:r()*2700,y:r(),s:500+r()*900,v:10+r()*28,a:.25+r()*.5});return a})();
+function fog(T,y0,y1,alpha,spr=FOGW){if(alpha<=0)return;g.save();for(const f of FOG){const x=((f.x+T*f.v)%2700)-500,y=y0+(y1-y0)*f.y;g.globalAlpha=alpha*f.a;g.drawImage(spr,x-f.s/2,y-f.s*.3,f.s,f.s*.6)}g.restore()}
+const VIG=mk(W,H);{const x=VIG.getContext('2d'),gr=x.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*1.05);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.8)');x.fillStyle=gr;x.fillRect(0,0,W,H)}
+const GRAIN=[0,1,2].map(k=>{const c=mk(220,220),x=c.getContext('2d'),d=x.createImageData(220,220),r=rng(40+k);for(let i=0;i<d.data.length;i+=4){const v=r()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}x.putImageData(d,0,0);return g.createPattern(c,'repeat')});
+const CITY=(()=>{const r=rng(3),near=[],far=[];
+  for(let x=-60;x<2000;){const w=60+r()*90;far.push({x,w,h:140+r()*260,t:Math.floor(r()*3)});x+=w+r()*20}
+  for(let x=-40;x<2000;){const w=70+r()*110;if(Math.abs(x+w/2-960)>150)near.push({x,w,h:110+r()*240,t:Math.floor(r()*3),d:r()});x+=w+r()*30}
+  return{near,far}})();
+const BUB=(()=>{const r=rng(11),a=[];for(let i=0;i<110;i++)a.push({x:r()*W,v:30+r()*90,o:r()*1200,s:2+r()*6,w:r()*6});return a})();
+const GULLS=(()=>{const r=rng(17),a=[];for(let i=0;i<7;i++)a.push({x:r()*W,y:120+r()*260,v:30+r()*40,s:.6+r()*.6,ph:r()*6});return a})();
+const ROCKS=(()=>{const r=rng(23),a=[];for(let i=0;i<9;i++){const x=i<5?1150+i*170+r()*60:80+(i-5)*190+r()*60;a.push({x,w:60+r()*90,h:60+r()*150,sk:(r()-.5)*40})}return a})();
+const WOMAN=(()=>{const c=mk(400,700),x=c.getContext('2d');x.fillStyle='#fff';x.strokeStyle='#fff';
+  x.beginPath();x.ellipse(200,92,32,40,0,0,7);x.fill();
+  x.beginPath();x.moveTo(168,80);x.bezierCurveTo(130,180,120,260,138,330);x.lineTo(170,300);x.lineTo(172,110);x.fill();
+  x.beginPath();x.moveTo(232,80);x.bezierCurveTo(270,180,280,260,262,330);x.lineTo(230,300);x.lineTo(228,110);x.fill();
+  x.fillRect(186,120,28,40);
+  x.beginPath();x.moveTo(140,165);x.quadraticCurveTo(200,148,260,165);x.lineTo(226,300);x.lineTo(174,300);x.closePath();x.fill();
+  x.beginPath();x.moveTo(174,295);x.bezierCurveTo(130,420,80,560,40,700);x.lineTo(360,700);x.bezierCurveTo(320,560,270,420,226,295);x.fill();
+  x.lineCap='round';x.lineWidth=20;x.beginPath();x.moveTo(150,175);x.quadraticCurveTo(95,250,58,215);x.stroke();
+  x.beginPath();x.moveTo(250,175);x.quadraticCurveTo(305,250,342,215);x.stroke();
+  const d=x.getImageData(0,0,400,700).data,r=rng(21),pts=[];let n=0;
+  while(pts.length<1500&&n<200000){n++;const px=Math.floor(r()*400),py=Math.floor(r()*700);if(d[(py*400+px)*4+3]>128)pts.push({px:px-200,py:py-700,rx:(r()-.5),ry:r(),d:r()*2.2,ph:r()*6,fx:(r()-.5),fy:r()})}
+  return pts})();
+
+/* ---------- примитивы ---------- */
+function sky(c1,c2,hy){const gr=g.createLinearGradient(0,0,0,hy);gr.addColorStop(0,c1);gr.addColorStop(1,c2);g.fillStyle=gr;g.fillRect(0,0,W,hy+2)}
+function glow(x,y,r,rgb,a){if(a<=0)return;g.save();g.globalCompositeOperation='lighter';g.globalAlpha=clamp(a);const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(${rgb},1)`);gr.addColorStop(.35,`rgba(${rgb},.35)`);gr.addColorStop(1,`rgba(${rgb},0)`);g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);g.restore()}
+function sea(T,hy,top,bot,line,amp=1){
+  const gr=g.createLinearGradient(0,hy,0,H);gr.addColorStop(0,top);gr.addColorStop(1,bot);g.fillStyle=gr;g.fillRect(0,hy,W,H-hy);
+  g.save();g.strokeStyle=line;g.lineWidth=1.6;
+  for(let i=1;i<34;i++){const k=i/34,y=hy+Math.pow(k,1.8)*(H-hy),a=(2+k*14)*amp;g.globalAlpha=.06+k*.22;g.beginPath();
+    for(let x=-24;x<=W+24;x+=24){const yy=y+Math.sin(x*.004/(.3+k)+T*(.5+k)+i*1.7)*a+Math.sin(x*.011+T*1.2+i)*a*.4;x===-24?g.moveTo(x,yy):g.lineTo(x,yy)}
+    g.stroke()}
+  g.restore()}
+function ring(T,tb,x,y,rgb,speed=650,ry=1){const k=T-tb;if(k<0||k>3)return;g.save();g.globalCompositeOperation='lighter';g.strokeStyle=`rgba(${rgb},${.45*(1-k/3)})`;g.lineWidth=4;g.beginPath();g.ellipse(x,y,k*speed,k*speed*ry,0,0,7);g.stroke();g.restore()}
+function bellShape(cx,top,s){g.beginPath();g.moveTo(cx-10*s,top);g.quadraticCurveTo(cx-14*s,top+4*s,cx-16*s,top+22*s);g.quadraticCurveTo(cx-18*s,top+36*s,cx-26*s,top+42*s);g.lineTo(cx+26*s,top+42*s);g.quadraticCurveTo(cx+18*s,top+36*s,cx+16*s,top+22*s);g.quadraticCurveTo(cx+14*s,top+4*s,cx+10*s,top);g.closePath()}
+function person(x,feet,s,ph,a,col='#bfcac6'){const bob=Math.abs(Math.sin(ph))*3*s;feet-=bob;g.save();g.globalAlpha=a;
+  g.fillStyle=col;g.strokeStyle=col;g.lineCap='round';
+  g.lineWidth=9*s;g.beginPath();g.moveTo(x,feet-60*s);g.lineTo(x+Math.sin(ph)*14*s,feet);g.moveTo(x,feet-60*s);g.lineTo(x-Math.sin(ph)*14*s,feet);g.stroke();
+  g.beginPath();g.moveTo(x-17*s,feet-150*s);g.lineTo(x-28*s,feet-40*s);g.lineTo(x+28*s,feet-40*s);g.lineTo(x+17*s,feet-150*s);g.closePath();g.fill();
+  g.lineWidth=7*s;g.beginPath();g.moveTo(x-16*s,feet-145*s);g.lineTo(x-24*s,feet-85*s);g.moveTo(x+16*s,feet-145*s);g.lineTo(x+24*s,feet-85*s);g.stroke();
+  g.beginPath();g.arc(x,feet-168*s,14*s,0,7);g.fill();g.restore()}
+// женщина из светящихся точек: cx,bottom — где стоит, k — масштаб, form 0..1 — собирается, gone 0..1 — рассыпается
+function woman(T,cx,bottom,k,form,gone,rgb='165,238,228',mirrorY=null){
+  g.save();g.globalCompositeOperation='lighter';
+  for(const q of WOMAN){const e=ease((form*6.2-q.d)/4),tx=cx+q.px*k,ty=bottom+q.py*k,sx=cx+q.rx*700*k,sy=bottom+q.ry*60;
+    let x=lerp(sx,tx,e)+Math.sin(T*1.7+q.ph)*(3+8*(1-e)),y=lerp(sy,ty,e)+Math.cos(T*1.3+q.ph)*(3+6*(1-e));
+    const gq=ease((gone*3-q.d*.6)/1.6);x+=q.fx*gq*500;y+=q.fy*gq*380+gq*gq*120;const a=(.18+.42*e)*(1-gq);if(a<=.01)continue;
+    g.fillStyle=`rgba(${rgb},${a})`;g.fillRect(x,y,3,3);
+    if(mirrorY!==null&&y<mirrorY){g.fillStyle=`rgba(${rgb},${a*.22})`;g.fillRect(x,mirrorY+(mirrorY-y)*.55,3,2)}}
+  g.restore()}
+function city(T,base,lift=1,col='#021215',far='#072a2f',tower=true){
+  g.fillStyle=far;for(const b of CITY.far){const h=b.h*.75*lift,y=base-60-h;g.fillRect(b.x,y,b.w,h+80);if(b.t===1){g.beginPath();g.moveTo(b.x-4,y);g.lineTo(b.x+b.w/2,y-34*lift);g.lineTo(b.x+b.w+4,y);g.fill()}if(b.t===2){g.beginPath();g.arc(b.x+b.w/2,y,b.w*.36,Math.PI,0);g.fill()}}
+  g.fillStyle=col;for(const b of CITY.near){const h=b.h*lift,y=base-h;g.fillRect(b.x,y,b.w,h+90);if(b.t===1){g.beginPath();g.moveTo(b.x-6,y);g.lineTo(b.x+b.w/2,y-46*lift);g.lineTo(b.x+b.w+6,y);g.fill()}if(b.t===2){g.beginPath();g.arc(b.x+b.w/2,y,b.w*.4,Math.PI,0);g.fill()}}
+  if(tower){const tx=960,s=lift,ttop=base-680*s;g.fillRect(tx-80,ttop+180*s,160,520*s);g.fillRect(tx-62,ttop+60*s,124,140*s);g.beginPath();g.moveTo(tx-70,ttop+62*s);g.lineTo(tx,ttop-90*s);g.lineTo(tx+70,ttop+62*s);g.fill();return ttop}
+  return base}
+function ship(x,y,rot,s){g.save();g.translate(x,y);g.rotate(rot);g.scale(s,s);
+  g.fillStyle='#2b3336';g.beginPath();g.moveTo(-200,-14);g.lineTo(200,-24);g.quadraticCurveTo(178,40,110,52);g.lineTo(-140,52);g.quadraticCurveTo(-190,32,-200,-14);g.fill();
+  g.strokeStyle='rgba(200,210,205,.35)';g.lineWidth=3;g.beginPath();g.moveTo(-200,-14);g.lineTo(200,-24);g.stroke();
+  g.fillStyle='#2b3336';g.fillRect(-46,-330,9,320);g.fillRect(70,-250,7,235);g.fillRect(-150,-262,210,6);g.fillRect(20,-196,130,5);
+  g.strokeStyle='rgba(30,36,38,.9)';g.lineWidth=2;g.beginPath();g.moveTo(-42,-330);g.lineTo(200,-24);g.moveTo(-42,-330);g.lineTo(-200,-14);g.stroke();
+  g.fillStyle='#cfc6b4';g.globalAlpha=.9;g.beginPath();g.moveTo(-140,-256);g.quadraticCurveTo(-60,-180,-130,-40);g.lineTo(50,-40);g.quadraticCurveTo(100,-160,52,-256);g.closePath();g.fill();
+  g.beginPath();g.moveTo(28,-190);g.quadraticCurveTo(110,-120,40,-40);g.lineTo(150,-40);g.quadraticCurveTo(170,-120,146,-190);g.closePath();g.fill();g.globalAlpha=1;
+  g.restore();glow(x+150*s,y-20*s,40,'255,180,100',.5)}
+function gulls(T,a=1){g.save();g.strokeStyle=`rgba(20,26,28,${.8*a})`;g.lineWidth=3;for(const q of GULLS){const x=((q.x+T*q.v)%(W+200))-100,y=q.y+Math.sin(T*.7+q.ph)*14,f=Math.sin(T*6+q.ph)*8*q.s;g.beginPath();g.moveTo(x-22*q.s,y-f);g.quadraticCurveTo(x-10*q.s,y-6*q.s,x,y);g.quadraticCurveTo(x+10*q.s,y-6*q.s,x+22*q.s,y-f);g.stroke()}g.restore()}
+
+/* ---------- катсцены ---------- */
+const BRONZE=196,SILVER=392,GREAT=55;
+const CS=[
+{id:'c1',n:1,title:'Голос из моря',session:'Сессия 1',when:'Финал на маяке, сразу после боя с Мейв',
+ moment:'Бой на фонарной площадке закончился — неважно, прозвенел колокол или нет. Заменяет текст «Финал сессии» и речь проекции Вейры.',
+ next:'Староста платит, Бран дарит Плащ ската, Аделина рассказывает о Монастыре Отлива. ⚓ Уровень 4.',
+ dur:38,voice:[['c1a',1.6],['c1b',11.6],['c1c',19.6],['c1d',28.2]],sea:700,drone:.06,choir:{from:9,to:30,vol:.045,chord:[220,261.63,329.63,440]},bells:[[27.6,SILVER,.35,false]],
+ draw(T){sky('#02060a','#0c1a1e',600);sea(T,600,'#06121a','#010304','#6fb2aa',lerp(1,.25,ease((T-1)/6)));
+  const isl=ease((T-31)/2.5)*(1-ease((T-35)/1.5));if(isl>0){g.save();g.globalAlpha=isl;g.fillStyle='#030708';g.beginPath();g.moveTo(1380,604);g.quadraticCurveTo(1460,520,1540,560);g.quadraticCurveTo(1600,530,1680,604);g.fill();g.restore()}
+  const form=ease((T-8.5)/7),gone=ease((T-27.6)/3.5);glow(960,360,460,'70,190,180',.22*form*(1-gone));
+  for(let i=0;i<4;i++){const k=((T+i*2.2)%8.8)/8.8;g.save();g.strokeStyle=`rgba(160,230,220,${.3*(1-k)*form})`;g.lineWidth=2;g.beginPath();g.ellipse(960,604,60+k*700,8+k*60,0,0,7);g.stroke();g.restore()}
+  woman(T,960,600,.74,form,gone,'165,238,228',600);fog(T,350,1000,.35,FOGT)}},
+{id:'c2',n:2,title:'Отплытие «Цапли»',session:'Сессия 2',when:'Сцена 2, после сборов — перед боем у Зубов Вдовы',
+ moment:'Герои закупились и поднялись на борт к Орвину. Катсцена переносит их к рифам и заканчивается тем, что «что-то» трётся о днище.',
+ next:'Сразу бой «Палуба»: мерроу лезут на борт. Попросите бросить инициативу, пока звучит последний удар.',
+ dur:30,voice:[['c2a',1.6],['c2b',10.6],['c2c',18.6]],sea:650,drone:.07,thumps:[24.6,26.2],
+ draw(T){const k=ease((T-9)/5);sky(mix([27,37,48],[10,16,20],k),mix([96,88,96],[38,48,52],k),620);glow(1500,560,380,'255,200,170',.25*(1-k));
+  sea(T,620,mix([42,52,57],[14,24,27],k),'#050a0b',k>.5?'#86a8a2':'#c4d1cf');
+  const rk=ease((T-10.5)/3.5);if(rk>0){g.save();g.globalAlpha=rk;g.fillStyle='#050809';for(const r of ROCKS){const b=640+(r.x<900?30:10);g.beginPath();g.moveTo(r.x-r.w/2,b);g.lineTo(r.x+r.sk,b-r.h);g.lineTo(r.x+r.w/2,b);g.fill()}g.restore()}
+  const sh=ease((T-18)/9);if(sh>0&&sh<1){g.save();g.globalAlpha=.45*Math.sin(sh*Math.PI);g.fillStyle='#000';g.beginPath();g.ellipse(lerp(400,1500,sh),770,260,48,0,0,7);g.fill();g.restore()}
+  let jolt=0;for(const t of[24.6,26.2]){const d=T-t;if(d>0&&d<1.2)jolt+=Math.sin(d*18)*Math.exp(-d*4)*.05}
+  ship(820+T*7,680+Math.sin(T*1.1)*6,Math.sin(T*.9)*.03+jolt,1.15);
+  fog(T,480,1000,lerp(.55,.3,k))}},
+{id:'c3',n:3,title:'Отлив',session:'Сессия 2',when:'Сцена 3, «Цапля» подходит к Чаячьему Хребту',
+ moment:'После боя на палубе. Катсцена показывает, как открывается дамба, и запускает отсчёт отлива.',
+ next:'Выложите 6 жетонов отлива перед игроками. Герои стоят у начала дамбы (зона 1).',
+ dur:28,voice:[['c3a',1.4],['c3b',7.4],['c3c',18.4]],sea:800,drone:.05,chimes:[23.6,24,24.5,24.9],
+ draw(T){sky('#1d2a30','#56666a',600);gulls(T,.9);
+  g.fillStyle='#0b1113';g.beginPath();g.moveTo(1000,640);g.lineTo(1080,470);g.lineTo(1250,430);g.lineTo(1500,450);g.lineTo(1660,520);g.lineTo(1760,640);g.fill();
+  g.fillStyle='#10181a';g.fillRect(1120,330,520,140);for(let x=1120;x<1640;x+=40)g.fillRect(x,312,24,20);
+  g.fillRect(1260,240,120,90);g.beginPath();g.moveTo(1250,240);g.lineTo(1320,170);g.lineTo(1390,240);g.fill();
+  g.beginPath();g.moveTo(1480,330);g.lineTo(1480,150);g.lineTo(1510,135);g.lineTo(1530,170);g.lineTo(1560,150);g.lineTo(1560,330);g.fill();
+  const low=ease((T-1)/14);
+  sea(T,600+low*40,'#1c2a2e','#060b0c','#a9c2bd',1);
+  g.save();g.globalAlpha=.6*low;g.fillStyle='#152020';g.fillRect(1000,640,760,30*low);g.restore();
+  for(let i=0;i<14;i++){const k=i/13,x=lerp(1060,520,k),y=lerp(668,1040,Math.pow(k,1.3)),s=lerp(.35,1.6,k),a=ease((T-3-k*8)/2);if(a<=0)continue;
+    g.save();g.globalAlpha=a;g.fillStyle='#1d2422';g.beginPath();g.ellipse(x,y,70*s,16*s,0,0,7);g.fill();g.fillStyle='rgba(120,150,120,.35)';g.beginPath();g.ellipse(x-10*s,y-4*s,40*s,6*s,0,0,7);g.fill();
+    g.strokeStyle=`rgba(220,235,230,${.35*a})`;g.lineWidth=2;g.beginPath();g.ellipse(x,y+4*s,(80+Math.sin(T*2+i)*6)*s,20*s,0,0,7);g.stroke();g.restore()}
+  fog(T,420,1000,.32)}},
+{id:'c4',n:4,title:'Купол на дне',session:'Сессия 2',when:'Финал сессии, когда звенит Серебряный колокол',
+ moment:'Бой с Колокольным Стражем окончен (или Вейра успела спеть). Колокол звенит в любом случае — катсцена заменяет «Финал сессии».',
+ next:'Если Лира жива — её выбор. Героям достаётся Жемчужина Дыхания. ⚓ Уровень 6.',
+ dur:30,voice:[['c4a',2.4],['c4b',11.6],['c4c',23.2]],sea:500,seaUnder:[[9.5,260]],drone:.07,choir:{from:12,to:30,vol:.04,chord:[196,246.94,293.66,392]},bells:[[1.2,SILVER,.8,false]],dips:[10],
+ draw(T){if(T<10){g.fillStyle='#030607';g.fillRect(0,0,W,H);
+    const gr=g.createLinearGradient(0,600,0,H);gr.addColorStop(0,'#0d3035');gr.addColorStop(1,'#020809');g.fillStyle=gr;g.fillRect(560,600,800,H-600);
+    const op=ease((T-4.5)/4);glow(960,860,520,'150,235,225',op*.8);
+    g.fillStyle='#071a1d';g.fillRect(560-op*420,600,400,H-600);g.fillRect(960+op*420,600,400,H-600);
+    g.fillStyle='#050909';g.fillRect(0,0,560,H);g.fillRect(1360,0,560,H);
+    g.fillStyle='#0b1416';bellShape(960,120,4.2);g.fill();glow(960,220,300,'200,230,235',ease(1-(T-1.2)/2.5)*.7);ring(T,1.2,960,240,'210,235,240',700,.8);
+    g.strokeStyle='#0b1416';g.lineWidth=8;g.beginPath();g.moveTo(960,0);g.lineTo(960,120);g.stroke();return}
+  const lt=T-10,gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#0c3a3f');gr.addColorStop(.5,'#04161a');gr.addColorStop(1,'#010405');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  const d=ease((lt-1)/5);city(T,H+60-d*30,.7,'#031417','#062226');
+  glow(960,820,760,'150,230,220',.28*d);g.save();g.globalCompositeOperation='lighter';g.strokeStyle=`rgba(190,245,235,${.45*d})`;g.lineWidth=3;g.beginPath();g.ellipse(960,1060,860,560+Math.sin(T*2)*6,0,Math.PI,0);g.stroke();
+  g.strokeStyle=`rgba(190,245,235,${.12*d})`;g.lineWidth=40;g.stroke();g.restore();
+  g.save();g.strokeStyle='rgba(180,240,230,.3)';g.lineWidth=1.5;for(const b of BUB){const y=H-((T*b.v+b.o)%(H+120)),x=b.x+Math.sin(T+b.w)*12;g.beginPath();g.arc(x,y,b.s,0,7);g.stroke()}g.restore();
+  fog(T,100,900,.18,FOGT)}},
+{id:'c5',n:5,title:'Спуск в Ис-Мерин',session:'Сессия 3',when:'Начало сессии, сцена 1 «Спуск»',
+ moment:'Первое, что видят игроки в третьей сессии. Можно начать вечер прямо с неё, вместо «В прошлый раз…».',
+ next:'Герои стоят на месте спуска (зона 1 карты Ис-Мерина). Здесь можно сделать короткий отдых.',
+ dur:32,voice:[['c5a',1.6],['c5b',12.2],['c5c',21.6]],sea:260,drone:.08,bells:[[27.2,GREAT*2,.7,true]],
+ draw(T){const k=ease(T/20),gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,mix([30,96,100],[6,30,34],k));gr.addColorStop(.5,mix([8,40,46],[2,14,17],k));gr.addColorStop(1,'#010405');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  g.save();g.globalCompositeOperation='lighter';for(let i=0;i<7;i++){const x=260+i*240+Math.sin(T*.3+i)*60,rg=g.createLinearGradient(0,0,0,H*.9);rg.addColorStop(0,`rgba(140,220,210,${.11*(1-k*.7)})`);rg.addColorStop(1,'rgba(140,220,210,0)');g.fillStyle=rg;g.beginPath();g.moveTo(x-40,0);g.lineTo(x+40,0);g.lineTo(x+260,H);g.lineTo(x-260,H);g.fill()}g.restore();
+  g.save();g.strokeStyle='rgba(190,245,235,.4)';g.lineWidth=1.5;for(const b of BUB){const y=H-((T*b.v*2.6+b.o)%(H+120)),x=b.x+Math.sin(T+b.w)*12;g.beginPath();g.arc(x,y,b.s,0,7);g.stroke()}g.restore();
+  const c=ease((T-12)/12),base=H+560-c*620;if(c>0){glow(960,base-300,800,'130,220,210',.25*c);const tt=city(T,base,1,'#031316','#07282c');glow(960,tt+150,140,'110,220,200',.2*c);
+    g.save();g.globalCompositeOperation='lighter';g.strokeStyle=`rgba(190,245,235,${.4*c})`;g.lineWidth=3;g.beginPath();g.ellipse(960,base+40,1100,820,0,Math.PI,0);g.stroke();g.restore()}
+  ring(T,27.2,960,base-560,'150,230,220',600,1);fog(T,300,1000,.15,FOGT)}},
+{id:'c6',n:6,title:'Певчая на троне',session:'Сессия 3',when:'Сцена 3, герои поднимаются на вершину башни',
+ moment:'Перед финальным боем, когда герои впервые видят Великий колокол и Вейру. Заменяет текст «Прочитайте вслух» на вершине.',
+ next:'Финальный бой: Вейра Тиш. Удар Великого колокола в конце — сигнал бросать инициативу.',
+ dur:32,voice:[['c6a',1.6],['c6b',15.4],['c6c',20.6]],sea:400,drone:.09,choir:{from:12,to:32,vol:.06,chord:[220,261.63,311.13,415.3]},bells:[[27,GREAT,1.2,false],[27.02,GREAT*2,.5,false]],
+ draw(T){g.fillStyle='#030606';g.fillRect(0,0,W,H);
+  const k=ease((T-12)/6);glow(960,560,820,'60,170,160',.18+.12*k);
+  g.fillStyle='#070d0e';g.fillRect(380,140,160,H);g.fillRect(1380,140,160,H);g.beginPath();g.moveTo(380,160);g.quadraticCurveTo(960,-140,1540,160);g.lineTo(1540,120);g.lineTo(380,120);g.fill();g.fillRect(380,0,1160,130);
+  g.fillStyle='#060b0b';g.fillRect(0,880,W,200);
+  const sw=Math.sin(T*.5)*.02*(1-ease((T-26)/1))+(T>27?Math.sin((T-27)*6)*Math.exp(-(T-27)*1.2)*.06:0);
+  glow(960,520,420,'110,200,190',.16+.1*k);
+  g.save();g.translate(960,120);g.rotate(sw);g.strokeStyle='#2a3a3a';g.lineWidth=10;for(const dx of[-150,0,150]){g.beginPath();g.moveTo(dx*1.4,0);g.lineTo(dx*.5,250);g.stroke()}
+  const bg=g.createLinearGradient(-280,0,280,0);bg.addColorStop(0,'#0e1a1a');bg.addColorStop(.35,'#2e4442');bg.addColorStop(.6,'#1a2a29');bg.addColorStop(1,'#0a1212');
+  g.fillStyle=bg;bellShape(0,230,11);g.fill();g.strokeStyle='rgba(150,220,205,.35)';g.lineWidth=3;g.stroke();g.restore();ring(T,27,960,580,'200,240,230',700,.6);
+  g.fillStyle='#0a1213';g.fillRect(1500,640,170,240);g.fillRect(1530,520,110,140);
+  woman(T,1585,880,.42,ease((T-14)/4),0,'175,240,230');glow(1585,700,200,'90,210,200',.25*k);
+  fog(T,500,1100,.25,FOGT)}},
+{id:'c7',n:7,title:'Рассвет',session:'Сессия 3',when:'Концовка: колокол заглушён, Вейра побеждена (или ушла сама)',
+ moment:'Хорошая концовка. Подходит и к мирному финалу, когда Вейра сама опускает колокол в Разлом.',
+ next:'Эпилог: награды, Тамси, Марта и Тобиас, почётное гражданство. ⚓ Уровень 8.',
+ dur:34,voice:[['c7a',1.6],['c7b',10.4],['c7c',19.6]],sea:750,drone:.04,warm:{from:6,to:34,vol:.05,chord:[261.63,329.63,392,523.25]},
+ draw(T){const k=ease((T-6)/16);sky(mix([8,16,20],[66,96,130],k),mix([24,40,44],[240,178,122],k),640);
+  const sy=lerp(700,560,ease((T-9)/20));glow(1300,sy,520,'255,190,120',.5*k);glow(1300,sy,70,'255,240,210',.9*k);
+  sea(T,640,mix([12,24,27],[90,96,110],k),mix([2,5,6],[24,30,36],k),k>.4?'#ffd2a0':'#8fb3ad');
+  gulls(T,ease((T-14)/4));
+  const sx=y=>1180+Math.sin(T*.9)*24+(y-660)*.4;
+  g.fillStyle=mix([12,12,10],[52,46,38],k);g.beginPath();g.moveTo(0,670);g.lineTo(sx(670),670);g.lineTo(sx(H),H);g.lineTo(0,H);g.fill();
+  const feet=930;for(let i=0;i<11;i++){const st=18+i*.9,x=1720-(T-st)*42-(i%3)*60,ph=T*2.2+i;if(T<st)continue;const sh=sx(feet),depth=clamp((x-sh)*.9,0,300);
+    g.save();if(depth>0){g.beginPath();g.rect(0,0,W,feet-6-(i%3)*30);g.clip()}person(x,feet+depth-(i%3)*30,.8+(i%3)*.12,ph,.85,mix([40,44,44],[30,26,24],k));g.restore()}
+  fog(T,440,1000,lerp(.6,.06,ease((T-8)/12)),k>.5?FOGD:FOGW)}},
+{id:'c8',n:8,title:'Город поднимается',session:'Сессия 3',when:'Плохая концовка: Великий колокол прозвенел',
+ moment:'Только если герои не успели перерубить цепи, или Шкала Мглы дошла до 6.',
+ next:'Короткая сцена бегства: герои выводят жителей из Солтхейвена. Можно сделать завязкой новой кампании.',
+ dur:33,voice:[['c8a',1.4],['c8b',8.6],['c8c',16.6],['c8d',20.4]],sea:600,drone:.1,choir:{from:3,to:33,vol:.05,chord:[110,130.81,155.56,207.65]},bells:[[0.6,GREAT,1.2,false],[7.4,GREAT,1,false],[14.2,GREAT,1,false],[28.2,GREAT,1.1,false]],
+ draw(T){sky('#030a08','#14261f',640);glow(960,520,700,'90,255,160',.15+.06*Math.sin(T*2));
+  const up=ease((T-5)/14);
+  g.save();g.beginPath();g.rect(0,0,W,646);g.clip();const tt=city(T,646+(1-up)*720,1,'#0c241b','#15392b');g.restore();
+  if(up>0&&up<1){g.save();g.strokeStyle='rgba(200,240,225,.35)';g.lineWidth=2;for(const b of CITY.near){if(b.d>.5)continue;const top=646+(1-up)*720-b.h;for(let j=0;j<3;j++){const x=b.x+10+j*(b.w/3),y=top+((T*300+j*80+b.x)%200);g.beginPath();g.moveTo(x,y);g.lineTo(x,y+30);g.stroke()}}g.restore()}
+  glow(960,tt+150,220,'90,255,160',.4*up);
+  sea(T,640,'#08140f','#010403','#7fd0a8',1.6);
+  for(const b of CS[7].bells)ring(T,b[0],960,650,'120,255,180',900,.2);
+  fog(T,200,900,.35,FOGG)}}
+];
+
+/* ---------- кадр ---------- */
+let cur=CS[0];
+function frame(T){g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';
+  let shake=0;for(const b of(cur.bells||[]))if(b[1]<=GREAT*2&&!b[3]){const d=T-b[0];if(d>0&&d<1.2)shake+=Math.sin(d*40)*Math.exp(-d*4)*6}
+  g.save();const z=1+T*.004;g.translate(W/2+shake,H/2);g.scale(z,z);g.translate(-W/2,-H/2);cur.draw(T);g.restore();
+  g.drawImage(VIG,0,0);
+  g.save();g.globalCompositeOperation='overlay';g.globalAlpha=.1;g.fillStyle=GRAIN[Math.floor(T*24)%3];g.translate((T*997)%220,(T*613)%220);g.fillRect(-220,-220,W+440,H+440);g.restore();
+  let d=Math.max(0,1-T/1.4,(T-(cur.dur-1.8))/1.8);for(const b of(cur.dips||[]))d=Math.max(d,1-Math.abs(T-b)/.8);
+  if(d>0){g.fillStyle=`rgba(0,0,0,${clamp(d)})`;g.fillRect(0,0,W,H)}}
+function poster(){const t={c1:16,c2:13,c3:14,c4:20,c5:24,c6:22,c7:24,c8:20}[cur.id];frame(t)}
+
+/* ---------- звук ---------- */
+let ac=null,t0=0,recDest=null;
+async function decodeVoices(keys){const V=window.CS_VOICE||{},out={};for(const k of keys){if(!V[k])continue;try{const bin=atob(V[k]),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);out[k]=await ac.decodeAudioData(u.buffer)}catch(e){}}return out}
+async function buildAudio(c){
+  ac=new (window.AudioContext||window.webkitAudioContext)();const VB=await decodeVoices(c.voice.map(v=>v[0]));const now=ac.currentTime+.15;t0=now;const D=c.dur;
+  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=3;
+  const master=ac.createGain();master.gain.setValueAtTime(0,now);master.gain.linearRampToValueAtTime(.95,now+1.2);master.gain.setValueAtTime(.95,now+D-1.8);master.gain.linearRampToValueAtTime(0,now+D);
+  master.connect(comp);comp.connect(ac.destination);recDest=ac.createMediaStreamDestination();comp.connect(recDest);
+  const rv=ac.createConvolver(),len=ac.sampleRate*4,ir=ac.createBuffer(2,len,ac.sampleRate);for(let k=0;k<2;k++){const d=ir.getChannelData(k);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)}rv.buffer=ir;
+  const rvg=ac.createGain();rvg.gain.value=.5;rv.connect(rvg);rvg.connect(master);
+  // море
+  const nb=ac.createBuffer(1,ac.sampleRate*4,ac.sampleRate),nd=nb.getChannelData(0);let l=0;for(let i=0;i<nd.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;nd[i]=l*3.2}
+  const ns=ac.createBufferSource();ns.buffer=nb;ns.loop=true;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(c.sea,now);
+  for(const [t,f] of(c.seaUnder||[])){lp.frequency.setValueAtTime(lp.frequency.value,now+t-.5);lp.frequency.linearRampToValueAtTime(f,now+t+.5)}
+  const sg=ac.createGain();sg.gain.value=.5;const lfo=ac.createOscillator();lfo.frequency.value=.12;const lg=ac.createGain();lg.gain.value=.28;lfo.connect(lg);lg.connect(sg.gain);
+  ns.connect(lp);lp.connect(sg);sg.connect(master);ns.start(now);lfo.start(now);ns.stop(now+D+.5);lfo.stop(now+D+.5);
+  // гул
+  const dr=ac.createGain();dr.gain.setValueAtTime(0,now);dr.gain.linearRampToValueAtTime(c.drone,now+4);
+  const dlp=ac.createBiquadFilter();dlp.type='lowpass';dlp.frequency.value=380;dlp.connect(dr);dr.connect(master);
+  for(const [f,t] of[[55,'sine'],[82.4,'sine'],[110.3,'triangle']]){const o=ac.createOscillator();o.type=t;o.frequency.value=f;const og=ac.createGain();og.gain.value=t==='triangle'?.35:1;o.connect(og);og.connect(dlp);o.start(now);o.stop(now+D+.5)}
+  // хор (тревожный) или тёплый аккорд (рассвет)
+  function pad(p,type,bpf){const ch=ac.createGain();ch.gain.setValueAtTime(0,now+p.from);ch.gain.linearRampToValueAtTime(p.vol,now+p.from+5);ch.gain.setValueAtTime(p.vol,now+Math.max(p.from+5,p.to-2));ch.gain.linearRampToValueAtTime(0,now+p.to);
+    const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=bpf;bp.Q.value=1.1;const clp=ac.createBiquadFilter();clp.type='lowpass';clp.frequency.value=2000;bp.connect(clp);clp.connect(ch);ch.connect(master);ch.connect(rv);
+    p.chord.forEach((f,i)=>{for(const dt of[-7,6]){const o=ac.createOscillator();o.type=type;o.detune.value=dt;o.frequency.value=f;const vib=ac.createOscillator();vib.frequency.value=4.6+i*.3;const vg=ac.createGain();vg.gain.value=3;vib.connect(vg);vg.connect(o.detune);o.connect(bp);o.start(now+p.from);vib.start(now+p.from);o.stop(now+p.to+.2);vib.stop(now+p.to+.2)}})}
+  if(c.choir)pad(c.choir,'sawtooth',820);if(c.warm)pad(c.warm,'triangle',600);
+  // колокола
+  function bell(at,f,vol,muffled){const bus=ac.createBiquadFilter();bus.type='lowpass';bus.frequency.value=muffled?700:7000;const bg=ac.createGain();bg.gain.value=vol;bus.connect(bg);bg.connect(master);bg.connect(rv);
+    const R=[.5,1,1.19,1.5,2,2.52,2.66,3.01,4.17],Am=[.6,1,.55,.45,.35,.22,.18,.12,.08];
+    R.forEach((r,i)=>{const o=ac.createOscillator();o.frequency.value=f*r;const e=ac.createGain(),dec=7.5*Math.pow(110/f,.35)/(1+i*.35);
+      e.gain.setValueAtTime(0,at);e.gain.linearRampToValueAtTime(Am[i]*.25,at+.008);e.gain.exponentialRampToValueAtTime(.0001,at+dec);o.connect(e);e.connect(bus);o.start(at);o.stop(at+dec+.1)})}
+  for(const [t,f,v,m] of(c.bells||[]))bell(now+t,f,v,m);
+  for(const t of(c.chimes||[]))bell(now+t,1318+Math.random()*300,.18,false);
+  // глухой удар о днище
+  for(const t of(c.thumps||[])){const o=ac.createOscillator();o.frequency.setValueAtTime(70,now+t);o.frequency.exponentialRampToValueAtTime(30,now+t+.6);const e=ac.createGain();e.gain.setValueAtTime(0,now+t);e.gain.linearRampToValueAtTime(.9,now+t+.02);e.gain.exponentialRampToValueAtTime(.001,now+t+.9);o.connect(e);e.connect(master);o.start(now+t);o.stop(now+t+1)}
+  // голоса: рассказчик напрямую, Вейра — с эхом
+  const vhp=ac.createBiquadFilter();vhp.type='highpass';vhp.frequency.value=70;const vg=ac.createGain();vg.gain.value=1;vhp.connect(vg);vg.connect(ac.destination);vg.connect(recDest);
+  const vsN=ac.createGain();vsN.gain.value=.08;vg.connect(vsN);vsN.connect(rv);
+  for(const [k,at] of c.voice){if(!VB[k])continue;const s=ac.createBufferSource();s.buffer=VB[k];
+    if(VEIRA.has(k)){const eg=ac.createGain();eg.gain.value=.5;s.connect(vhp);s.connect(eg);eg.connect(rv)}else s.connect(vhp);s.start(now+at)}
+}
+const VEIRA=new Set(['c1b','c1c','c4c','c6b','c6c','c8c']);
+
+/* ---------- управление ---------- */
+let playing=false,startPerf=0,raf=0,rec=null,chunks=[],recExt='webm';
+const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function now(){return ac?ac.currentTime-t0:(performance.now()-startPerf)/1000}
+function loop(){const T=now();if(T>=cur.dur){finish();return}frame(Math.max(0,T));$('prog').style.width=(clamp(T/cur.dur)*100)+'%';$('time').textContent=fmt(T)+' / '+fmt(cur.dur);raf=requestAnimationFrame(loop)}
+function stopAll(){cancelAnimationFrame(raf);if(ac){try{ac.close()}catch(e){}ac=null}playing=false}
+async function play(){stopAll();try{await buildAudio(cur)}catch(e){ac=null;$('status').textContent='Звук недоступен в этом браузере — показываю без звука.'}
+  if(!ac)startPerf=performance.now();playing=true;$('playBig').hidden=true;$('btnPlay').textContent='↺ Сначала';loop()}
+function finish(){frame(cur.dur-.01);$('prog').style.width='100%';stopAll();$('btnPlay').textContent='▶ Смотреть снова';$('playBig').hidden=false;if(rec&&rec.state!=='inactive')rec.stop();
+  if(document.body.classList.contains('embed'))try{parent.postMessage({t:'cs-done'},'*')}catch(e){}}
+function select(c,push){if(rec&&rec.state!=='inactive')return;stopAll();cur=c;
+  document.querySelectorAll('.cs').forEach(b=>b.setAttribute('aria-current',b.dataset.id===c.id?'true':'false'));
+  $('now').innerHTML='';const t=document.createElement('div');t.className='t';t.textContent=c.n+'. '+c.title;$('now').append(t);
+  for(const [lab,txt] of[['Когда',c.session+' · '+c.when],['Момент',c.moment],['Дальше',c.next]]){const p=document.createElement('p'),b=document.createElement('b');b.textContent=lab+': ';p.append(b,txt);$('now').append(p)}
+  $('btnPlay').textContent='▶ Смотреть';$('playBig').hidden=false;$('prog').style.width='0';$('time').textContent='0:00 / '+fmt(c.dur);$('status').textContent='';
+  if(push){try{history.replaceState(null,'','#'+c.id)}catch(e){}}poster()}
+
+let lastS='';for(const c of CS){if(c.session!==lastS){const h=document.createElement('div');h.className='grp';h.textContent=c.session;$('list').append(h);lastS=c.session}
+  const b=document.createElement('button');b.type='button';b.className='cs';b.dataset.id=c.id;b.setAttribute('role','listitem');
+  const n=document.createElement('span');n.className='n';n.textContent=c.n;const t=document.createElement('span');t.className='t';t.textContent=c.title;const w=document.createElement('span');w.className='w';w.textContent=c.when;
+  b.append(n,t,w);b.addEventListener('click',()=>select(c,true));$('list').append(b);
+  const tr=document.createElement('tr');const cells=[c.n,null,c.session,c.moment,c.next];cells.forEach((v,i)=>{const td=document.createElement('td');if(i===0)td.className='n';
+    if(i===1){const a=document.createElement('a');a.href='#'+c.id;a.textContent=c.title;a.addEventListener('click',e=>{e.preventDefault();select(c,true);$('stageWrap').scrollIntoView({behavior:'smooth',block:'center'})});td.append(a);const s=document.createElement('div');s.style.cssText='font-size:14px;color:var(--muted)';s.textContent=fmt(c.dur);td.append(s)}else td.textContent=v;tr.append(td)});$('sched').append(tr)}
+
+$('playBig').addEventListener('click',play);$('btnPlay').addEventListener('click',()=>{if(rec&&rec.state!=='inactive')return;play()});
+$('btnFull').addEventListener('click',()=>{const el=$('stageWrap');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else if(el.requestFullscreen)el.requestFullscreen().catch(()=>{$('status').textContent='Полный экран здесь недоступен. Откройте страницу в браузере и нажмите F11.'})});
+
+async function recordBlob(){
+  const types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  const mt=types.find(t=>MediaRecorder.isTypeSupported(t));if(!mt)throw new Error('Этот браузер не умеет записывать видео. Попробуйте Chrome или Edge.');
+  recExt=mt.startsWith('video/mp4')?'mp4':'webm';
+  await play();if(!ac){stopAll();throw new Error('Браузер не дал включить звук — запись отменена.')}
+  const st=cv.captureStream(30);const at=recDest.stream.getAudioTracks()[0];if(at)st.addTrack(at);
+  chunks=[];rec=new MediaRecorder(st,{mimeType:mt,videoBitsPerSecond:9000000,audioBitsPerSecond:192000});
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  const done=new Promise(res=>{rec.onstop=()=>{rec=null;res({blob:new Blob(chunks,{type:mt}),ext:recExt})}});
+  rec.start(1000);return done}
+window.__csSelect=id=>select(CS.find(c=>c.id===id),false);window.__csRecord=recordBlob;window.__csFrame=(id,t)=>{cur=CS.find(c=>c.id===id);frame(t)};window.__csList=CS.map(c=>[c.id,c.title,c.dur]);
+
+let downloads=null;
+if(window.claude&&window.claude.use){window.claude.use('downloads').then(d=>{downloads=d;if(d&&window.MediaRecorder&&cv.captureStream)$('btnRec').hidden=false}).catch(()=>{})}
+$('btnRec').addEventListener('click',async()=>{
+  $('btnRec').disabled=true;$('btnPlay').disabled=true;$('status').textContent='Идёт запись… не сворачивайте вкладку ('+fmt(cur.dur)+').';
+  let r;try{r=await recordBlob()}catch(e){$('status').textContent=e.message;$('btnRec').disabled=false;$('btnPlay').disabled=false;return}
+  $('btnRec').disabled=false;$('btnPlay').disabled=false;
+  $('status').textContent='Запись готова ('+(r.blob.size/1048576).toFixed(1)+' МБ). Подтвердите сохранение.';
+  try{await downloads.save({filename:'Катсцена '+cur.n+' — '+cur.title.replace(/[«»]/g,'')+'.'+r.ext,data:r.blob});$('status').textContent='Видео сохранено.'}
+  catch(e){const c=e&&e.code;$('status').textContent=c==='declined'?'Сохранение отменено. Можно записать заново.':c==='rate_limited'?'Окно сохранения уже открыто.':'Не получилось сохранить видео здесь ('+(c||'ошибка')+').'}});
+
+// #embed-c3 — катсцена внутри игрового стола: только сцена, сразу играет, по окончании сообщает столу
+const emb=/^#embed-(c\d)$/.exec(location.hash);if(emb)document.body.classList.add('embed');
+const start=CS.find(c=>emb?c.id===emb[1]:'#'+c.id===location.hash)||CS[0];select(start,false);
+if(emb)(async()=>{await (document.fonts?document.fonts.ready:null);await play();if(ac&&ac.state!=='running'){try{await Promise.race([ac.resume(),new Promise(r=>setTimeout(r,500))])}catch(e){}}
+  if(ac&&ac.state!=='running'){stopAll();poster();$('playBig').hidden=false}})();
+(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>{if(!playing)poster()});
+})();
+</script>
+
+</body>
+</html>
