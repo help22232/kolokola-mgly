@@ -13,6 +13,7 @@ const st=document.createElement('style');st.textContent=`
 .sp-slot{display:flex;gap:3px;align-items:center;font-size:12px;color:var(--muted)}
 .sp-pip{width:14px;height:14px;border-radius:50%;border:1px solid var(--brass);background:var(--brass);cursor:pointer;padding:0}
 .sp-pip.used{background:transparent}
+@media (max-width:600px){.sp-pip{width:24px;height:24px}.sp-slots{gap:12px}.sp-head{min-height:40px}}
 .sp-lvl{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin:10px 0 2px;letter-spacing:.06em;text-transform:uppercase}
 .sp-item{border:1px solid var(--line);border-radius:8px;margin:4px 0;background:#0c1213}
 .sp-head{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 9px;cursor:pointer}
@@ -86,12 +87,24 @@ function rest(t,c,kind){const sp=c.spells||{};const ck=clsKeyOf(c);
   if(sp.pact||ck==='warlock'){save(t,c,{used:{}});V.post({kind:'sys',text:`${t.name}: короткий отдых — ячейки договора восстановлены`})}}
 window.addEventListener('vtt-rest',e=>{const d=e.detail||{};const t=V.S.tokens[d.tokenId];const c=t&&V.S.chars[t.id];if(t&&c&&c.spells)rest(t,c,d.kind==='long'?'long':'short')});
 
-V.addHeroSection((t,c)=>{if(!t||!c)return null;const ck=clsKeyOf(c);if(!ck&&!c.spells)return null;
+V.addHeroSection((t,c)=>{if(!t||!c)return null;
+  if(!document.getElementById('vacc-css')){const s=document.createElement('style');s.id='vacc-css';s.textContent=`
+details.vacc{border:1px solid var(--line,#243235);border-radius:10px;background:var(--panel2,#162022);margin:8px 0}
+details.vacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px}
+details.vacc>summary::-webkit-details-marker{display:none}
+details.vacc>summary::after{content:'▸';margin-left:auto;color:var(--muted,#8e9e9b);transition:transform .15s}
+details.vacc[open]>summary::after{transform:rotate(90deg)}
+details.vacc>summary h3{margin:0;font-size:17px}
+details.vacc>.vacc-b{padding:0 12px 10px;overflow-x:hidden}
+@media (max-width:600px){details.vacc button{min-height:40px}}
+`;document.head.append(s)}
+  const accordion=(key,title,kids)=>{let open=false;try{open=localStorage.getItem('vtt-acc-'+key)==='1'}catch(e){}const d=h('details',{class:'vacc'},h('summary',{},h('h3',{},title)),h('div',{class:'vacc-b'},...kids.filter(Boolean)));d.open=open;d.ontoggle=()=>{try{localStorage.setItem('vtt-acc-'+key,d.open?'1':'0')}catch(e){}};return d};
+const ck=clsKeyOf(c);if(!ck&&!c.spells)return null;
   const sp=c.spells||{};c.spells=sp;const ab=CAST_AB[ck]||sp.ab||'int';const prof=Number(c.prof)||2;const dc=8+prof+md(c[ab]),atk=prof+md(c[ab]);
   const gm=V.isGM(),mine=gm||t.owner===V.myId,canCast=mine&&!V.readOnly;
   const out=[h('h3',{},'Магия')];
   out.push(h('div',{class:'sp-row sp-stat'},`Характеристика: ${ABK[ab]} · СЛ спасброска ${dc} · атака заклинанием ${sg(atk)}`));
-  if(!spells().length){out.push(h('p',{class:'small muted'},'Данные заклинаний загружаются…'));return[h('div',{class:'sp-box'},...out)]}
+  if(!spells().length){out.push(h('p',{class:'small muted'},'Данные заклинаний загружаются…'));return accordion('spells','Магия',[h('div',{class:'sp-box'},...out.slice(1))])}
   // ячейки
   const lv=Object.keys(sp.slots||{}).map(Number).filter(l=>Number(sp.slots[l])>0).sort((a,b)=>a-b);
   if(lv.length)out.push(h('div',{class:'sp-slots'},...lv.map(l=>h('span',{class:'sp-slot'},`${l}:`,...Array.from({length:Number(sp.slots[l])},(_,i)=>{const used=i<Number((sp.used||{})[l]||0);
@@ -114,6 +127,6 @@ V.addHeroSection((t,c)=>{if(!t||!c)return null;const ck=clsKeyOf(c);if(!ck&&!c.s
   for(const l of Object.keys(byLvl).sort((a,b)=>a-b))out.push(h('div',{class:'sp-lvl'},`${l} круг`),...byLvl[l].sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(s=>spellCard(t,c,s,ctx)));
   if(!cantrips.length&&!shown.length)out.push(h('p',{class:'small muted'},prepK?'Нажмите «Подготовить на сегодня» и отметьте заклинания.':'Заклинаний в листе нет — их выбирают при создании героя и повышении уровня.'));
   const miss=[...(sp.cantrips||[]),...(sp.known||[])].filter(n=>!byName(n));if(miss.length)out.push(h('p',{class:'small muted'},'Нет описания: '+miss.join(', ')));
-  return[h('div',{class:'sp-box'},...out)]});
+  return accordion('spells','Магия',[h('div',{class:'sp-box'},...out.slice(1))])});
 function freeMaxLevel(sp){return Math.max(0,...Object.keys(sp.slots||{}).map(Number).filter(l=>Number(sp.slots[l])>0))}
 })();

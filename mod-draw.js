@@ -21,13 +21,26 @@ const st=document.createElement('style');st.textContent=`
 .mdw-c[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px var(--brass,#d9b36c)}
 .mdw-txt{flex:1;min-width:140px;background:#0c1213;border:1px solid var(--line,#243235);border-radius:7px;padding:6px 8px;color:inherit;font:inherit}
 .mdw-sm{font-size:12px;color:var(--muted,#8e9e9b)}
-@media (max-width:520px){.mdw-panel{top:calc(env(safe-area-inset-top,0px) + 46px);padding:6px}.mdw-b{min-width:32px;height:32px;padding:0 6px}.mdw-c{width:24px;height:24px}}`;
+/* телефон: одна строка с прокруткой внизу поля, слева от кнопок масштаба */
+.mdw-panel.mdw-dock{transform:none;top:auto;display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;align-items:center;gap:8px;padding:4px 6px;border-color:var(--line,#243235);touch-action:pan-x;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.mdw-dock .mdw-row{flex-wrap:nowrap;flex:0 0 auto}
+.mdw-dock .mdw-b{min-width:40px;height:40px;white-space:nowrap}
+.mdw-dock .mdw-c{width:32px;height:32px;flex:0 0 auto}
+.mdw-dock .mdw-txt{flex:0 0 150px;min-width:0;height:40px}
+.mdw-dock .mdw-lt{display:none}`;
 document.head.append(st);
 
 /* ---------- данные ---------- */
 V.watch('drawings',a=>{drawings=a;V.requestDraw()});
 if(V.isOwner)V.watch('gm',a=>{gmDrawings=a.filter(d=>d.id.startsWith('draw_')).map(d=>({...d,gm:true}));V.requestDraw()});
 const mapId=()=>V.st().map;
+const narrow=()=>innerWidth<600;
+const onceHint=(key,txt)=>{let seen=false;try{seen=localStorage.getItem('vtt-hint-'+key)==='1';localStorage.setItem('vtt-hint-'+key,'1')}catch(e){}if(seen)return'';setTimeout(()=>{const el=document.getElementById('hint');if(el&&el.textContent===txt)V.setHint('')},3000);return txt};
+const cvRect=()=>{const c=document.getElementById('cv');return c?c.getBoundingClientRect():{left:0,top:0,right:innerWidth,bottom:innerHeight,width:innerWidth,height:innerHeight}};
+function dockPanel(){if(!panel)return;const nw=narrow();panel.classList.toggle('mdw-dock',nw);
+  if(nw){const r=cvRect();panel.style.left=(r.left+8)+'px';panel.style.bottom=Math.max(8,innerHeight-r.bottom+10)+'px';panel.style.width=Math.max(150,r.width-206)+'px';panel.style.maxWidth='none'}
+  else{panel.style.left='';panel.style.bottom='';panel.style.width='';panel.style.maxWidth=''}}
+addEventListener('resize',dockPanel);
 const visible=()=>[...drawings,...(V.isGM()?gmDrawings:[])].filter(d=>d.map===mapId());
 const pathOf=d=>d.gm?'gm/'+d.id:'drawings/'+d.id;
 const canDel=d=>V.isOwner||d.by===V.myId;
@@ -80,16 +93,16 @@ async function save(d){if(V.readOnly){V.toast('У вас доступ тольк
 function rerender(){if(panel)renderPanel()}
 function renderPanel(){if(!panel){panel=h('div',{class:'mdw-panel',role:'toolbar','aria-label':'Рисование на карте'});V.overlay().append(panel)}
   const rows=[];
-  rows.push(h('div',{class:'mdw-row'},...MODES.map(([k,ic,n])=>h('button',{type:'button',class:'mdw-b',title:n,'aria-label':n,'aria-pressed':String(mode===k),onclick:()=>{mode=k;cur=null;V.setHint(hintText());rerender()}},ic)),
+  rows.push(h('div',{class:'mdw-row'},...MODES.map(([k,ic,n])=>h('button',{type:'button',class:'mdw-b',title:n,'aria-label':n,'aria-pressed':String(mode===k),onclick:()=>{mode=k;cur=null;V.setHint(onceHint('draw-'+k,hintText()));rerender()}},ic)),
     h('button',{type:'button',class:'mdw-b',title:'Закрыть рисование','aria-label':'Закрыть рисование',onclick:()=>V.setTool('select')},'✕')));
   rows.push(h('div',{class:'mdw-row'},...COLORS.map(c=>h('button',{type:'button',class:'mdw-c',title:'Цвет','aria-label':'Цвет '+c,'aria-pressed':String(color===c),style:`background:${c}`,onclick:()=>{color=c;rerender()}})),
     ...WIDTHS.map(([n,w])=>h('button',{type:'button',class:'mdw-b','aria-pressed':String(width===w),onclick:()=>{width=w;rerender()}},n))));
   if(mode==='text'){const inp=h('input',{type:'text',class:'mdw-txt',placeholder:'Текст надписи, затем коснитесь карты',maxlength:120,'aria-label':'Текст надписи'});inp.value=text;inp.oninput=()=>{text=inp.value};rows.push(h('div',{class:'mdw-row'},inp))}
-  const extra=[h('button',{type:'button',class:'mdw-b',onclick:clearMine},'Убрать мои рисунки')];
-  if(V.isOwner){const cb=h('input',{type:'checkbox',checked:hidden,onchange:e=>{hidden=e.target.checked}});extra.unshift(h('label',{class:'mdw-row mdw-sm'},cb,'Скрытый слой (видит только Мастер)'))}
+  const extra=[h('button',{type:'button',class:'mdw-b',title:'Убрать мои рисунки на этой карте',onclick:clearMine},'🧹',h('span',{class:'mdw-lt'},' Убрать мои рисунки'))];
+  if(V.isOwner){const cb=h('input',{type:'checkbox',checked:hidden,onchange:e=>{hidden=e.target.checked}});extra.unshift(h('label',{class:'mdw-row mdw-sm',title:'Скрытый слой: видит только Мастер'},cb,'🙈',h('span',{class:'mdw-lt'},' Скрытый слой (видит только Мастер)')))}
   rows.push(h('div',{class:'mdw-row'},...extra));
-  panel.replaceChildren(...rows);panel.hidden=false}
-function hintText(){return{pen:'Карандаш: ведите пальцем или мышью по карте.',line:'Прямая: потяните от начала к концу.',arrow:'Стрелка: потяните от начала к острию.',rect:'Прямоугольник: потяните из угла в угол.',circle:'Круг: потяните от центра к краю.',text:'Текст: напишите надпись в поле на панели и коснитесь карты.',erase:V.isOwner?'Ластик: коснитесь любого рисунка.':'Ластик: коснитесь своего рисунка.'}[mode]}
+  panel.replaceChildren(...rows);panel.hidden=false;dockPanel()}
+function hintText(){return{pen:'Ведите пальцем по карте',line:'Тяните от начала к концу',arrow:'Тяните к острию стрелки',rect:'Тяните из угла в угол',circle:'Тяните от центра к краю',text:'Напишите текст, коснитесь карты',erase:'Коснитесь рисунка — стереть'}[mode]}
 function hidePanel(){if(panel)panel.hidden=true;cur=null;V.requestDraw()}
 
 async function clearMine(){const mine=visible().filter(d=>d.by===V.myId);if(!mine.length){V.toast('На этой карте нет ваших рисунков.');return}for(const d of mine)await V.store.del(pathOf(d));V.toast('Ваши рисунки убраны: '+mine.length)}
@@ -98,8 +111,8 @@ async function clearAll(){const all=[...drawings,...gmDrawings].filter(d=>d.map=
   clearArm=0;for(const d of all)await V.store.del(pathOf(d));V.toast('Все рисунки на карте стёрты.')}
 
 /* ---------- инструмент ---------- */
-V.addTool({id:'draw',icon:'✏️',title:'Рисовать на карте',get hint(){return hintText()},
-  activate(){renderPanel();V.setHint(hintText())},
+V.addTool({id:'draw',icon:'✏️',title:'Рисовать на карте',get hint(){return onceHint('draw-'+mode,hintText())},
+  activate(){renderPanel()},
   cancel(){hidePanel()},
   down(x,y){if(V.readOnly){V.toast('У вас доступ только для просмотра.');return}
     if(mode==='erase'){eraseAt(x,y);return}

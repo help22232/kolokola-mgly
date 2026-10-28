@@ -124,15 +124,26 @@ V.addLogRenderer(m=>{if(!m||typeof m!=='object')return null;
   return null});
 
 /* ---------- макросы героя ---------- */
+if(!document.getElementById('vacc-css')){const s=document.createElement('style');s.id='vacc-css';s.textContent=`
+details.vacc{border:1px solid var(--line,#243235);border-radius:10px;background:var(--panel2,#162022);margin:8px 0}
+details.vacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px}
+details.vacc>summary::-webkit-details-marker{display:none}
+details.vacc>summary::after{content:'▸';margin-left:auto;color:var(--muted,#8e9e9b);transition:transform .15s}
+details.vacc[open]>summary::after{transform:rotate(90deg)}
+details.vacc>summary h3{margin:0;font-size:17px}
+details.vacc>.vacc-b{padding:0 12px 10px;overflow-x:hidden}
+@media (max-width:600px){details.vacc button{min-height:40px}}
+`;document.head.append(s)}
+const accordion=(key,title,kids)=>{let open=false;try{open=localStorage.getItem('vtt-acc-'+key)==='1'}catch(e){}const d=h('details',{class:'vacc'},h('summary',{},h('h3',{},title)),h('div',{class:'vacc-b'},...kids.filter(Boolean)));d.open=open;d.ontoggle=()=>{try{localStorage.setItem('vtt-acc-'+key,d.open?'1':'0')}catch(e){}};return d};
 V.addHeroSection((t,c)=>{const can=!V.readOnly&&(V.isOwner||t.owner===V.myId);const macros=Array.isArray(c&&c.macros)?c.macros:[];
   const save=list=>V.store.set('chars/'+t.id,{...(c||{}),macros:list.slice(0,40)});
   const box=h('div',{class:'mc-mac'},...macros.map((mm,i)=>h('span',{class:'mc-m'},
     h('button',{type:'button',title:mm[1],onclick:()=>{if(!V.roll(mm[1])){V.toast('Формула макроса не читается: '+mm[1]);return}V.rollPost(`${t.name}: ${mm[0]}`,mm[1],{})}},mm[0],h('small',{},mm[1])),
     can?h('button',{type:'button',class:'mc-x','aria-label':'Удалить макрос '+mm[0],onclick:()=>save(macros.filter((_,j)=>j!==i))},'✕'):null)));
-  const out=[h('h3',{},'Макросы'),macros.length?box:h('p',{class:'small muted'},'Быстрые кнопки бросков: «Скрытая атака 2d6», «Внимательность 1d20+4», «Лечение 1d8+3».')];
+  const out=[macros.length?box:h('p',{class:'small muted'},'Свои броски: «Скрытая атака 2d6».')];
   if(can){const n=h('input',{type:'text',placeholder:'Название','aria-label':'Название макроса',style:'flex:1;min-width:110px'}),f=h('input',{type:'text',placeholder:'1d20+4','aria-label':'Формула макроса',style:'width:96px'});
     out.push(h('div',{class:'row'},n,f,h('button',{class:'btn sm',type:'button',onclick:()=>{const name=n.value.trim().slice(0,30),fm=f.value.replace(/\s+/g,'');if(!name||!V.roll(fm)){V.toast('Укажите название и формулу, например 2d6+3');return}save([...macros,[name,fm]])}},'+ Макрос')))}
-  return out});
+  return accordion('macros','Макросы'+(macros.length?` (${macros.length})`:''),out)});
 
 /* ---------- случайные таблицы Мастера ---------- */
 const PRESET=[

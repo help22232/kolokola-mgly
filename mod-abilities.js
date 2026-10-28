@@ -15,6 +15,7 @@ const st=document.createElement('style');st.textContent=`
 .ab-num{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
 .ab-r .ab-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .ab-r .ab-btns .btn{padding:7px 10px}
+@media (max-width:600px){.ab-r .ab-btns .btn{min-height:40px}.ab-dots i{width:18px;height:18px}.ab-feat>summary{min-height:40px;align-items:center}}
 .ab-desc{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.4}
 .ab-feat{border-bottom:1px solid var(--line);padding:2px 0}
 .ab-feat>summary{cursor:pointer;padding:8px 2px;list-style:none;display:flex;justify-content:space-between;gap:8px;color:var(--ink);margin:0}
@@ -246,7 +247,18 @@ function section(t,c){if(!t||t.kind==='monster')return null;c=c||{};const cls=cl
   for(const [g,lv,nm,d] of list){if(g!==grp){out.push(h('div',{class:'ab-grp'},g==='Класс'?'Умения класса':'Умения подкласса'));grp=g}out.push(feat(t.id+g+nm,nm,lv,d))}
   const race=RACE[c.raceKey];if(race){out.push(h('div',{class:'ab-grp'},'Черты расы · '+race[0]));for(const [nm,d] of race[1])out.push(feat(t.id+'r'+nm,nm,0,d))}
   return out}
-V.addHeroSection((t,c)=>section(t,c));
+if(!document.getElementById('vacc-css')){const s=document.createElement('style');s.id='vacc-css';s.textContent=`
+details.vacc{border:1px solid var(--line,#243235);border-radius:10px;background:var(--panel2,#162022);margin:8px 0}
+details.vacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px}
+details.vacc>summary::-webkit-details-marker{display:none}
+details.vacc>summary::after{content:'▸';margin-left:auto;color:var(--muted,#8e9e9b);transition:transform .15s}
+details.vacc[open]>summary::after{transform:rotate(90deg)}
+details.vacc>summary h3{margin:0;font-size:17px}
+details.vacc>.vacc-b{padding:0 12px 10px;overflow-x:hidden}
+@media (max-width:600px){details.vacc button{min-height:40px}}
+`;document.head.append(s)}
+const accordion=(key,title,kids)=>{let open=false;try{open=localStorage.getItem('vtt-acc-'+key)==='1'}catch(e){}const d=h('details',{class:'vacc'},h('summary',{},h('h3',{},title)),h('div',{class:'vacc-b'},...kids.filter(Boolean)));d.open=open;d.ontoggle=()=>{try{localStorage.setItem('vtt-acc-'+key,d.open?'1':'0')}catch(e){}};return d};
+V.addHeroSection((t,c)=>{const o=section(t,c);return o?accordion('abil','Умения и ресурсы',o.slice(1)):null});
 
 /* ---------- у Мастера: долгий отдых всему отряду ---------- */
 V.addGmSection(()=>{if(!V.isOwner)return null;const pcs=V.tokList().filter(t=>t.kind==='pc');

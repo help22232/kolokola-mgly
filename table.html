@@ -145,8 +145,30 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 .net.ok{background:rgba(143,207,138,.12);color:var(--ok)}
 .net.bad{background:rgba(229,138,128,.14);color:var(--danger)}
 .lrow{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+#toolsToggle[hidden]{display:none}
+.tools.collapsed button[data-tool]:not(.cur):not([data-tool="select"]),.tools.collapsed #btnPreview:not(.cur){display:none}
+.hint{cursor:pointer}
+.rollfx{position:absolute;right:10px;top:10px;z-index:4;display:flex;flex-direction:column;gap:6px;width:min(300px,calc(100% - 70px));pointer-events:none}
+.rcard{pointer-events:auto;display:flex;gap:10px;align-items:center;background:rgba(17,24,25,.95);border:1px solid var(--line);border-left:4px solid #d9b36c;border-radius:10px;padding:7px 10px;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:rin .25s ease-out;transition:opacity .4s,transform .4s;cursor:pointer}
+.rcard.out{opacity:0;transform:translateX(30px)}
+.rcard.crit{border-left-color:#7fd68a;background:rgba(20,40,26,.96)}.rcard.fail{border-left-color:#e5786f;background:rgba(44,20,20,.96)}
+.rtot{font:700 28px/1 'IBM Plex Mono',monospace;color:#ffe6a0;min-width:42px;text-align:center}
+.rcard.crit .rtot{color:#9cf0a6}.rcard.fail .rtot{color:#ff9a90}
+.rtxt{min-width:0;font-size:13px;line-height:1.3}.rtxt b{display:block;overflow:hidden;text-overflow:ellipsis}
+.rdmg{color:#ff9a90;font-weight:700}.rdet{color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fnum{position:absolute;z-index:4;transform:translate(-50%,-50%);font:800 26px/1 'IBM Plex Mono',monospace;pointer-events:none;text-shadow:0 0 4px #000,0 2px 6px #000;animation:fup 1.9s ease-out forwards}
+.fnum.dmg{color:#ff6b5e}.fnum.heal{color:#7fe08c}
+@keyframes fup{0%{opacity:0;margin-top:0;scale:.6}12%{opacity:1;scale:1.25}25%{scale:1}100%{opacity:0;margin-top:-60px}}
+@keyframes rin{from{opacity:0;transform:translateY(-10px)}}
 @media (max-width:820px){
-  .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,56fr) minmax(0,44fr)}
+  .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,62fr) minmax(0,38fr)}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .tabs button{flex:0 0 auto;padding:9px 12px}
+  .tools button,.zoom button{width:40px;height:40px}
+  .hint{top:auto;bottom:62px;font-size:12px;max-width:calc(100% - 24px)}
+  .rollfx{top:6px;left:56px;right:56px;width:auto;align-items:center}.rcard{width:100%;max-width:260px}.rcard{padding:5px 8px}.rtot{font-size:22px;min-width:34px}.rdet{display:none}
+  .banner{font-size:12px;padding:4px 8px;bottom:58px}
+  .pane{padding:10px 12px 30px}
   aside.panel{border-left:0;border-top:1px solid var(--line)}
   header .ttl{display:none}
   header.top{gap:6px}
@@ -397,7 +419,8 @@ store.watchCol('maps',a=>{S.maps=Object.fromEntries(a.map(m=>[m.id,m]));lightDir
 store.watchCol('chars',a=>{S.chars=Object.fromEntries(a.map(c=>[c.id,c]));changed('panel')});
 store.watchCol('notes',a=>{S.notes=Object.fromEntries(a.map(n=>[n.id,n]));requestDraw()});
 store.watchCol('ready',a=>{S.ready=Object.fromEntries(a.map(r=>[r.id,r]));changed('panel')});
-store.watchCol('log',a=>{S.log=a.reverse();changed('panel')},{order:'ts',dir:'desc',limit:80});
+const fxBoot=Date.now(),fxSeen=new Set();
+store.watchCol('log',a=>{S.log=a.reverse();for(const m of S.log){const k=m.id||m.ts+m.text;if(fxSeen.has(k))continue;fxSeen.add(k);if((m.ts||0)>fxBoot-1500)try{showFx(m)}catch(e){console.error(e)}}changed('panel')},{order:'ts',dir:'desc',limit:80});
 if(isOwner){store.watchCol('gm',a=>{S.gm=Object.fromEntries(a.filter(d=>d.id.startsWith('mon_')).map(d=>[d.id.slice(4),d]));S.gmnotes=Object.fromEntries(a.filter(d=>d.id.startsWith('note_')).map(d=>[d.id,{...d,gm:true}]));S.gmlog=a.filter(d=>d.id.startsWith('roll_'));changed('panel')})}
 
 /* ================= комната: пинги и живое перетаскивание ================= */
@@ -627,7 +650,15 @@ $('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
   tool=b.dataset.tool;wallStart=null;for(const x of $('tools').querySelectorAll('[data-tool]'))x.setAttribute('aria-pressed',String(x===b));cv.classList.toggle('tool',tool!=='select');
   const ptn=modTool();if(ptn&&ptn.activate)try{ptn.activate()}catch(e){console.error(e)}
   const H=ptn?(ptn.hint||''):{select:'',wall:'Стены: щёлкайте по точкам. Двойной клик или правая кнопка — закончить линию.',door:'Дверь: два клика — начало и конец. Клик по двери в режиме выбора открывает её.',light:'Свет: клик ставит источник (радиус задан во вкладке «Мастер»), клик по нему — убрать.',reveal:'Открыть тайное: два клика — углы области. Игроки увидят в ней карту Мастера (тайный ход, дверь, тайник). Не забудьте убрать стену или поставить дверь, чтобы через проход было видно.',erase:'Ластик: клик по стене, двери, свету или открытой области.',dark:'Магическая тьма радиусом 15 фт (как заклинание «Тьма»): внутри не видно ничего, даже тёмным зрением. Клик по кругу — убрать.'}[tool];
-  $('hint').textContent=H;$('hint').hidden=!H;requestDraw()});
+  showHint(H);if(isPhone()&&tool!=='select')$('tools').classList.add('collapsed');syncToolbar();requestDraw()});
+const isPhone=()=>(window.innerWidth||800)<820;let hintT=0;
+function showHint(t){clearTimeout(hintT);if(t&&isPhone())t=t.split(/[.:]/)[0];$('hint').textContent=t||'';$('hint').hidden=!t;if(t)hintT=setTimeout(()=>{$('hint').hidden=true},3500)}
+$('hint').addEventListener('click',()=>{$('hint').hidden=true});
+// на телефоне панель инструментов свёрнута: видны «выбор», текущий инструмент и кнопка 🧰
+function syncToolbar(){const tb=$('tools');let tg=$('toolsToggle');if(!tg){tg=h('button',{type:'button',id:'toolsToggle',title:'Инструменты'},'🧰');tg.onclick=e=>{e.stopPropagation();tb.classList.toggle('collapsed');syncToolbar()};tb.prepend(tg)}
+  tg.hidden=!isPhone();tg.setAttribute('aria-pressed',String(!tb.classList.contains('collapsed')));
+  for(const b of tb.querySelectorAll('button[data-tool],#btnPreview'))b.classList.toggle('cur',b.dataset.tool===tool||(b.id==='btnPreview'&&preview))}
+if(isPhone())$('tools').classList.add('collapsed');setTimeout(syncToolbar,0);window.addEventListener('resize',()=>{if(!isPhone())$('tools').classList.remove('collapsed');syncToolbar()});
 
 /* ================= кубики ================= */
 const rnd=n=>1+Math.floor(Math.random()*n);
@@ -644,21 +675,33 @@ function whoAmI(){const t=myToken();return isOwner?'Мастер':(t?t.name:(nam
 async function post(entry,secret){if(readOnly)return;const e={ts:Date.now(),who:whoAmI(),by:myId,...entry};if(secret&&isOwner){await store.set('gm/roll_'+store.newId('gm'),{...e,kind:'secret'})}else await store.set('log/'+store.newId('log'),e)}
 async function rollPost(label,expr,opt={}){const r=roll(expr,opt.mode);if(!r){toast('Не понял формулу: '+expr);return null}
   await post({kind:'roll',text:label,expr,total:r.total,det:r.det+(opt.mode?(opt.mode==='adv'?' · с преимуществом':' · с помехой'):''),nat:r.nat,target:opt.target||null,dmg:opt.dmg??null},opt.secret);return r}
+/* ===== броски и урон на карте, без поиска в журнале ===== */
+function fxBox(){let b=$('rollFx');if(!b){b=h('div',{id:'rollFx',class:'rollfx','aria-live':'polite'});$('board').appendChild(b)}return b}
+function floatNum(tid,delta){const t=S.tokens[tid];if(!t||!canSee(t))return;const sx=t.x*cam.z+cam.ox,sy=t.y*cam.z+cam.oy;
+  const n=h('div',{class:'fnum '+(delta<0?'dmg':'heal')},(delta<0?'−':'+')+Math.abs(delta));n.style.left=sx+'px';n.style.top=sy+'px';$('board').appendChild(n);setTimeout(()=>n.remove(),1900)}
+function showFx(m){if(m.tid&&m.delta)floatNum(m.tid,m.delta);if(m.kind!=='roll'||m.total==null)return;
+  const crit=m.nat===20,fail=m.nat===1,tg=m.target&&S.tokens[m.target];
+  const c=h('div',{class:'rcard'+(crit?' crit':fail?' fail':''),onclick:()=>c.remove()},
+    h('div',{class:'rtot'},String(m.total)),
+    h('div',{class:'rtxt'},h('b',{},m.text||''),m.who?h('div',{class:'small muted'},m.who):null,
+      m.dmg!=null?h('div',{class:'rdmg'},`урон ${m.dmg}${tg?' → '+tg.name:''}`):null,
+      h('div',{class:'rdet'},(m.det||'').slice(0,110))));
+  const b=fxBox();b.prepend(c);while(b.children.length>3)b.lastChild.remove();setTimeout(()=>{c.classList.add('out');setTimeout(()=>c.remove(),400)},crit||fail?7000:5000)}
 function toast(t){showBanner(t);clearTimeout(toast.t);toast.t=setTimeout(()=>showBanner(readOnly?$('banner').textContent:''),3500)}
 
 /* ================= правила игры: урон, лечение, хиты монстров ================= */
 const hpState=(hp,mx)=>hp<=0?'down':hp<=mx/2?'bloodied':hp<mx?'hurt':'ok';
 async function applyHp(tid,amount,mode){const t=S.tokens[tid];if(!t)return;amount=Math.max(0,Math.floor(amount));
   if(t.kind==='monster'){const m=S.gm[tid];if(!m||!isOwner)return;let hp=mode==='heal'?Math.min(m.hpMax,m.hp+amount):m.hp-amount;hp=Math.max(0,hp);await store.update('gm/mon_'+tid,{hp});await store.update('tokens/'+tid,{hpState:hpState(hp,m.hpMax)});
-    await post({kind:'sys',text:`${t.name}: ${mode==='heal'?'+':'−'}${amount} хитов${hp<=0?' — повержен':''}`});return}
+    await post({kind:'sys',tid,delta:mode==='heal'?amount:-amount,text:`${t.name}: ${mode==='heal'?'+':'−'}${amount} хитов${hp<=0?' — повержен':''}`});return}
   let hp=t.hp,tmp=t.hpTemp||0;
-  if(mode==='heal'){hp=Math.min(t.hpMax,Math.max(0,hp)+amount);await store.update('tokens/'+tid,{hp,ds:0,df:0});await post({kind:'sys',text:`${t.name} лечится на ${amount} → ${hp}/${t.hpMax}`});return}
+  if(mode==='heal'){hp=Math.min(t.hpMax,Math.max(0,hp)+amount);await store.update('tokens/'+tid,{hp,ds:0,df:0});await post({kind:'sys',tid,delta:amount,text:`${t.name} лечится на ${amount} → ${hp}/${t.hpMax}`});return}
   if(mode==='temp'){await store.update('tokens/'+tid,{hpTemp:Math.max(tmp,amount)});return}
   const absorb=Math.min(tmp,amount);tmp-=absorb;let rest=amount-absorb;let note='';
   if(hp<=0&&rest>0){note=' — урон на 0 хитов: провал спасброска от смерти';await store.update('tokens/'+tid,{df:Math.min(3,(t.df||0)+1)})}
   const over=rest-hp;hp=Math.max(0,hp-rest);if(hp===0&&over>=t.hpMax)note=' — мгновенная смерть (остаток урона ≥ макс. хитов)';else if(hp===0&&t.hp>0)note=' — без сознания, спасброски от смерти';
   if((t.cond||[]).includes('Концентрация')&&amount>0)note+=` · проверка концентрации СЛ ${Math.max(10,Math.floor(amount/2))}`;
-  await store.update('tokens/'+tid,{hp,hpTemp:tmp});await post({kind:'sys',text:`${t.name}: −${amount} хитов${absorb?` (временные поглотили ${absorb})`:''} → ${hp}/${t.hpMax}${note}`})}
+  await store.update('tokens/'+tid,{hp,hpTemp:tmp});await post({kind:'sys',tid,delta:-amount,text:`${t.name}: −${amount} хитов${absorb?` (временные поглотили ${absorb})`:''} → ${hp}/${t.hpMax}${note}`})}
 
 /* ================= выбор и данные игрока ================= */
 function selectToken(id){sel=id;changed('panel');requestDraw()}
@@ -737,10 +780,13 @@ function renderLobby(){const el=$('lobby');const s=st();if(!el)return;if(s.start
         h('div',{},h('b',{},hero.name),h('div',{class:'small muted'},(S.chars[hero.id]||{}).cls||''),h('div',{class:'small muted'},`ХП ${hero.hp}/${hero.hpMax} · КД ${hero.ac}`))),
         h('div',{class:'row',style:'margin-top:10px'},h('button',{class:'btn',type:'button',onclick:()=>{lobbyMini=true;tab='hero';renderTabs();renderPane(true);renderLobby()}},'Открыть лист героя'),!me?h('button',{class:'btn sm',type:'button',onclick:()=>store.update('tokens/'+hero.id,{owner:null})},'Выбрать другого'):null))
       :h('div',{class:'lcard'},...paneClaim());
-    el.replaceChildren(h('div',{class:'lcard'},h('h3',{},'Скоро начнём'),h('p',{class:'muted',style:'margin:0'},'Подготовьте героя и нажмите «Готово». Игру начнёт Мастер.'),net,...rows),heroCard,h('div',{class:'readybar'},readyBtn))}}
+    el.replaceChildren(st().ended?h('div',{class:'lcard',style:'border-color:#d9b36c'},h('h3',{},'⏹ Сессия завершена'),h('p',{class:'muted',style:'margin:0'},`Мастер закончил игру ${new Date(st().ended).toLocaleString('ru',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})}. Герой и вещи сохранены — до следующей сессии!`)):null,h('div',{class:'lcard'},h('h3',{},'Скоро начнём'),h('p',{class:'muted',style:'margin:0'},'Подготовьте героя и нажмите «Готово». Игру начнёт Мастер.'),net,...rows),heroCard,h('div',{class:'readybar'},readyBtn))}}
 let lobbyMini=false,lobbyDirty=false;const netOk=()=>!window.__net||window.__net.ok();
 $('lobby').addEventListener('focusout',()=>setTimeout(()=>{if(lobbyDirty&&!$('lobby').contains(document.activeElement))renderLobby()},0));
-async function startGame(){lobbyForce=false;await store.set('game/state',{...st(),started:true});await post({kind:'sys',text:'▶ Игра началась!'});if(lobbyIntro)showCutAll('intro')}
+async function startGame(){lobbyForce=false;await store.set('game/state',{...st(),started:true,ended:null});await post({kind:'sys',text:'▶ Игра началась!'});if(lobbyIntro)showCutAll('intro')}
+async function endSession(){if(!isOwner||readOnly)return;if(!confirm('Завершить сессию? Бой остановится, все вернутся в лобби. Герои, карты и журнал сохранятся.'))return;
+  const s=st();await store.set('game/state',{...s,started:false,combat:{on:false,round:1,turn:null},ended:Date.now()});
+  for(const id of Object.keys(S.ready))await store.del('ready/'+id);await post({kind:'sys',text:'⏹ Сессия завершена. Спасибо за игру!'})}
 async function toLobby(){await store.set('game/state',{...st(),started:false});for(const id of Object.keys(S.ready))await store.del('ready/'+id)}
 
 /* ---- карты отряда: что Мастер выдал, игроки открывают в любой момент ---- */
@@ -968,7 +1014,7 @@ function paneGM(part='scene'){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const
     h('p',{class:'small muted'},MIST_TXT[s.mist]+' Игроки видят шкалу в шапке; каждое изменение пишется в журнал.'));
   const pcs=tokList().filter(t=>t.kind==='pc');
   out.push(h('h3',{},'Игра'),h('div',{class:'row',style:'margin-bottom:6px'},h('button',{class:'btn sm pri',type:'button',disabled:!pcs.length,onclick:()=>grantLevel(pcs.map(t=>t.id),true)},'⚓ Новый уровень всему отряду'),h('span',{class:'small muted'},pcs.filter(t=>t.lvlUp).length?`ждут повышения: ${pcs.filter(t=>t.lvlUp).map(t=>t.name).join(', ')}`:'')),
-    s.started?h('div',{class:'row'},h('span',{class:'small muted'},'Игра идёт.'),h('button',{class:'btn sm',type:'button',onclick:toLobby},'Вернуть всех в лобби (новая сессия)'))
+    s.started?h('div',{class:'row'},h('span',{class:'small muted'},'Игра идёт.'),h('button',{class:'btn sm',type:'button',onclick:endSession},'⏹ Завершить сессию'),h('button',{class:'btn sm',type:'button',onclick:toLobby},'В лобби без завершения'))
     :h('div',{class:'row'},h('span',{class:'small muted'},'Игра не начата — игроки в лобби.'),h('button',{class:'btn sm pri',type:'button',onclick:startGame},'▶ Начать игру')));
   out.push(h('h3',{},'Катсцены'),h('p',{class:'small muted'},'Откроются на весь экран у всех за столом, со звуком и голосом.'),
     h('div',{class:'row'},...CUTS.map(([id,n])=>h('button',{class:'btn sm',type:'button',onclick:()=>showCutAll(id)},'🎬 '+n))));

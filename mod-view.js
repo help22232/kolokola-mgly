@@ -2,6 +2,18 @@
    «Все смотрят сюда», значки состояний, ауры, подсветка хода, двойной тап по своей фишке. */
 (function boot(){if(!window.VTT)return setTimeout(boot,50);window.VTT_VIEW=true;
 const V=window.VTT,h=V.h;
+const onceHint=(key,txt)=>{let seen=false;try{seen=localStorage.getItem('vtt-hint-'+key)==='1';localStorage.setItem('vtt-hint-'+key,'1')}catch(e){}if(seen)return'';setTimeout(()=>{const el=document.getElementById('hint');if(el&&el.textContent===txt)V.setHint('')},3000);return txt};
+if(!document.getElementById('vacc-css')){const s=document.createElement('style');s.id='vacc-css';s.textContent=`
+details.vacc{border:1px solid var(--line,#243235);border-radius:10px;background:var(--panel2,#162022);margin:8px 0}
+details.vacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px}
+details.vacc>summary::-webkit-details-marker{display:none}
+details.vacc>summary::after{content:'▸';margin-left:auto;color:var(--muted,#8e9e9b);transition:transform .15s}
+details.vacc[open]>summary::after{transform:rotate(90deg)}
+details.vacc>summary h3{margin:0;font-size:17px}
+details.vacc>.vacc-b{padding:0 12px 10px;overflow-x:hidden}
+@media (max-width:600px){details.vacc button{min-height:40px}}
+`;document.head.append(s)}
+const accordion=(key,title,kids)=>{let open=false;try{open=localStorage.getItem('vtt-acc-'+key)==='1'}catch(e){}const d=h('details',{class:'vacc'},h('summary',{},h('h3',{},title)),h('div',{class:'vacc-b'},...kids.filter(Boolean)));d.open=open;d.ontoggle=()=>{try{localStorage.setItem('vtt-acc-'+key,d.open?'1':'0')}catch(e){}};return d};
 
 /* ---------- стили ---------- */
 const css=document.createElement('style');
@@ -10,6 +22,7 @@ css.textContent=`
   background:#231d10;border:1px solid rgba(217,179,108,.8);color:#ffe6a0;font-family:"Alegreya SC",Georgia,serif;font-size:26px;
   padding:10px 26px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.6);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
 .mv-turn.on{opacity:1;transform:translateX(-50%) scale(1)}
+@media (max-width:600px){.mv-turn{font-size:19px;padding:7px 16px;top:calc(env(safe-area-inset-top,0px) + 60px);max-width:calc(100vw - 24px);text-align:center}}
 .mv-aura{display:grid;gap:6px;margin-top:6px}
 .mv-aura .mv-pre{display:flex;flex-wrap:wrap;gap:4px}
 .mv-aura .mv-pre button{font-size:12px}
@@ -27,11 +40,11 @@ function flyTo(x,y,z){const c=V.cam,from={ox:c.ox,oy:c.oy,z:c.z},tz=Math.max(.15
 function pullView(x,y,z){const r=V.room;const d={x:Math.round(x),y:Math.round(y),z:Math.round((z||V.cam.z)*100)/100,map:V.st().map};
   if(r)r.emit('view',d).catch(()=>{});V.toast('Все игроки смотрят на это место')}
 V.addTool({id:'pullview',icon:'🎯',title:'Все смотрят сюда: коснитесь места на карте',gmOnly:true,
-  hint:'Коснитесь места на карте — камера всех игроков переедет туда.',
+  get hint(){return onceHint('pullview','Коснитесь места — все смотрят')},
   down(wx,wy){pullView(wx,wy,V.cam.z);V.setTool('select')}});
 V.addGmSection(()=>[h('h3',{},'Камера игроков'),
   h('div',{class:'row'},h('button',{class:'btn sm pri',type:'button',onclick:()=>{const c=V.cam;pullView((V.VW/2-c.ox)/c.z,(V.VH/2-c.oy)/c.z,c.z)}},'🎯 Показать всем мою текущую область')),
-  h('p',{class:'small muted'},'Или инструмент 🎯 слева на карте: коснитесь места — у всех игроков камера плавно переедет туда.')]);
+  h('p',{class:'small muted'},'Или 🎯 слева на карте.')]);
 let roomBound=false;
 function bindRoom(){if(roomBound||!V.room)return;roomBound=true;
   V.room.on('view',m=>{const d=m.data||{};if(m.isMe&&m.sameTab)return;if(typeof d.x!=='number'||d.map!==V.st().map)return;flyTo(d.x,d.y,d.z)})}
@@ -60,7 +73,8 @@ const a=t.aura||{};
   return h('div',{class:'card mv-aura'},h('b',{},'Аура'+(a.r?` · ${a.r} фт`:'')),
     can?h('div',{class:'row'},'Радиус',r,'фт',col,h('button',{class:'btn sm pri',type:'button',onclick:()=>save(Number(r.value)||0,col.value)},'Сохранить'),a.r?h('button',{class:'btn sm',type:'button',onclick:()=>save(0)},'Убрать'):null):h('span',{class:'small muted'},a.r?`${a.r} фт вокруг фишки`:'Нет ауры'),
     can?h('div',{class:'mv-pre'},...PRESETS.map(([n,rr,cc])=>h('button',{class:'btn sm',type:'button',onclick:()=>save(rr,cc)},`${n} ${rr} фт`))):null)}
-V.addHeroSection(t=>t?auraEditor(t):null);
+// у игрока без ауры раздел не нужен; у Мастера свёрнут
+V.addHeroSection(t=>!t||(!V.isGM()&&!(t.aura&&t.aura.r))?null:accordion('aura','Аура'+(t.aura&&t.aura.r?` · ${t.aura.r} фт`:''),[auraEditor(t)]));
 V.addGmSection(()=>{const t=V.sel&&V.S.tokens[V.sel];if(!t)return null;return[h('h3',{},'Аура выбранной фишки · '+t.name),auraEditor(t)]});
 
 /* ---------- 4) подсветка хода ---------- */

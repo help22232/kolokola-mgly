@@ -129,11 +129,23 @@ const st=document.createElement('style');st.textContent=`
 .lt-items tr.m td:first-child{color:#c9a7ff}
 .lt-coins{font-family:var(--f-mono);color:var(--brass);margin:6px 0}
 .lt-hist{font-size:13px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--line)}
+@media (max-width:600px){.lt-chip{min-height:40px;min-width:40px}.lt-intro{display:none}.lt-items td{font-size:13px}}
 `;document.head.append(st);
+if(!document.getElementById('vacc-css')){const s=document.createElement('style');s.id='vacc-css';s.textContent=`
+details.vacc{border:1px solid var(--line,#243235);border-radius:10px;background:var(--panel2,#162022);margin:8px 0}
+details.vacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px}
+details.vacc>summary::-webkit-details-marker{display:none}
+details.vacc>summary::after{content:'▸';margin-left:auto;color:var(--muted,#8e9e9b);transition:transform .15s}
+details.vacc[open]>summary::after{transform:rotate(90deg)}
+details.vacc>summary h3{margin:0;font-size:17px}
+details.vacc>.vacc-b{padding:0 12px 10px;overflow-x:hidden}
+@media (max-width:600px){details.vacc button{min-height:40px}}
+`;document.head.append(s)}
+const accordion=(key,title,kids)=>{let open=false;try{open=localStorage.getItem('vtt-acc-'+key)==='1'}catch(e){}const d=h('details',{class:'vacc'},h('summary',{},h('h3',{},title)),h('div',{class:'vacc-b'},...kids.filter(Boolean)));d.open=open;d.ontoggle=()=>{try{localStorage.setItem('vtt-acc-'+key,d.open?'1':'0')}catch(e){}};return d};
 
 /* ---------- вкладка ---------- */
 function render(){const L=curLoc();const conts=LOC_CONTS[L];if(!cont||!conts.includes(cont))cont=conts[0];const out=[h('h3',{},'Добыча')];
-  out.push(h('p',{class:'small muted'},'Что нашли герои: бросок по таблице контейнера + монеты по уровню. Таблицы тематические для каждой локации.'));
+  out.push(h('p',{class:'small muted lt-intro'},'Что нашли герои: бросок по таблице контейнера + монеты по уровню. Таблицы тематические для каждой локации.'));
   const ls=h('select',{'aria-label':'Локация',style:'width:100%'},...Object.entries(LOCS).map(([k,n])=>h('option',{value:k,selected:k===L},n+(MAP_LOC[V.st().map]===k?' · текущая карта':''))));
   ls.onchange=()=>{loc=ls.value;cont=null;cur=null;V.renderPane()};out.push(h('label',{class:'f'},'Локация',ls));
   out.push(h('div',{class:'small muted',style:'margin-top:8px'},'Что обыскивают'),h('div',{class:'lt-row'},...conts.map(k=>h('button',{type:'button',class:'lt-chip','aria-pressed':String(k===cont),onclick:()=>{cont=k;V.renderPane()}},CONTS[k]))));
@@ -151,7 +163,7 @@ function render(){const L=curLoc();const conts=LOC_CONTS[L];if(!cont||!conts.inc
       h('div',{class:'lt-row'},sel,h('button',{type:'button',class:'btn sm pri',disabled:!heroes.length||(r.items.length===0&&!c),onclick:give},'🎒 Отдать')));
     if(r.given)kids.push(h('div',{class:'small muted'},'Отдано: '+r.given));
     out.push(h('div',{class:'lt-card'},...kids))}
-  if(hist.length>1){out.push(h('h3',{},'Последние броски'));for(const r of hist.slice(1))out.push(h('div',{class:'lt-hist'},`${new Date(r.ts).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})} · ${CONTS[r.cont]} (${LOCS[r.loc].replace(/ \(.+\)/,'')}): ${summary(r)||(r.kind==='trap'?'неприятность':'пусто')}`))}
+  if(hist.length>1)out.push(accordion('loot-hist','Последние броски',hist.slice(1).map(r=>h('div',{class:'lt-hist'},`${new Date(r.ts).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})} · ${CONTS[r.cont]} (${LOCS[r.loc].replace(/ \(.+\)/,'')}): ${summary(r)||(r.kind==='trap'?'неприятность':'пусто')}`))))
   return out}
 
 V.addTab({id:'gmloot',label:'Добыча',gm:true,render});

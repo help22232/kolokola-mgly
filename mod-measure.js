@@ -14,9 +14,22 @@ const css=document.createElement('style');css.textContent=`
 .mm-menu .mm-who{font-size:12px;color:#8e9e9b;margin-bottom:6px}
 .mm-menu ul{margin:6px 0;padding-left:18px}
 .mm-list{display:grid;gap:4px;max-height:120px;overflow:auto}
-.mm-li{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;color:#8e9e9b}`;
+.mm-li{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;color:#8e9e9b}
+.mm-q{display:none}
+/* телефон: одна строка с прокруткой внизу поля, слева от кнопок масштаба */
+.mm-panel.mm-dock{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;align-items:center;gap:8px;padding:4px 6px;touch-action:pan-x;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.mm-dock .mm-row{flex-wrap:nowrap;flex:0 0 auto;gap:4px}
+.mm-dock .mm-b{min-height:40px;min-width:40px;white-space:nowrap;padding:0 9px}
+.mm-dock .mm-c{width:32px;height:32px;flex:0 0 auto}
+.mm-dock .mm-in{width:56px;min-height:40px}
+.mm-dock .mm-tip{display:none}
+.mm-dock .mm-q{display:inline-flex;align-items:center;justify-content:center}
+.mm-dock .mm-list{display:flex;flex:0 0 auto;max-height:none;overflow:visible}
+.mm-dock .mm-li{white-space:nowrap}`;
 document.head.append(css);
 
+const narrow=()=>innerWidth<600;
+const onceHint=(key,txt)=>{let seen=false;try{seen=localStorage.getItem('vtt-hint-'+key)==='1';localStorage.setItem('vtt-hint-'+key,'1')}catch(e){}if(seen)return'';setTimeout(()=>{const el=document.getElementById('hint');if(el&&el.textContent===txt)V.setHint('')},3000);return txt};
 const KINDS=[['cone','Конус'],['sphere','Сфера'],['line','Линия'],['cube','Куб']];
 const COLORS=[['#e8734a','огонь'],['#6fb7e8','холод'],['#9fd36a','яд'],['#c79bf0','магия']];
 const KNAME=Object.fromEntries(KINDS);
@@ -74,7 +87,7 @@ const rul={pts:[],cur:null,dragging:false,downAt:null,fadeT:0};
 let presT=0;function sendRuler(){if(!V.room)return;clearTimeout(presT);presT=setTimeout(()=>{const pts=rul.pts.concat(rul.cur?[rul.cur]:[]);V.room.presence({ruler:pts.length>1?{map:V.st().map,pts:pts.map(p=>[Math.round(p[0]),Math.round(p[1])]),who:V.whoAmI()}:null}).catch(()=>{})},60)}
 function clearRuler(){rul.pts=[];rul.cur=null;rul.dragging=false;clearTimeout(rul.fadeT);sendRuler();V.requestDraw()}
 function scheduleFade(){clearTimeout(rul.fadeT);rul.fadeT=setTimeout(clearRuler,2600)}
-V.addTool({id:'ruler',icon:'📏',title:'Линейка: расстояние в футах',hint:'Линейка: тяните от точки. Коснитесь ещё раз в течение 2 секунд — добавится поворот пути.',
+V.addTool({id:'ruler',icon:'📏',title:'Линейка: расстояние в футах',get hint(){return onceHint('ruler','Тяните — расстояние в футах')},
   down(wx,wy,e){if(e&&e.isPrimary===false)return;const m=V.mapInfo();const p=snapCenter(m,wx,wy);clearTimeout(rul.fadeT);
     if(!rul.pts.length)rul.pts=[p];rul.cur=p;rul.dragging=true;rul.downAt=[e?e.clientX:0,e?e.clientY:0];sendRuler();V.requestDraw()},
   move(wx,wy){if(!rul.dragging)return;rul.cur=snapCenter(V.mapInfo(),wx,wy);sendRuler();V.requestDraw()},
@@ -104,16 +117,22 @@ function openMenu(s,sx,sy){closeMenu();const m=V.mapInfo(),mine=s.by===V.myId||V
   else{const ts=tokensIn(s,m).filter(t=>V.canSee(t));if(ts.length)kids.push(h('div',{},'Видно в области: '+ts.map(t=>t.name).join(', ')))}
   kids.push(h('div',{class:'mm-row',style:'margin-top:8px'},mine&&!V.readOnly?h('button',{class:'mm-b',type:'button',onclick:async()=>{await V.store.del('shapes/'+s.id);closeMenu()}},'Убрать'):null,h('button',{class:'mm-b',type:'button',onclick:closeMenu},'Закрыть')));
   menu=h('div',{class:'mm-menu'},...kids);menu.style.left=Math.min(Math.max(8,sx+12),innerWidth-270)+'px';menu.style.top=Math.min(Math.max(8,sy+12),innerHeight-220)+'px';(V.overlay()||document.body).append(menu)}
-function refreshPanel(){if(!panel)return;const r=cvRect();panel.style.left=(r.left+56)+'px';panel.style.top=(r.top+46)+'px';panel.style.maxWidth=Math.max(200,r.width-70)+'px';
+function dockPanel(){if(!panel)return;const r=cvRect(),nw=narrow();panel.classList.toggle('mm-dock',nw);
+  if(nw){panel.style.left=(r.left+8)+'px';panel.style.top='auto';panel.style.bottom=Math.max(8,innerHeight-r.bottom+10)+'px';panel.style.maxWidth='none';panel.style.width=Math.max(150,r.width-206)+'px'}
+  else{panel.style.left=(r.left+56)+'px';panel.style.top=(r.top+46)+'px';panel.style.bottom='auto';panel.style.width='';panel.style.maxWidth=Math.max(200,r.width-70)+'px'}}
+addEventListener('resize',dockPanel);
+function refreshPanel(){if(!panel)return;dockPanel();
   const sz=h('input',{class:'mm-in',type:'number',min:5,max:300,step:5,value:aoe.size,'aria-label':'Размер в футах'});sz.onchange=()=>{aoe.size=Math.max(5,Math.min(300,Number(sz.value)||5));refreshPanel()};
   const mineHere=shapes.filter(s=>s.map===V.st().map&&(s.by===V.myId||V.isOwner));
+  const tip=aoe.origin?'Коснитесь, куда направить':(aoe.kind==='cone'||aoe.kind==='line')?'Коснитесь точки начала, потом направления (или тяните)':'Коснитесь центра области';panel.title=tip;
   panel.replaceChildren(
     h('div',{class:'mm-row'},...KINDS.map(([k,n])=>h('button',{class:'mm-b',type:'button','aria-pressed':String(aoe.kind===k),onclick:()=>{aoe.kind=k;aoe.origin=null;aoe.preview=null;refreshPanel();V.requestDraw()}},n))),
     h('div',{class:'mm-row'},...[10,15,20,30,60].map(n=>h('button',{class:'mm-b',type:'button','aria-pressed':String(aoe.size===n),onclick:()=>{aoe.size=n;refreshPanel()}},n)),sz,h('span',{},'фт')),
     h('div',{class:'mm-row'},...COLORS.map(([c,n])=>h('button',{class:'mm-c',type:'button',title:n,'aria-label':n,'aria-pressed':String(aoe.color===c),style:`background:${c}`,onclick:()=>{aoe.color=c;refreshPanel()}})),
-      h('span',{style:'color:#8e9e9b;font-size:12px'},aoe.origin?'Коснитесь, куда направить':(aoe.kind==='cone'||aoe.kind==='line')?'Коснитесь точки начала, потом направления (или тяните)':'Коснитесь центра области')),
+      h('span',{class:'mm-tip',style:'color:#8e9e9b;font-size:12px'},tip)),
+    h('button',{class:'mm-b mm-q',type:'button',title:tip,'aria-label':'Как ставить область',onclick:()=>V.toast(tip)},'?'),
     mineHere.length?h('div',{class:'mm-list'},...mineHere.map(s=>h('div',{class:'mm-li'},h('span',{},`${KNAME[s.kind]} ${s.size} фт · ${s.who||''}`),h('button',{class:'mm-b',type:'button',style:'min-height:28px;padding:3px 8px',onclick:()=>V.store.del('shapes/'+s.id)},'✕')))):null)}
-V.addTool({id:'aoe',icon:'🔥',title:'Область заклинания: конус, сфера, линия, куб',hint:'',
+V.addTool({id:'aoe',icon:'🔥',title:'Область заклинания: конус, сфера, линия, куб',get hint(){return onceHint('aoe','Коснитесь карты — область')},
   activate(){if(!panel){panel=h('div',{class:'mm-panel'});(V.overlay()||document.body).append(panel)}refreshPanel()},
   cancel(){aoe.origin=null;aoe.preview=null;closeMenu();if(panel){panel.remove();panel=null}V.requestDraw()},
   down(wx,wy,e){if(e&&e.isPrimary===false)return;closeMenu();aoe.downAt=[e?e.clientX:0,e?e.clientY:0];

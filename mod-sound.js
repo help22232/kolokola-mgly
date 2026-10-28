@@ -181,6 +181,8 @@ const css=document.createElement('style');css.textContent=`
 @keyframes msnd-pulse{50%{box-shadow:0 0 0 4px rgba(232,196,106,.15)}}
 @media (prefers-reduced-motion:reduce){.msnd-fab.off{animation:none}}
 .msnd-fab:focus-visible{outline:2px solid var(--sea,#8fd1c4)}
+/* телефон: круглая кнопка 40px в правом верхнем углу поля, без текста */
+.msnd-fab.round{width:40px;height:40px;min-height:40px;padding:0;justify-content:center;font-size:18px}
 .msnd-pop{position:fixed;z-index:21;width:min(270px,calc(100vw - 24px));background:var(--panel,#111819);border:1px solid var(--line,#243235);border-radius:12px;padding:12px;
   color:var(--ink,#e3ebe8);font:14px var(--f-body,system-ui,sans-serif);box-shadow:0 10px 30px rgba(0,0,0,.55)}
 .msnd-pop b{display:block;font-family:var(--f-display,Georgia,serif);font-size:17px;margin-bottom:4px}
@@ -196,12 +198,15 @@ const css=document.createElement('style');css.textContent=`
 document.head.append(css);
 const fab=h('button',{type:'button',class:'msnd-fab','aria-haspopup':'dialog'}),pop=h('div',{class:'msnd-pop',role:'dialog','aria-label':'Звук'});pop.hidden=true;
 (V.overlay()||document.body).append(fab,pop);
-function place(){const b=document.getElementById('board');const r=b?b.getBoundingClientRect():{left:0,bottom:innerHeight};
+function place(){const b=document.getElementById('board');const r=b?b.getBoundingClientRect():{left:0,top:0,right:innerWidth,bottom:innerHeight};
+  if((window.innerWidth||800)<600){fab.style.left=Math.round(r.right-50)+'px';fab.style.top=Math.round(r.top+10)+'px';
+    pop.style.left=Math.round(Math.max(12,r.right-10-(pop.offsetWidth||270)))+'px';pop.style.top=Math.round(r.top+56)+'px';return}
   fab.style.left=Math.round(r.left+10)+'px';fab.style.top=Math.round(r.bottom-46)+'px';
   pop.style.left=Math.round(Math.max(12,r.left+10))+'px';pop.style.top=Math.round(Math.max(12,r.bottom-56-(pop.offsetHeight||190)))+'px'}
-const bd=document.getElementById('board');if(bd&&window.ResizeObserver)new ResizeObserver(place).observe(bd);addEventListener('resize',place);addEventListener('scroll',place,true);setInterval(place,2000);
+const bd=document.getElementById('board');if(bd&&window.ResizeObserver)new ResizeObserver(place).observe(bd);addEventListener('resize',()=>{renderBtn()});addEventListener('scroll',place,true);setInterval(place,2000);
 function renderBtn(){const on=running();fab.classList.toggle('off',!on);
-  const narrow=(window.innerWidth||800)<600;fab.textContent=!on?(narrow?'🔇 Звук':'🔇 Нажмите, чтобы включить звук'):(pref.mute?'🔇':'🔊')+(!narrow&&want.track!=='silence'?' '+trackName(want.track):'');fab.title=on?'Громкость и звук':'Звук пока выключен браузером';
+  const narrow=(window.innerWidth||800)<600;fab.classList.toggle('round',narrow);fab.textContent=narrow?(!on||pref.mute?'🔇':'🔊'):!on?'🔇 Нажмите, чтобы включить звук':(pref.mute?'🔇':'🔊')+(want.track!=='silence'?' '+trackName(want.track):'');
+  fab.title=on?'Громкость и звук':'Звук выключен — нажмите, чтобы включить';fab.setAttribute('aria-label',fab.title);
   if(!pop.hidden)renderPop();place()}
 function renderPop(){const vol=h('input',{type:'range',min:0,max:100,value:Math.round(pref.vol*100),'aria-label':'Моя громкость'});
   vol.oninput=()=>{pref.vol=Number(vol.value)/100;applyPref();savePref()};

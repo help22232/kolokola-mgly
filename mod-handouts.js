@@ -35,6 +35,17 @@ const STYLES=[['letter','Письмо'],['note','Записка'],['book','Кн�
 if(!document.getElementById('hoStyles')){const css=document.createElement('style');css.id='hoStyles';css.textContent=`
 .ho-fab{position:fixed;z-index:20;left:max(56px,calc(env(safe-area-inset-left,0px) + 56px));top:calc(env(safe-area-inset-top,0px) + 56px);border:1px solid rgba(217,179,108,.6);background:rgba(35,29,16,.94);color:#d9b36c;border-radius:9px;padding:7px 11px;font:500 14px "Alegreya Sans",system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 .ho-fab:focus-visible{outline:2px solid #8fd1c4}
+/* телефон: круглая кнопка 40px под кнопкой звука, число записок — значком */
+.ho-fab.round{width:40px;height:40px;padding:0;border-radius:50%;font-size:18px;display:flex;align-items:center;justify-content:center}
+.ho-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#d9b36c;color:#111819;font:700 11px/18px system-ui,sans-serif;text-align:center}
+details.vacc{border:1px solid var(--line,#243235);border-radius:10px;background:var(--panel2,#162022);margin:8px 0}
+details.vacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px}
+details.vacc>summary::-webkit-details-marker{display:none}
+details.vacc>summary::after{content:'▸';margin-left:auto;color:var(--muted,#8e9e9b);transition:transform .15s}
+details.vacc[open]>summary::after{transform:rotate(90deg)}
+details.vacc>summary h3{margin:0;font-size:17px}
+details.vacc>.vacc-b{padding:0 12px 10px;overflow-x:hidden}
+@media (max-width:600px){details.vacc button{min-height:40px}}
 .ho-ov{position:fixed;inset:0;z-index:45;background:rgba(6,9,10,.82);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 18px) max(14px,env(safe-area-inset-right,0px)) 40px max(14px,env(safe-area-inset-left,0px))}
 .ho-sheet{position:relative;max-width:620px;margin:0 auto;padding:30px 28px 26px;border-radius:6px;color:#3b2a17;background:#efe0bd;background-image:radial-gradient(circle at 20% 15%,rgba(255,255,255,.35),transparent 55%),radial-gradient(circle at 85% 90%,rgba(120,80,30,.18),transparent 60%),linear-gradient(180deg,#f2e5c6,#e6d2a6);box-shadow:0 18px 50px rgba(0,0,0,.6),inset 0 0 60px rgba(120,80,30,.22);font-family:"Alegreya",Georgia,"Times New Roman",serif;font-size:19px;line-height:1.55}
 .ho-sheet h2{font-family:"Alegreya SC",Georgia,serif;font-weight:700;font-size:24px;margin:0 0 14px;color:#4a3015;text-wrap:balance;letter-spacing:.02em}
@@ -63,6 +74,8 @@ let shown={},drafts={},firstSnap=true,openId=null;
 // перерисовать панель Мастера, но не сбивать ввод в поля
 const refresh=()=>{const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;V.renderPane()};
 const draft={id:null,title:'',text:'',style:'letter'};
+const accordion=(key,title,kids)=>{let open=false;try{open=localStorage.getItem('vtt-acc-'+key)==='1'}catch(e){}const d=h('details',{class:'vacc'},h('summary',{},h('h3',{},title)),h('div',{class:'vacc-b'},...kids.filter(Boolean)));d.open=open;d.ontoggle=()=>{try{localStorage.setItem('vtt-acc-'+key,d.open?'1':'0')}catch(e){}};return d};
+
 const root=V.overlay()||document.body;
 const fab=h('button',{type:'button',class:'ho-fab',hidden:true,'aria-label':'Записки отряда'},'📜 Записки');
 const ov=h('div',{class:'ho-ov',hidden:true,role:'dialog','aria-modal':'true'});
@@ -72,7 +85,10 @@ ov.addEventListener('click',e=>{if(e.target===ov)closeOv()});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!ov.hidden)closeOv()});
 
 function sorted(){return Object.values(shown).sort((a,b)=>(a.ts||0)-(b.ts||0))}
-function renderFab(){const n=Object.keys(shown).length;fab.hidden=!n;fab.textContent=`📜 Записки (${n})`}
+function renderFab(){const n=Object.keys(shown).length,nw=innerWidth<600;fab.hidden=!n;fab.classList.toggle('round',nw);fab.title=`Записки отряда: ${n}`;
+  if(nw){fab.replaceChildren('📜',h('span',{class:'ho-badge'},String(n)));const c=document.getElementById('board'),r=c?c.getBoundingClientRect():{right:innerWidth,top:0};fab.style.left=Math.round(r.right-50)+'px';fab.style.top=Math.round(r.top+58)+'px'}
+  else{fab.textContent=`📜 Записки (${n})`;fab.style.left='';fab.style.top=''}}
+addEventListener('resize',renderFab);
 function closeOv(){ov.hidden=true;ov.replaceChildren();openId=null}
 function sheet(d){const kids=[h('h2',{},d.title||'Записка'),h('p',{class:'ho-txt'},d.text||'')];
   if(d.pre)kids.push(h('pre',{'aria-label':'Ноты'},d.pre));if(d.after)kids.push(h('p',{class:'ho-txt',style:'font-size:16px;opacity:.85'},d.after));
@@ -103,7 +119,7 @@ async function showAll(d,srcId){if(V.readOnly)return;
 async function takeBack(id){const d=shown[id];await V.store.del('handouts/'+id);if(d)V.post({kind:'sys',text:'📜 Мастер забрал записку: '+d.title})}
 
 /* ---------- раздел Мастера ---------- */
-V.addGmSection(()=>{const out=[h('h3',{},'Записки и материалы'),h('p',{class:'small muted'},'«Показать всем» — у игроков сразу откроется записка на весь экран, потом она останется в кнопке «📜 Записки». «Забрать» — убрать у всех.')];
+V.addGmSection(()=>{const out=[h('p',{class:'small muted'},'«Показать всем» — записка откроется у игроков. «Забрать» — убрать у всех.')];
   const box=h('div',{class:'ho-gm'});
   for(const p of PRESETS){const on=Object.values(shown).find(x=>x.src===p.id);
     box.append(h('div',{class:'ho-row'},h('span',{},h('b',{},p.title),h('span',{class:'ho-when'},p.when)),
@@ -132,6 +148,6 @@ V.addGmSection(()=>{const out=[h('h3',{},'Записки и материалы')
         await V.store.set('gm/'+id,{title:draft.title.trim().slice(0,120),text:draft.text.slice(0,8000),style:draft.style,ts:Date.now()});V.toast('Черновик сохранён — игроки его не видят');clear()}},'Сохранить черновик'),
       h('button',{class:'btn sm pri',type:'button',disabled:V.readOnly,onclick:async()=>{if(!draft.title.trim()&&!draft.text.trim())return V.toast('Напишите заголовок или текст');await showAll({title:draft.title.trim(),text:draft.text,style:draft.style});if(draft.id)await V.store.del('gm/'+draft.id);clear()}},'Показать всем'),
       draft.id||draft.title||draft.text?h('button',{class:'btn sm',type:'button',onclick:clear},'Очистить'):null)));
-  return out});
+  return accordion('ho-gm','Записки и материалы',out)});
 renderFab();
 })();
