@@ -45,8 +45,8 @@ header .sp{flex:1}
 .hint{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:rgba(17,24,25,.92);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:13px;color:var(--muted);z-index:2;max-width:calc(100% - 120px);text-align:center}
 .banner{position:absolute;left:10px;right:10px;bottom:56px;background:rgba(35,29,16,.95);border:1px solid rgba(217,179,108,.5);color:var(--brass);border-radius:8px;padding:6px 10px;font-size:13px;z-index:2}
 aside.panel{display:grid;grid-template-rows:auto minmax(0,1fr);border-left:1px solid var(--line);background:var(--panel);min-height:0;min-width:0}
-.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
-.tabs button{flex:0 0 auto;padding:10px 12px;border:0;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;font-weight:500}
+.tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tabs button{flex:1 0 auto;padding:9px 10px;border:0;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;font-weight:500}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
 .tabs button:focus-visible{outline:2px solid var(--sea);outline-offset:-2px}
 .pane{overflow:auto;padding:12px 14px 40px;min-height:0}
@@ -469,7 +469,13 @@ function canSee(t){if(isGM())return true;if(t.owner&&t.owner===myId)return true;
 /* ================= рисование ================= */
 let drawQueued=false;function requestDraw(){if(!drawQueued){drawQueued=true;requestAnimationFrame(draw)}}
 let sel=null,drag=null,tool='select',wallStart=null,hover=null;
-const canMove=t=>!readOnly&&(isOwner||(t.owner&&t.owner===myId));
+// перемещение по правилам 5e: в бою ходит только тот, чей ход, и не дальше своей скорости (Рывок — вдвое)
+const speedOf=t=>{const c=S.chars[t.id];const b=BEST[t.monster];return Number((c&&c.speed)||(b&&b.spd)||30)||30};
+const moveBudget=t=>speedOf(t)*(t.dash?2:1);
+const moveLeft=t=>Math.max(0,moveBudget(t)-(t.moved||0));
+const gridFt=(m,ax,ay,bx,by)=>Math.round(Math.max(Math.abs(bx-ax),Math.abs(by-ay))/cellPx(m))*5;
+const inTurnLock=t=>st().combat.on&&t.inCombat&&!isGM();
+const canMove=t=>!readOnly&&(isOwner||(t.owner&&t.owner===myId))&&!(inTurnLock(t)&&st().combat.turn!==t.id);
 const hpCol=k=>k<=0?'#555':k<=.5?'#e58a80':k<1?'#e8c46a':'#8fcf8a';
 function hpFrac(t){if(t.kind==='monster'){if(isOwner&&S.gm[t.id])return S.gm[t.id].hp/S.gm[t.id].hpMax;return{ok:1,hurt:.75,bloodied:.45,down:0}[t.hpState||'ok']}return t.hpMax?t.hp/t.hpMax:1}
 function drawToken(t,x,y,alpha=1){const m=mapInfo(),r=(t.size||1)*cellPx(m)/2*.9;g.save();g.globalAlpha=alpha*(t.hidden?.5:1);
@@ -502,7 +508,7 @@ function draw(){drawQueued=false;const m=mapInfo();if(lightDirty)buildLight();
   for(const t of vis){if(drag&&drag.id===t.id)continue;if(t.kind!=='monster'||isOwner||!LC||LC.amb<.95)drawLabel(t,t.x,t.y)}
   drawNotes();
   runHooks('top',m);
-  if(drag){const t=S.tokens[drag.id];if(t){const ft=Math.round(Math.max(Math.abs(drag.x-drag.sx),Math.abs(drag.y-drag.sy))/cellPx(m))*5;g.save();g.font=`700 ${15/cam.z}px "IBM Plex Mono",monospace`;g.fillStyle='#ffe6a0';g.textAlign='left';g.fillText(ft+' фт',drag.x+16/cam.z,drag.y-16/cam.z);g.restore()}}
+  if(drag){const t=S.tokens[drag.id];if(t){const ft=Math.round(Math.max(Math.abs(drag.x-drag.sx),Math.abs(drag.y-drag.sy))/cellPx(m))*5;g.save();g.font=`700 ${15/cam.z}px "IBM Plex Mono",monospace`;g.fillStyle='#ffe6a0';g.textAlign='left';const lim=inTurnLock(t)?moveLeft(t):null;g.fillStyle=lim!=null&&ft>lim?'#ff8a7a':'#ffe6a0';g.fillText(ft+' фт'+(lim!=null?` / осталось ${lim}`:''),drag.x+16/cam.z,drag.y-16/cam.z);g.restore()}}
   if(isGM()||tool!=='select'){const md=S.maps[m.id]||{};g.lineCap='round';
     for(const w of md.walls||[]){g.strokeStyle=w.d?(w.o?'rgba(120,220,120,.9)':'rgba(230,170,70,.95)'):'rgba(229,138,128,.85)';g.lineWidth=(w.d?6:4)/cam.z;g.beginPath();g.moveTo(w.x1,w.y1);g.lineTo(w.x2,w.y2);g.stroke()}
     for(const l of md.lights||[]){g.fillStyle='rgba(255,210,120,.95)';g.beginPath();g.arc(l.x,l.y,7/cam.z,0,7);g.fill();g.strokeStyle='rgba(255,210,120,.35)';g.lineWidth=1/cam.z;g.beginPath();g.arc(l.x,l.y,l.r*ftPx(m),0,7);g.stroke()}
@@ -565,8 +571,11 @@ function endPtr(e){ptrs.delete(e.pointerId);clearTimeout(longT);if(ptrs.size<2)p
   if(drag){const d=drag;drag=null;if(room)room.presence({drag:null}).catch(()=>{});
     if(di.moved){const t=S.tokens[d.id],m=mapInfo();const r=(t.size||1)*cellPx(m)/2;const [x,y]=snap(m,clamp(d.x,r,m.w-r),clamp(d.y,r,m.h-r),t.size||1);
       // игрок не проходит сквозь стены и закрытые двери (Мастер — может)
-      if(!isGM()&&blocked(d.sx,d.sy,x,y)){toast('Туда не пройти: путь преграждает стена или закрытая дверь.')}
-      else{t.x=x;t.y=y;lightDirty=true;store.update('tokens/'+d.id,{x,y})}}
+      const cost=gridFt(m,d.sx,d.sy,x,y);
+      if(inTurnLock(t)&&st().combat.turn!==t.id){toast('Сейчас не ваш ход.')}
+      else if(inTurnLock(t)&&cost>moveLeft(t)){toast(`Слишком далеко: ${cost} фт, а осталось ${moveLeft(t)} фт. Можно сделать Рывок.`)}
+      else if(!isGM()&&blocked(d.sx,d.sy,x,y)){toast('Туда не пройти: путь преграждает стена или закрытая дверь.')}
+      else{t.x=x;t.y=y;lightDirty=true;const p={x,y};if(st().combat.on&&t.inCombat)p.moved=(t.moved||0)+cost;store.update('tokens/'+d.id,p)}}
     else selectToken(d.id);requestDraw();return}
   if(!di.moved){const nt=!di.t&&noteAt(di.wx,di.wy);if(nt){openNote(nt);return}if(di.t){selectToken(di.t.id)}else{const w=doorAt(di.wx,di.wy);if(w)toggleDoor(w);else{sel=null;changed('panel')}}}requestDraw()}
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
@@ -642,7 +651,7 @@ const sgn=n=>(n>=0?'+':'')+n;
 
 /* ================= панели ================= */
 let tab='combat';
-function tabsFor(){const t=[['combat','Бой'],['hero','Герой'],['inv','Вещи'],['dice','Кубики']];for(const x of extraTabs)if(!x.gm)t.push([x.id,x.label]);if(isOwner){t.push(['gm','Мастер'],['lore','Лор']);for(const x of extraTabs)if(x.gm)t.push([x.id,x.label]);t.push(['ai','Правила · ИИ'])}return t}
+function tabsFor(){const t=[['combat','Бой'],['hero','Герой'],['inv','Вещи'],['dice','Кубики']];for(const x of extraTabs)if(!x.gm)t.push([x.id,x.label]);if(isOwner){t.push(['gm','Сцена'],['gmmap','Карта'],['gmmob','Существа'],['gmmat','Материалы']);for(const x of extraTabs)if(x.gm)t.push([x.id,x.label]);t.push(['lore','Лор'],['ai','ИИ · правила'])}return t}
 
 /* ---- прокачка: Мастер выдаёт уровень, игрок проходит мастер повышения ---- */
 async function grantLevel(ids,party){for(const id of ids)await store.update('tokens/'+id,{lvlUp:true});
@@ -677,7 +686,7 @@ const pane=$('pane');let paneDirty=false;
 pane.addEventListener('focusout',()=>setTimeout(()=>{if(paneDirty&&!pane.contains(document.activeElement))renderPane()},0));
 function changed(what){if(what!=='panel'){requestDraw()}renderHeader();renderPane()}
 function renderPane(force){const a=document.activeElement;if(!force&&a&&pane.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){paneDirty=true;return}paneDirty=false;
-  const sc=pane.scrollTop;const xt=extraTabs.find(x=>x.id===tab);const f=xt?()=>xt.render():({combat:paneCombat,hero:paneHero,inv:paneInv,dice:paneDice,gm:paneGM,lore:paneLore,ai:paneAI}[tab]||paneCombat);pane.replaceChildren(...[f()].flat());if(!force)pane.scrollTop=sc;
+  const sc=pane.scrollTop;const xt=extraTabs.find(x=>x.id===tab);const f=xt?()=>xt.render():({combat:paneCombat,hero:paneHero,inv:paneInv,dice:paneDice,gm:()=>paneGM('scene'),gmmap:()=>paneGM('map'),gmmob:()=>paneGM('mob'),gmmat:()=>paneGM('mat'),lore:paneLore,ai:paneAI}[tab]||paneCombat);pane.replaceChildren(...[f()].flat());if(!force)pane.scrollTop=sc;
   resolveNames([...tokList().map(t=>t.owner),...S.log.map(l=>l.by)])}
 /* ---- катсцены за столом: Мастер запускает, видят все ---- */
 const CUTS=[['intro','Пролог'],['c1','1. Голос из моря'],['c2','2. Отплытие «Цапли»'],['c3','3. Отлив'],['c4','4. Купол на дне'],['c5','5. Спуск в Ис-Мерин'],['c6','6. Певчая на троне'],['c7','7. Рассвет'],['c8','8. Город поднимается']];
@@ -746,16 +755,17 @@ function renderHeader(){const s=st(),m=mapInfo();$('mistCells').replaceChildren(
 function combatOrder(){return tokList().filter(t=>t.inCombat&&t.map===st().map&&(isOwner||!t.hidden)).sort((a,b)=>(b.init??-99)-(a.init??-99)||(a.name>b.name?1:-1))}
 function hpText(t){if(t.kind==='monster'){if(isOwner&&S.gm[t.id])return`${S.gm[t.id].hp}/${S.gm[t.id].hpMax} · КД ${S.gm[t.id].ac}`;return{ok:'невредим',hurt:'ранен',bloodied:'тяжело ранен',down:'повержен'}[t.hpState||'ok']}return`${t.hp}/${t.hpMax}${t.hpTemp?` +${t.hpTemp}`:''} · КД ${t.ac}`}
 async function nextTurn(){const o=combatOrder().filter(t=>t.init!=null);if(!o.length)return;const s=st();let i=o.findIndex(t=>t.id===s.combat.turn),round=s.combat.round;i++;if(i>=o.length){i=0;round++}
-  await store.set('game/state',{...s,combat:{...s.combat,turn:o[i].id,round}});const t=o[i];await post({kind:'sys',text:`Ход: ${t.name}${i===0?` · раунд ${round}`:''}`});if(t.map===st().map&&canSee(t))centerOn(t.x,t.y)}
+  await store.update('tokens/'+o[i].id,{moved:0,dash:false});await store.set('game/state',{...s,combat:{...s.combat,turn:o[i].id,round}});const t=o[i];await post({kind:'sys',text:`Ход: ${t.name}${i===0?` · раунд ${round}`:''}`});if(t.map===st().map&&canSee(t))centerOn(t.x,t.y)}
 async function startCombat(){const s=st();const here=tokList().filter(t=>t.map===s.map&&!t.hidden);
-  for(const t of here){const patch={inCombat:true};if(t.kind!=='pc'&&t.init==null){const b=BEST[t.monster]||{dex:t.kind==='npc'?3:0};patch.init=rnd(20)+(b.dex||0)}await store.update('tokens/'+t.id,patch)}
+  for(const t of here){const patch={inCombat:true,moved:0,dash:false};if(t.kind!=='pc'&&t.init==null){const b=BEST[t.monster]||{dex:t.kind==='npc'?3:0};patch.init=rnd(20)+(b.dex||0)}await store.update('tokens/'+t.id,patch)}
   await store.set('game/state',{...s,combat:{on:true,round:1,turn:null}});await post({kind:'sys',text:'⚔ Бой начался! Бросайте инициативу.'})}
 async function endCombat(){for(const t of tokList())if(t.inCombat||t.init!=null)await store.update('tokens/'+t.id,{inCombat:false,init:null});await store.set('game/state',{...st(),combat:{on:false,round:1,turn:null}});await post({kind:'sys',text:'Бой окончен.'})}
 async function rollInit(t){const c=S.chars[t.id]||{};const b=BEST[t.monster];const m=b?b.dex:mod(c.dex);const r=await rollPost(`${t.name}: инициатива`,'1d20'+sgn(m));if(r)await store.update('tokens/'+t.id,{init:r.total,inCombat:true})}
 function paneCombat(){const s=st(),o=combatOrder(),out=[];
   out.push(h('h3',{},s.combat.on?`Бой · раунд ${s.combat.round}`:'Бой'));
   if(isOwner){out.push(h('div',{class:'row'},s.combat.on?[h('button',{class:'btn pri',type:'button',onclick:nextTurn},'Следующий ход ▸'),h('button',{class:'btn bad',type:'button',onclick:endCombat},'Закончить бой')]:h('button',{class:'btn pri',type:'button',onclick:startCombat},'⚔ Начать бой на этой карте')))}
-  if(s.combat.on){const cur=S.tokens[s.combat.turn];if(cur&&cur.owner===myId&&!isOwner)out.push(h('div',{class:'card'},h('b',{},'Ваш ход!'),' ',h('button',{class:'btn pri sm',type:'button',onclick:nextTurn},'Закончить ход')));
+  if(s.combat.on){const cur=S.tokens[s.combat.turn];if(cur&&cur.owner===myId&&!isOwner)out.push(h('div',{class:'card',style:'border-color:rgba(217,179,108,.7)'},h('b',{},`Ваш ход, ${cur.name}!`),h('div',{class:'small',style:'margin:6px 0'},`Перемещение: осталось ${moveLeft(cur)} из ${moveBudget(cur)} фт${cur.dash?' (Рывок)':''}. Ещё есть действие, бонусное действие и реакция.`),h('div',{class:'row'},cur.dash?null:h('button',{class:'btn sm',type:'button',onclick:()=>{store.update('tokens/'+cur.id,{dash:true});post({kind:'sys',text:`${cur.name} совершает Рывок: +${speedOf(cur)} фт перемещения`})}},'🏃 Рывок (действие)'),h('button',{class:'btn pri',type:'button',onclick:nextTurn},'✓ Закончить ход'))));
+    else if(cur)out.push(h('p',{class:'small muted'},`Сейчас ходит: ${cur.hidden&&!isOwner?'кто-то':cur.name}${isOwner?` · перемещение ${moveLeft(cur)}/${moveBudget(cur)} фт`:''}`));
     for(const t of myTokens())if(t.inCombat&&t.init==null||(!t.inCombat&&s.combat.on&&t.map===s.map))out.push(h('div',{class:'row'},h('button',{class:'btn pri',type:'button',onclick:()=>rollInit(t)},`🎲 Инициатива: ${t.name}`)))}
   if(!o.length)out.push(h('p',{class:'muted'},s.combat.on?'Пока никого. Мастер добавляет участников кнопкой «В бой» во вкладке «Мастер».':'Бой не идёт. На карте можно свободно ходить.'));
   for(const t of o){const f=clamp(hpFrac(t),0,1);const row=h('div',{class:'ini'+(s.combat.turn===t.id?' cur':''),onclick:()=>{selectToken(t.id);if(canSee(t))centerOn(t.x,t.y)}},
@@ -769,7 +779,10 @@ function selectedCard(t){const kids=[h('b',{},t.name),h('div',{class:'small mute
   const can=isOwner||t.owner===myId;
   if(can&&!readOnly){const inp=h('input',{type:'number',min:0,value:'',placeholder:'0','aria-label':'Сколько хитов'});
     kids.push(h('div',{class:'row',style:'margin-top:6px'},inp,h('button',{class:'btn sm bad',type:'button',onclick:()=>applyHp(t.id,inp.value,'dmg')},'Урон'),h('button',{class:'btn sm',type:'button',onclick:()=>applyHp(t.id,inp.value,'heal')},'Лечение'),t.kind!=='monster'?h('button',{class:'btn sm',type:'button',onclick:()=>applyHp(t.id,inp.value,'temp')},'Временные'):null));
-    kids.push(h('div',{style:'margin-top:6px'},CONDS.map(c=>h('span',{class:'tag',role:'button',tabindex:0,'aria-pressed':String((t.cond||[]).includes(c)),onclick:()=>{const has=(t.cond||[]).includes(c);store.update('tokens/'+t.id,{cond:has?t.cond.filter(x=>x!==c):[...(t.cond||[]),c]})}},c))))}
+    // состояния накладывает Мастер; игрок сам отмечает только концентрацию
+    const toggle=c=>{const has=(t.cond||[]).includes(c);store.update('tokens/'+t.id,{cond:has?t.cond.filter(x=>x!==c):[...(t.cond||[]),c]})};
+    if(isGM())kids.push(h('div',{style:'margin-top:6px'},CONDS.map(c=>h('span',{class:'tag',role:'button',tabindex:0,'aria-pressed':String((t.cond||[]).includes(c)),onclick:()=>toggle(c)},c))));
+    else{const own=(t.cond||[]).filter(c=>c!=='Концентрация');kids.push(h('div',{style:'margin-top:6px'},h('span',{class:'tag',role:'button',tabindex:0,'aria-pressed':String((t.cond||[]).includes('Концентрация')),onclick:()=>toggle('Концентрация')},'Концентрация'),own.length?h('div',{class:'small',style:'margin-top:4px'},'Состояния (накладывает Мастер): '+own.join(', ')):null))}}
   else if((t.cond||[]).length)kids.push(h('div',{class:'small'},'Состояния: '+t.cond.join(', ')));
   return h('div',{class:'card'},kids)}
 
@@ -885,7 +898,10 @@ function paneDice(){const out=[h('h3',{},'Кубики')];
 async function clearLog(){for(let i=0;i<20;i++){const ids=await store.list('log',200);if(!ids.length)break;for(const id of ids)await store.del('log/'+id)}for(const d of S.gmlog)await store.del('gm/'+d.id)}
 
 /* ---- МАСТЕР ---- */
-function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
+// вкладки Мастера: scene — ход игры, map — карта, mob — существа, mat — материалы; разделы модулей раскладываются по заголовку
+const GM_SEC_TAB=[['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Случайные','mat'],['Записки','mat']];
+function paneGM(part='scene'){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
+  if(part==='scene'){
   const heroes=tokList().filter(t=>t.kind!=='monster'&&t.map===s.map);
   out.push(h('h3',{},'Глазами игрока'),h('select',{'aria-label':'Смотреть глазами',style:'width:100%',onchange:e=>{const v=e.target.value;setPreview(v!=='',v==='all'?null:v)}},
     h('option',{value:'',selected:!preview},'Выкл — я вижу всё'),h('option',{value:'all',selected:preview&&!previewTok},'Все герои вместе'),...heroes.map(t=>h('option',{value:t.id,selected:preview&&previewTok===t.id},t.name+(t.owner&&names[t.owner]?' · '+names[t.owner]:'')))),
@@ -898,9 +914,13 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
     :h('div',{class:'row'},h('span',{class:'small muted'},'Игра не начата — игроки в лобби.'),h('button',{class:'btn sm pri',type:'button',onclick:startGame},'▶ Начать игру')));
   out.push(h('h3',{},'Катсцены'),h('p',{class:'small muted'},'Откроются на весь экран у всех за столом, со звуком и голосом.'),
     h('div',{class:'row'},...CUTS.map(([id,n])=>h('button',{class:'btn sm',type:'button',onclick:()=>showCutAll(id)},'🎬 '+n))));
+  }
+  if(part==='mat'){
   const hs=s.handouts||[];const allMaps=[...MAPS.map(x=>[x.id,x.name]),...Object.values(S.maps).filter(x=>x.asset||x.data).map(x=>[x.id,x.name||'Своя карта'])];
   out.push(h('h3',{},'Карты отряда'),h('p',{class:'small muted'},'Отмеченные карты игроки открывают кнопкой «🗺 Карты» в шапке — в версии без секретов.'),
     h('div',{class:'grid2'},...allMaps.map(([id,n])=>h('label',{class:'row small'},h('input',{type:'checkbox',checked:hs.includes(id),onchange:e=>toggleHandout(id,e.target.checked)}),n))));
+  }
+  if(part==='map'){
   out.push(h('h3',{},'Карта'));
   const all=[...MAPS.map(x=>[x.id,x.name]),...Object.values(S.maps).filter(x=>x.asset||x.data).map(x=>[x.id,x.name||'Своя карта'])];
   out.push(h('select',{'aria-label':'Карта',style:'width:100%',onchange:e=>{store.set('game/state',{...s,map:e.target.value})}},...all.map(([id,n])=>h('option',{value:id,selected:id===s.map},n))));
@@ -918,6 +938,8 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   else if(NET){const fi=h('input',{type:'file',accept:'image/png,image/jpeg,image/webp','aria-label':'Своя карта'});
     fi.onchange=()=>{const f=fi.files[0];if(!f)return;if(f.size>3e6)return toast('Карта больше 3 МБ — сожмите картинку (JPG) и попробуйте снова.');const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=async()=>{const id='custom-'+store.newId('maps');await store.set('maps/'+id,{name:f.name.replace(/\.[^.]+$/,'').slice(0,40),data:fr.result,w:im.naturalWidth||1400,h:im.naturalHeight||1000,grid:40,amb:0});await store.set('game/state',{...st(),map:id});toast('Карта загружена и отправлена игрокам')};im.src=fr.result};fr.readAsDataURL(f)};
     out.push(h('label',{class:'f',style:'margin-top:6px'},'Загрузить свою карту (PNG, JPG, WebP до 3 МБ)',fi))}
+  }
+  if(part==='mob'){
   out.push(h('h3',{},'Добавить существо'));
   const sb=h('select',{'aria-label':'Существо',style:'flex:1'},...Object.keys(BEST).map(n=>h('option',{value:n},n))),cnt=h('input',{type:'number',value:1,min:1,max:10,'aria-label':'Сколько'}),hid=h('input',{type:'checkbox'}),avg=h('input',{type:'checkbox',checked:true});
   out.push(h('div',{class:'row'},sb,cnt),h('div',{class:'row small',style:'margin-top:4px'},h('label',{class:'row'},hid,'спрятать от игроков'),h('label',{class:'row'},avg,'средние хиты')),
@@ -926,8 +948,9 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   out.push(h('div',{class:'row',style:'margin-top:10px'},nn,h('button',{class:'btn',type:'button',onclick:()=>{if(nn.value.trim())addToken({name:nn.value.trim(),kind:'npc',hp:14,hpMax:14,ac:13})}},'+ Союзник'),h('button',{class:'btn',type:'button',onclick:()=>{if(nn.value.trim())addToken({name:nn.value.trim(),kind:'pc',hp:18,hpMax:18,ac:14})}},'+ Герой')));
   const t=sel&&S.tokens[sel];out.push(h('h3',{},'Выбранная фишка'));
   if(!t)out.push(h('p',{class:'muted'},'Щёлкните по фишке на карте.'));else out.push(gmTokenCard(t));
-  for(const f of gmSections){try{const n=f();if(n)out.push(...[n].flat())}catch(e){console.error(e)}}
-  out.push(h('p',{class:'credit'},CREDIT));return out}
+  }
+  for(const f of gmSections){try{const n=f();if(!n)continue;const arr=[n].flat().filter(Boolean);const head=(arr[0]&&arr[0].textContent)||'';const hit=GM_SEC_TAB.find(([k])=>head.startsWith(k));if((hit?hit[1]:'mat')===part)out.push(...arr)}catch(e){console.error(e)}}
+  if(part==='mat')out.push(h('p',{class:'credit'},CREDIT));return out}
 function freeSpot(){const m=mapInfo();let [cx,cy]=toWorld(VW/2,VH/2);cx=clamp(cx,40,m.w-40);cy=clamp(cy,40,m.h-40);const c=cellPx(m);for(let r=0;r<12;r++)for(let i=-r;i<=r;i++)for(let j=-r;j<=r;j++){if(Math.max(Math.abs(i),Math.abs(j))!==r)continue;const [x,y]=snap(m,cx+i*c,cy+j*c);if(x<0||y<0||x>m.w||y>m.h)continue;if(!tokList().some(t=>t.map===m.id&&Math.hypot(t.x-x,t.y-y)<c*.6))return[x,y]}return snap(m,cx,cy)}
 async function addToken(p){const id=store.newId('tokens');const [x,y]=freeSpot();await store.set('tokens/'+id,{color:COLORS[Math.floor(Math.random()*COLORS.length)],size:1,map:st().map,hpTemp:0,dv:0,light:0,owner:null,hidden:false,cond:[],inCombat:false,init:null,...p,x,y});
   if(p.kind!=='monster')await store.set('chars/'+id,{cls:'',lvl:2,str:10,dex:12,con:10,int:10,wis:10,cha:10,prof:2,speed:30,attacks:[],inv:[],gp:0,sp:0,cp:0,notes:''});sel=id;return id}
@@ -1012,7 +1035,7 @@ window.VTT={
   onChat(fn){chatHooks.push(fn)},addLogFilter(fn){logFilters.push(fn)},addLogRenderer(fn){logRenderers.push(fn)},
   watch(col,cb,q){return store.watchCol(col,cb,q)},
   overlay(){return $('modov')}};
-for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
+for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
 window.__table={S,st,cam,frame:()=>draw()};
 })();
 </script>
