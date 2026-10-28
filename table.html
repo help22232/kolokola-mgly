@@ -100,6 +100,13 @@ label.f{display:grid;gap:3px;font-size:12px;color:var(--muted)}
 .ai-a{white-space:pre-wrap;line-height:1.5}
 .ai-q{color:var(--brass);margin-top:12px;font-weight:500}
 .sep{border:0;border-top:1px solid var(--line);margin:14px 0}
+.pp{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:6px}
+.pp button{display:grid;justify-items:center;gap:3px;padding:6px 2px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);cursor:pointer;font-size:11px;color:var(--muted);line-height:1.15}
+.pp button[aria-pressed="true"]{border-color:var(--brass);color:var(--ink);background:#231d10}
+.pp .ava{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #d9b36c}
+.pp .ava img{width:30px;height:30px}
+details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
+.credit{font-size:11px;color:var(--muted);margin-top:18px}
 @media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,56fr) minmax(0,44fr)}
   aside.panel{border-left:0;border-top:1px solid var(--line)}
@@ -185,6 +192,11 @@ const BEST={
  'Водяной элементаль':{ac:14,hp:'12d10+48',avg:114,dex:2,dv:60,sz:2,atk:[['Удар',7,'2d8+4']]},
  'Разбойник-главарь (Лира)':{ac:15,hp:'10d8+20',avg:65,dex:3,dv:0,sz:1,atk:[['Скимитар ×2',5,'1d6+3'],['Кинжал',5,'1d4+3']]},
  'Вейра Тиш':{ac:15,hp:'16d8+48',avg:120,dex:3,dv:60,sz:1,atk:[['Трезубец',6,'1d6+3+2d8'],['Волна',8,'4d8']]}};
+// Портреты фишек: значки game-icons.net (CC BY 3.0), лежат в tokens/<ключ>.svg
+const MON_IC={'Бандит':'bandit','Головорез':'thug','Гигантский краб':'crab','Культист':'cultist','Фанатик культа':'fanatic','Сахуагин':'sahuagin','Жрица сахуагинов':'priestess','Мерроу':'merrow','Акула-охотник':'shark','Зомби':'zombie','Гуль':'ghoul','Колокольный Страж':'guardian','Водяной элементаль':'elemental','Разбойник-главарь (Лира)':'lira','Вейра Тиш':'veira'};
+const HERO_IC=[['h-barbarian','Варвар'],['h-knight','Рыцарь'],['h-swordwoman','Воительница'],['h-viking','Северянин'],['h-dwarf','Дварф'],['h-dwarf-king','Дварф в короне'],['h-elf-woman','Эльфийка'],['h-elf-helm','Эльф-страж'],['h-archer','Лучник'],['h-bowman','Стрелок'],['h-hood','Следопыт'],['h-rogue','Плут'],['h-assassin','Убийца в капюшоне'],['h-ninja','Тень'],['h-wizard','Волшебник'],['h-witch','Ведьма'],['h-priest','Жрец солнца'],['h-nun','Жрица'],['h-monk','Монах'],['h-orc','Полуорк'],['h-gnome','Гном'],['h-devil','Тифлинг'],['captain','Капитан'],['tamsi','Юнга']];
+const ALL_IC=[...HERO_IC,...Object.entries(MON_IC).map(([n,k])=>[k,n]),['siren','Сирена']];
+const icOf=t=>t.img||(t.kind==='monster'?MON_IC[t.monster]:(/тамси/i.test(t.name||'')?'tamsi':null));
 const CONDS=['Ослеплён','Очарован','Оглохший','Испуган','Схвачен','Недееспособен','Невидим','Парализован','Окаменел','Отравлен','Сбит с ног','Опутан','Ошеломлён','Без сознания','Концентрация'];
 const ABIL=[['str','СИЛ'],['dex','ЛОВ'],['con','ТЕЛ'],['int','ИНТ'],['wis','МДР'],['cha','ХАР']];
 const COLORS=['#c0603f','#3f7fc0','#6aa84f','#a64dc0','#c0a43f','#3fb3a6','#c03f6b','#7d8a96'];
@@ -311,7 +323,7 @@ const ftPx=m=>cellPx(m)/5;
 if(!LIVE){
   await store.set('game/state',{...DEF_STATE});
   const demo=[['Ари (пример)','pc','#3f7fc0',620,500,18,18,15,60,0,'local'],['Борин (пример)','pc','#c0603f',580,560,22,24,16,60,0,null],['Тамси','npc','#3fb3a6',660,560,21,21,14,0,0,null]];
-  for(const [n,k,c,x,y,hp,mx,ac,dv,li,ow] of demo){const id=store.newId('tokens');await store.set('tokens/'+id,{name:n,kind:k,color:c,x,y,size:1,map:'03-grot-bochek',hp,hpMax:mx,hpTemp:0,ac,dv,light:k==='npc'?20:li,owner:ow,hidden:false,cond:[],inCombat:false,init:null});
+  for(const [n,k,c,x,y,hp,mx,ac,dv,li,ow] of demo){const id=store.newId('tokens');await store.set('tokens/'+id,{name:n,kind:k,img:{'Ари (пример)':'h-elf-woman','Борин (пример)':'h-dwarf'}[n]||null,color:c,x,y,size:1,map:'03-grot-bochek',hp,hpMax:mx,hpTemp:0,ac,dv,light:k==='npc'?20:li,owner:ow,hidden:false,cond:[],inCombat:false,init:null});
     await store.set('chars/'+id,{cls:k==='pc'?'Воин':'Плут',lvl:2,str:14,dex:14,con:14,int:10,wis:12,cha:10,prof:2,speed:30,attacks:[['Длинный меч',5,'1d8+3'],['Лёгкий арбалет',4,'1d8+2']],inv:[['Зелье лечения',1,.5],['Факел',5,1]],gp:25,sp:0,cp:0,notes:''})}
   for(const [i,[x,y]] of [[0,[860,380]],[1,[940,420]]]){const id=store.newId('tokens');await store.set('tokens/'+id,{name:'Бандит '+(i+1),kind:'monster',monster:'Бандит',color:'#7d3030',x,y,size:1,map:'03-grot-bochek',hpState:'ok',dv:0,light:0,owner:null,hidden:false,cond:[],inCombat:false,init:null});await store.set('gm/mon_'+id,{hp:11,hpMax:11,ac:12,type:'Бандит'})}
 }
@@ -380,7 +392,8 @@ function buildLight(){
   if(fogOn){const v=visCv.getContext('2d');v.setTransform(1,0,0,1,0,0);v.clearRect(0,0,W,H);v.setTransform(s,0,0,s,0,0);v.fillStyle='#fff';for(const p of vpolys){pathPoly(v,p.poly);v.fill()}
     let ex=explored.get(m.id);if(!ex||ex.width!==W){ex=document.createElement('canvas');ex.width=W;ex.height=H;explored.set(m.id,ex)}
     const e=ex.getContext('2d');e.drawImage(visCv,0,0);
-    f.fillStyle='#000';f.fillRect(0,0,W,H);f.globalCompositeOperation='destination-out';f.globalAlpha=.5;f.drawImage(ex,0,0);f.globalAlpha=1;f.drawImage(visCv,0,0);f.globalCompositeOperation='source-over'}
+    if(!vpolys.length){f.fillStyle='rgba(0,0,0,.6)';f.fillRect(0,0,W,H)}else{ // героя ещё нет — карта приглушена, существ не видно
+    f.fillStyle='#000';f.fillRect(0,0,W,H);f.globalCompositeOperation='destination-out';f.globalAlpha=.5;f.drawImage(ex,0,0);f.globalAlpha=1;f.drawImage(visCv,0,0);f.globalCompositeOperation='source-over'}}
   LC={m,s,amb,lights,vpolys,fogOn,fp};lightDirty=false}
 function canSee(t){if(isGM())return true;if(t.owner&&t.owner===myId)return true;if(t.hidden)return false;if(!LC||!LC.fogOn)return true;
   if(!LC.vpolys.some(v=>inPoly(t.x,t.y,v.poly)))return false;if(LC.amb<.5)return true;
@@ -394,11 +407,13 @@ const canMove=t=>!readOnly&&(isOwner||(t.owner&&t.owner===myId));
 const hpCol=k=>k<=0?'#555':k<=.5?'#e58a80':k<1?'#e8c46a':'#8fcf8a';
 function hpFrac(t){if(t.kind==='monster'){if(isOwner&&S.gm[t.id])return S.gm[t.id].hp/S.gm[t.id].hpMax;return{ok:1,hurt:.75,bloodied:.45,down:0}[t.hpState||'ok']}return t.hpMax?t.hp/t.hpMax:1}
 function drawToken(t,x,y,alpha=1){const m=mapInfo(),r=(t.size||1)*cellPx(m)/2*.9;g.save();g.globalAlpha=alpha*(t.hidden?.5:1);
-  g.beginPath();g.arc(x,y,r,0,7);g.fillStyle=t.color||'#777';g.fill();
+  g.beginPath();g.arc(x,y,r,0,7);const bg=g.createRadialGradient(x,y-r*.3,r*.1,x,y,r);bg.addColorStop(0,t.color||'#777');bg.addColorStop(1,'#111');g.fillStyle=bg;g.fill();
+  const ic=icOf(t),ii=ic&&img('tokens/'+ic+'.svg'),hasIc=ii&&ii.complete&&ii.naturalWidth;
+  if(hasIc){g.save();g.beginPath();g.arc(x,y,r*.92,0,7);g.clip();g.drawImage(ii,x-r*.72,y-r*.72,r*1.44,r*1.44);g.restore()}
   g.lineWidth=Math.max(2,r*.12);g.strokeStyle=t.kind==='pc'?'#d9b36c':t.kind==='monster'?'#e58a80':'#8fd1c4';g.stroke();
   const cur=st().combat.on&&st().combat.turn===t.id;if(cur){g.beginPath();g.arc(x,y,r+6,0,7);g.strokeStyle='rgba(255,220,140,.9)';g.lineWidth=3;g.setLineDash([6,4]);g.stroke();g.setLineDash([])}
   if(sel===t.id){g.beginPath();g.arc(x,y,r+3,0,7);g.strokeStyle='#fff';g.lineWidth=2;g.stroke()}
-  g.fillStyle='#fff';g.font=`700 ${Math.round(r*.9)}px "Alegreya Sans",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText((t.name||'?').trim()[0].toUpperCase(),x,y+1);
+  if(!hasIc){g.fillStyle='#fff';g.font=`700 ${Math.round(r*.9)}px "Alegreya Sans",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText(((t.name||'?').trim()[0]||'?').toUpperCase(),x,y+1)}
   const f=clamp(hpFrac(t),0,1);g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x-r,y+r+3,r*2,5);g.fillStyle=hpCol(f);g.fillRect(x-r,y+r+3,r*2*f,5);
   if((t.cond||[]).length){g.fillStyle='#e58a80';for(let i=0;i<Math.min(4,t.cond.length);i++){g.beginPath();g.arc(x+r*.7-i*8,y-r*.75,3.5,0,7);g.fill()}}
   g.restore()}
@@ -565,6 +580,11 @@ function selectedCard(t){const kids=[h('b',{},t.name),h('div',{class:'small mute
   else if((t.cond||[]).length)kids.push(h('div',{class:'small'},'Состояния: '+t.cond.join(', ')));
   return h('div',{class:'card'},kids)}
 
+/* ---- портреты ---- */
+function picker(cur,color,onPick,list=HERO_IC){return h('div',{class:'pp',role:'group','aria-label':'Внешность'},...list.map(([k,n])=>h('button',{type:'button','aria-pressed':String(cur===k),title:n,onclick:e=>{for(const b of e.currentTarget.parentNode.children)b.setAttribute('aria-pressed',String(b===e.currentTarget));onPick(k)}},
+  h('span',{class:'ava',style:`background:radial-gradient(circle at 50% 35%,${color||'#555'},#111)`},h('img',{src:'tokens/'+k+'.svg',alt:''})),n)))}
+const CREDIT='Портреты фишек: game-icons.net (Lorc, Delapouite, Cathelineau, DarkZaitzev, Kier Heyl, Skoll, Carl Olsen), лицензия CC BY 3.0.';
+
 /* ---- ГЕРОЙ ---- */
 function heroFor(){if(isOwner){const t=sel&&S.tokens[sel];return t&&t.kind!=='monster'?t:null}return myToken()}
 function paneHero(){const t=heroFor();
@@ -572,6 +592,7 @@ function paneHero(){const t=heroFor();
   const c=S.chars[t.id]||{};const up=(p)=>!readOnly&&store.set('chars/'+t.id,{...c,...p});const upT=p=>!readOnly&&store.update('tokens/'+t.id,p);
   const out=[];
   out.push(h('div',{class:'row'},h('input',{type:'text',value:t.name,'aria-label':'Имя',style:'font-weight:700;flex:1',onchange:e=>upT({name:e.target.value.slice(0,40)})}),h('input',{type:'color',value:t.color||'#777','aria-label':'Цвет фишки',onchange:e=>upT({color:e.target.value})})));
+  out.push(h('details',{open:!t.img},h('summary',{},'Внешность фишки'),picker(icOf(t),t.color,k=>upT({img:k}))));
   out.push(h('div',{class:'grid3',style:'margin-top:8px'},
     h('label',{class:'f'},'Класс',h('input',{type:'text',value:c.cls||'',onchange:e=>up({cls:e.target.value})})),
     h('label',{class:'f'},'Уровень',h('input',{type:'number',min:1,max:20,value:c.lvl||2,onchange:e=>up({lvl:Number(e.target.value),prof:Math.ceil(Number(e.target.value)/4)+1})})),
@@ -609,12 +630,14 @@ async function importHero(r){const n=v=>Number(v)||0;const id=store.newId('token
     saves:arr(r.saves).map(String),attacks:arr(r.attacks).map(a=>[String(a[0]).slice(0,40),n(a[1]),String(a[2]||'1d4')]),inv:arr(r.inv).map(i=>[String(i[0]).slice(0,60),n(i[1])||1,n(i[2])]),gp:n(r.gp),sp:n(r.sp),cp:n(r.cp),
     notes:[r.bg?'Предыстория: '+r.bg:'',r.skills&&r.skills.length?'Навыки: '+arr(r.skills).join(', '):'',String(r.notes||'')].filter(Boolean).join('\n').slice(0,4000)});
   sel=id;await post({kind:'sys',text:`${r.name} присоединяется к отряду`});renderPane(true);if(m)centerOn(cx,cy)}
+let newPick='h-barbarian';
 function paneClaim(){const free=tokList().filter(t=>t.kind==='pc'&&!t.owner);const out=[h('h3',{},'Ваш герой'),h('p',{class:'muted'},'Выберите своего героя или создайте нового.')];
   for(const t of free)out.push(h('div',{class:'row',style:'margin:5px 0'},h('button',{class:'btn pri',type:'button',onclick:()=>store.update('tokens/'+t.id,{owner:myId})},'Это мой герой: '+t.name)));
   const n=h('input',{type:'text',placeholder:'Имя героя','aria-label':'Имя героя'}),cl=h('input',{type:'text',placeholder:'Воин 2','aria-label':'Класс'}),hp=h('input',{type:'number',value:18,'aria-label':'Хиты'}),ac=h('input',{type:'number',value:14,'aria-label':'КД'}),dv=h('input',{type:'number',value:0,step:30,'aria-label':'Тёмное зрение'});
   out.push(h('div',{class:'card'},h('b',{},'Новый герой'),h('div',{class:'grid2',style:'margin-top:6px'},h('label',{class:'f'},'Имя',n),h('label',{class:'f'},'Класс и уровень',cl),h('label',{class:'f'},'Хиты',hp),h('label',{class:'f'},'КД',ac),h('label',{class:'f'},'Тёмное зрение, фт',dv)),
+    h('div',{class:'small muted',style:'margin-top:8px'},'Внешность фишки'),picker(newPick,'#3f7fc0',k=>{newPick=k}),
     h('button',{class:'btn pri',type:'button',style:'margin-top:8px',disabled:readOnly||!myId,onclick:async()=>{if(!n.value.trim())return toast('Введите имя героя');const id=store.newId('tokens');const m=mapInfo();const [cx,cy]=toWorld(VW/2,VH/2);const [x,y]=snap(m,clamp(cx,0,m.w),clamp(cy,0,m.h));
-      await store.set('tokens/'+id,{name:n.value.trim().slice(0,40),kind:'pc',color:COLORS[Math.floor(Math.random()*COLORS.length)],x,y,size:1,map:st().map,hp:Number(hp.value)||10,hpMax:Number(hp.value)||10,hpTemp:0,ac:Number(ac.value)||10,dv:Number(dv.value)||0,light:0,owner:myId,hidden:false,cond:[],inCombat:false,init:null});
+      await store.set('tokens/'+id,{name:n.value.trim().slice(0,40),kind:'pc',img:newPick,color:COLORS[Math.floor(Math.random()*COLORS.length)],x,y,size:1,map:st().map,hp:Number(hp.value)||10,hpMax:Number(hp.value)||10,hpTemp:0,ac:Number(ac.value)||10,dv:Number(dv.value)||0,light:0,owner:myId,hidden:false,cond:[],inCombat:false,init:null});
       await store.set('chars/'+id,{cls:cl.value,lvl:2,str:10,dex:10,con:10,int:10,wis:10,cha:10,prof:2,speed:30,attacks:[],inv:[],gp:25,sp:0,cp:0,notes:''});sel=id;renderPane(true)}},'Создать героя')));
   let regs=[];try{regs=JSON.parse(localStorage.getItem('smgla-heroes')||'[]')}catch(e){}
   const code=h('input',{type:'text',placeholder:'Код героя из регистрации','aria-label':'Код героя',style:'flex:1'});
@@ -691,19 +714,20 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   out.push(h('div',{class:'row',style:'margin-top:10px'},nn,h('button',{class:'btn',type:'button',onclick:()=>{if(nn.value.trim())addToken({name:nn.value.trim(),kind:'npc',hp:14,hpMax:14,ac:13})}},'+ Союзник'),h('button',{class:'btn',type:'button',onclick:()=>{if(nn.value.trim())addToken({name:nn.value.trim(),kind:'pc',hp:18,hpMax:18,ac:14})}},'+ Герой')));
   const t=sel&&S.tokens[sel];out.push(h('h3',{},'Выбранная фишка'));
   if(!t)out.push(h('p',{class:'muted'},'Щёлкните по фишке на карте.'));else out.push(gmTokenCard(t));
-  return out}
+  out.push(h('p',{class:'credit'},CREDIT));return out}
 function freeSpot(){const m=mapInfo();let [cx,cy]=toWorld(VW/2,VH/2);cx=clamp(cx,40,m.w-40);cy=clamp(cy,40,m.h-40);const c=cellPx(m);for(let r=0;r<12;r++)for(let i=-r;i<=r;i++)for(let j=-r;j<=r;j++){if(Math.max(Math.abs(i),Math.abs(j))!==r)continue;const [x,y]=snap(m,cx+i*c,cy+j*c);if(x<0||y<0||x>m.w||y>m.h)continue;if(!tokList().some(t=>t.map===m.id&&Math.hypot(t.x-x,t.y-y)<c*.6))return[x,y]}return snap(m,cx,cy)}
 async function addToken(p){const id=store.newId('tokens');const [x,y]=freeSpot();await store.set('tokens/'+id,{color:COLORS[Math.floor(Math.random()*COLORS.length)],size:1,map:st().map,hpTemp:0,dv:0,light:0,owner:null,hidden:false,cond:[],inCombat:false,init:null,...p,x,y});
   if(p.kind!=='monster')await store.set('chars/'+id,{cls:'',lvl:2,str:10,dex:12,con:10,int:10,wis:10,cha:10,prof:2,speed:30,attacks:[],inv:[],gp:0,sp:0,cp:0,notes:''});sel=id;return id}
 async function addMonsters(type,n,hidden,useAvg){const b=BEST[type];const same=tokList().filter(t=>t.monster===type).length;
   for(let i=0;i<n;i++){const hp=useAvg?b.avg:Math.max(1,roll(b.hp).total);const id=store.newId('tokens');const [x,y]=freeSpot();
-    await store.set('tokens/'+id,{name:`${type.replace(/ \(.+\)/,'')}${n+same>1?' '+(same+i+1):''}`,kind:'monster',monster:type,color:'#7d3030',size:b.sz,map:st().map,x,y,hpState:'ok',dv:b.dv,light:0,owner:null,hidden,cond:[],inCombat:st().combat.on,init:st().combat.on?rnd(20)+b.dex:null});
+    await store.set('tokens/'+id,{name:`${type.replace(/ \(.+\)/,'')}${n+same>1?' '+(same+i+1):''}`,kind:'monster',monster:type,img:MON_IC[type]||null,color:'#7d3030',size:b.sz,map:st().map,x,y,hpState:'ok',dv:b.dv,light:0,owner:null,hidden,cond:[],inCombat:st().combat.on,init:st().combat.on?rnd(20)+b.dex:null});
     await store.set('gm/mon_'+id,{hp,hpMax:hp,ac:b.ac,type});if(!S.tokens[id])S.tokens[id]={id,name:type,kind:'monster',x,y,map:st().map,hidden:true}}}
 function gmTokenCard(t){const g2=S.gm[t.id];const upT=p=>store.update('tokens/'+t.id,p);const kids=[];
   kids.push(h('div',{class:'row'},h('input',{type:'text',value:t.name,'aria-label':'Имя',style:'flex:1;font-weight:700',onchange:e=>upT({name:e.target.value.slice(0,40)})}),h('input',{type:'color',value:t.color||'#777','aria-label':'Цвет',onchange:e=>upT({color:e.target.value})})));
   if(t.kind==='monster'&&g2){kids.push(h('div',{class:'grid3',style:'margin-top:6px'},h('label',{class:'f'},'Хиты',h('input',{type:'number',value:g2.hp,onchange:e=>{const hp=Number(e.target.value);store.update('gm/mon_'+t.id,{hp});upT({hpState:hpState(hp,g2.hpMax)})}})),h('label',{class:'f'},'Макс.',h('input',{type:'number',value:g2.hpMax,onchange:e=>store.update('gm/mon_'+t.id,{hpMax:Number(e.target.value)})})),h('label',{class:'f'},'КД',h('input',{type:'number',value:g2.ac,onchange:e=>store.update('gm/mon_'+t.id,{ac:Number(e.target.value)})}))));
     const b=BEST[t.monster];if(b){const tgt=h('select',{'aria-label':'Цель'},h('option',{value:''},'— цель —'),...tokList().filter(x=>x.map===t.map&&x.kind!=='monster').map(x=>h('option',{value:x.id},x.name)));
       kids.push(h('div',{class:'row',style:'margin-top:6px'},'Цель: ',tgt),...b.atk.map(a=>h('button',{class:'btn sm pri',type:'button',style:'margin:4px 4px 0 0',onclick:()=>attack(t,a,tgt.value)},`⚔ ${a[0]} ${sgn(a[1])} · ${a[2]}`)))}}
+  kids.push(h('details',{},h('summary',{},'Портрет фишки'),picker(icOf(t),t.color,k=>upT({img:k}),ALL_IC)));
   kids.push(h('div',{class:'grid3',style:'margin-top:6px'},
     h('label',{class:'f'},'Размер, клеток',h('input',{type:'number',min:1,max:4,value:t.size||1,onchange:e=>upT({size:Number(e.target.value)||1})})),
     h('label',{class:'f'},'Тёмн. зрение',h('input',{type:'number',step:30,value:t.dv||0,onchange:e=>upT({dv:Number(e.target.value)})})),
