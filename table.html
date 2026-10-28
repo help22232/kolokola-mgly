@@ -777,7 +777,7 @@ function paneCombat(){const s=st(),o=combatOrder(),out=[];
   return out}
 function selectedCard(t){const kids=[h('b',{},t.name),h('div',{class:'small muted'},({pc:'Герой',npc:'Союзник',monster:t.monster||'Существо'})[t.kind]+' · '+hpText(t))];
   const can=isOwner||t.owner===myId;
-  if(can&&!readOnly){const inp=h('input',{type:'number',min:0,value:'',placeholder:'0','aria-label':'Сколько хитов'});
+  if(isGM()&&!readOnly){const inp=h('input',{type:'number',min:0,value:'',placeholder:'0','aria-label':'Сколько хитов'});
     kids.push(h('div',{class:'row',style:'margin-top:6px'},inp,h('button',{class:'btn sm bad',type:'button',onclick:()=>applyHp(t.id,inp.value,'dmg')},'Урон'),h('button',{class:'btn sm',type:'button',onclick:()=>applyHp(t.id,inp.value,'heal')},'Лечение'),t.kind!=='monster'?h('button',{class:'btn sm',type:'button',onclick:()=>applyHp(t.id,inp.value,'temp')},'Временные'):null));
     // состояния накладывает Мастер; игрок сам отмечает только концентрацию
     const toggle=c=>{const has=(t.cond||[]).includes(c);store.update('tokens/'+t.id,{cond:has?t.cond.filter(x=>x!==c):[...(t.cond||[]),c]})};
@@ -797,7 +797,7 @@ function paneHero(){const t=heroFor();
   if(!t){if(isOwner)return[h('h3',{},'Лист героя'),h('p',{class:'muted'},'Выберите героя или союзника на карте — здесь откроется его лист.')];return paneClaim()}
   const c=S.chars[t.id]||{};const up=(p)=>!readOnly&&store.set('chars/'+t.id,{...c,...p});const upT=p=>!readOnly&&store.update('tokens/'+t.id,p);
   const out=[];
-  out.push(h('div',{class:'row'},h('input',{type:'text',value:t.name,'aria-label':'Имя',style:'font-weight:700;flex:1',onchange:e=>upT({name:e.target.value.slice(0,40)})}),h('input',{type:'color',value:t.color||'#777','aria-label':'Цвет фишки',onchange:e=>upT({color:e.target.value})})));
+  out.push(h('div',{class:'row'},h('input',{type:'text','data-ok':'1',value:t.name,'aria-label':'Имя',style:'font-weight:700;flex:1',onchange:e=>upT({name:e.target.value.slice(0,40)})}),h('input',{type:'color','data-ok':'1',value:t.color||'#777','aria-label':'Цвет фишки',onchange:e=>upT({color:e.target.value})})));
   if(t.lvlUp)out.push(h('div',{class:'card',style:'border-color:rgba(217,179,108,.6)'},h('b',{},`⚓ Новый уровень: ${(c.lvl||1)+1}!`),h('p',{class:'small muted',style:'margin:4px 0 8px'},'Мастер разрешил повышение. Пройдите шаги: хиты, новые умения, характеристики и заклинания — всё по Книге игрока 2014.'),
     h('button',{class:'btn pri',type:'button',disabled:readOnly||!(isOwner||t.owner===myId),onclick:()=>openLevelUp(t)},'Повысить уровень')));
   else if(window.LevelUp&&c.lvl)out.push(h('p',{class:'small muted'},`Уровень ${c.lvl}. Следующий — когда Мастер отметит веху${LevelUp.xpFor?` (по опыту: ${LevelUp.xpFor((c.lvl||1)+1)} оп.)`:''}.`));
@@ -807,25 +807,29 @@ function paneHero(){const t=heroFor();
     h('label',{class:'f'},'Уровень',h('input',{type:'number',min:1,max:20,value:c.lvl||2,onchange:e=>up({lvl:Number(e.target.value),prof:Math.ceil(Number(e.target.value)/4)+1})})),
     h('label',{class:'f'},'Скорость',h('input',{type:'number',value:c.speed||30,onchange:e=>up({speed:Number(e.target.value)})}))));
   out.push(h('div',{class:'grid3',style:'margin-top:8px'},
-    h('label',{class:'f'},'Хиты',h('div',{class:'row'},h('input',{type:'number',value:t.hp,onchange:e=>upT({hp:Number(e.target.value)})}),'/',h('input',{type:'number',value:t.hpMax,onchange:e=>upT({hpMax:Number(e.target.value)})}))),
+    isGM()?h('label',{class:'f'},'Хиты',h('div',{class:'row'},h('input',{type:'number',value:t.hp,onchange:e=>upT({hp:Number(e.target.value)})}),'/',h('input',{type:'number',value:t.hpMax,onchange:e=>upT({hpMax:Number(e.target.value)})})))
+      :h('div',{class:'f'},h('span',{class:'small muted'},'Хиты'),h('b',{style:'font-size:18px'},`${t.hp} / ${t.hpMax}${t.hpTemp?` +${t.hpTemp}`:''}`)),
     h('label',{class:'f'},'КД',h('input',{type:'number',value:t.ac,onchange:e=>upT({ac:Number(e.target.value)})})),
     h('label',{class:'f'},'Тёмное зрение, фт',h('input',{type:'number',value:t.dv||0,step:30,onchange:e=>upT({dv:Number(e.target.value)})}))));
   out.push(h('div',{class:'row',style:'margin-top:8px'},h('label',{class:'row small'},h('input',{type:'checkbox',checked:t.light>0,onchange:e=>upT({light:e.target.checked?20:0})}),'Несёт факел (свет 20 фт)')));
   if(t.hp<=0)out.push(h('div',{class:'card'},h('b',{},'Без сознания · спасброски от смерти'),h('div',{class:'small'},`Успехи: ${'●'.repeat(t.ds||0)}${'○'.repeat(3-(t.ds||0))} · Провалы: ${'●'.repeat(t.df||0)}${'○'.repeat(3-(t.df||0))}`),
     h('button',{class:'btn pri sm',type:'button',onclick:async()=>{const r=await rollPost(t.name+': спасбросок от смерти','1d20');if(!r)return;const v=r.total;if(v===20){await upT({hp:1,ds:0,df:0});await post({kind:'sys',text:t.name+' приходит в себя с 1 хитом!'})}else if(v>=10){const ds=(t.ds||0)+1;await upT({ds});if(ds>=3)await post({kind:'sys',text:t.name+' стабилизирован.'})}else{const df=(t.df||0)+(v===1?2:1);await upT({df});if(df>=3)await post({kind:'sys',text:t.name+' погибает…'})}}},'🎲 Спасбросок от смерти')));
   out.push(h('h3',{},'Характеристики'),h('div',{class:'stats'},ABIL.map(([k,n])=>h('div',{class:'stat'},h('b',{},n),h('input',{type:'number',value:c[k]??10,'aria-label':n,onchange:e=>up({[k]:Number(e.target.value)})}),h('div',{class:'md',role:'button',tabindex:0,title:'Бросить проверку',onclick:()=>rollPost(`${t.name}: проверка ${n}`,'1d20'+sgn(mod(c[k])),{mode:advMode})},sgn(mod(c[k])))))));
-  out.push(h('div',{class:'row small muted',style:'margin-top:6px'},'Спасброски (клик): ',...ABIL.map(([k,n])=>{const sv=(c.saves||[]).includes(k);const bonus=mod(c[k])+(sv?(c.prof||2):0);return h('span',{class:'tag','aria-pressed':String(sv),role:'button',tabindex:0,title:'Правый клик — владение',onclick:()=>rollPost(`${t.name}: спасбросок ${n}`,'1d20'+sgn(bonus),{mode:advMode}),oncontextmenu:e=>{e.preventDefault();up({saves:sv?(c.saves||[]).filter(x=>x!==k):[...(c.saves||[]),k]})}},`${n} ${sgn(bonus)}`)})));
+  out.push(h('div',{class:'row small muted',style:'margin-top:6px'},'Спасброски (клик): ',...ABIL.map(([k,n])=>{const sv=(c.saves||[]).includes(k);const bonus=mod(c[k])+(sv?(c.prof||2):0);return h('span',{class:'tag','aria-pressed':String(sv),role:'button',tabindex:0,title:'Правый клик — владение',onclick:()=>rollPost(`${t.name}: спасбросок ${n}`,'1d20'+sgn(bonus),{mode:advMode}),oncontextmenu:e=>{e.preventDefault();if(!isGM())return;up({saves:sv?(c.saves||[]).filter(x=>x!==k):[...(c.saves||[]),k]})}},`${n} ${sgn(bonus)}`)})));
   out.push(advRow());
   out.push(h('h3',{},'Атаки'));
-  const tgt=h('select',{'aria-label':'Цель'},h('option',{value:''},'— цель не выбрана —'),...tokList().filter(x=>x.map===st().map&&x.id!==t.id&&canSee(x)).map(x=>h('option',{value:x.id,selected:x.id===lastTarget},x.name)));tgt.onchange=e=>{lastTarget=e.target.value};
+  const tgt=h('select',{'data-ok':'1','aria-label':'Цель'},h('option',{value:''},'— цель не выбрана —'),...tokList().filter(x=>x.map===st().map&&x.id!==t.id&&canSee(x)).map(x=>h('option',{value:x.id,selected:x.id===lastTarget},x.name)));tgt.onchange=e=>{lastTarget=e.target.value};
   out.push(h('div',{class:'row'},'Цель: ',tgt));
   const atks=c.attacks||[];
-  atks.forEach((a,i)=>out.push(h('div',{class:'row',style:'margin:5px 0'},h('button',{class:'btn pri',type:'button',onclick:()=>attack(t,a,tgt.value)},`⚔ ${a[0]}`),h('span',{class:'small muted'},`${sgn(a[1])} · ${a[2]}`),h('button',{class:'btn sm',type:'button','aria-label':'Удалить атаку',onclick:()=>up({attacks:atks.filter((_,j)=>j!==i)})},'✕'))));
+  atks.forEach((a,i)=>out.push(h('div',{class:'row',style:'margin:5px 0'},h('button',{class:'btn pri',type:'button',onclick:()=>attack(t,a,tgt.value)},`⚔ ${a[0]}`),h('span',{class:'small muted'},`${sgn(a[1])} · ${a[2]}`),h('button',{class:'btn sm gm-edit',type:'button','aria-label':'Удалить атаку',onclick:()=>up({attacks:atks.filter((_,j)=>j!==i)})},'✕'))));
   const an=h('input',{type:'text',placeholder:'Название','aria-label':'Название атаки',style:'flex:1'}),ab=h('input',{type:'number',placeholder:'+5','aria-label':'Бонус атаки'}),ad=h('input',{type:'text',placeholder:'1d8+3','aria-label':'Урон',style:'width:80px'});
-  out.push(h('div',{class:'row'},an,ab,ad,h('button',{class:'btn sm',type:'button',onclick:()=>{if(!an.value||!roll(ad.value))return toast('Укажите название и урон, например 1d8+3');up({attacks:[...atks,[an.value.slice(0,40),Number(ab.value)||0,ad.value]]})}},'+')));
-  out.push(h('h3',{},'Заметки'),h('textarea',{rows:4,value:c.notes||'',placeholder:'Заклинания, умения, предыстория…',onchange:e=>up({notes:e.target.value.slice(0,4000)})}));
+  out.push(h('div',{class:'row gm-edit'},an,ab,ad,h('button',{class:'btn sm',type:'button',onclick:()=>{if(!an.value||!roll(ad.value))return toast('Укажите название и урон, например 1d8+3');up({attacks:[...atks,[an.value.slice(0,40),Number(ab.value)||0,ad.value]]})}},'+')));
+  out.push(h('h3',{},'Заметки'),h('textarea',{rows:4,'data-ok':'1',value:c.notes||'',placeholder:'Заклинания, умения, предыстория…',onchange:e=>up({notes:e.target.value.slice(0,4000)})}));
   for(const f of heroSections){try{const n=f(t,c);if(n)out.push(...[n].flat())}catch(e){console.error(e)}}
-  out.push(selectedCard(t));return out}
+  out.push(selectedCard(t));
+  if(!isGM())for(const n of out){if(!(n instanceof Element))continue;for(const el of n.querySelectorAll('input,select,textarea')){if(el.closest('.pp')||el.dataset.ok)continue;el.disabled=true;el.title='Меняется только через повышение уровня или Мастером'}for(const el of n.querySelectorAll('.gm-edit'))el.remove();if(n.classList.contains('gm-edit'))n.remove()}
+  if(!isGM())out.unshift(h('p',{class:'small muted'},'Характеристики, уровень, КД и атаки меняются только при повышении уровня или Мастером. Сами вы правите имя, фишку и заметки.'));
+  return out.filter(n=>!(n instanceof Element)||n.isConnected||!n.classList.contains('gm-edit'))}
 let lastTarget='',advMode=null;
 function advRow(){return h('div',{class:'row small',style:'margin-top:6px'},'Бросать:',...[[null,'обычно'],['adv','с преимуществом'],['dis','с помехой']].map(([v,n])=>h('span',{class:'tag',role:'button',tabindex:0,'aria-pressed':String(advMode===v),onclick:()=>{advMode=v;renderPane(true)}},n)))}
 async function attack(t,a,tid){const tg=tid&&S.tokens[tid];const r=roll('1d20'+sgn(a[1]),advMode);if(!r)return;const crit=r.nat===20,miss1=r.nat===1;
@@ -863,20 +867,48 @@ function paneClaim(){const free=tokList().filter(t=>t.kind==='pc'&&!t.owner);con
   return out}
 
 /* ---- ВЕЩИ ---- */
+// предметы, которые можно использовать: зелья лечат по Книге игрока 2014, остальное — с понятным эффектом
+const USABLE=[[/зелье высшего лечения/i,{heal:'10d4+20'}],[/зелье превосходного лечения/i,{heal:'8d4+8'}],[/зелье большего лечения/i,{heal:'4d4+4'}],[/зелье лечения/i,{heal:'2d4+2'}],
+  [/противояди/i,{cure:'Отравлен',note:'преимущество на спасброски от яда на 1 час'}],[/набор целителя/i,{note:'стабилизирует существо с 0 хитов без проверки Медицины (1 использование)'}],
+  [/факел/i,{torch:true,note:'горит 1 час: яркий свет 20 фт и тусклый ещё 20 фт'}],[/рацион/i,{note:'еда на 1 день'}],[/святая вода/i,{note:'метнуть: 2d6 урона излучением нежити или исчадию'}]];
+const usableOf=name=>{const u=USABLE.find(([re])=>re.test(name||''));return u?u[1]:null};
+let giveRow=null;
+async function useItem(t,i){const c=S.chars[t.id]||{};const inv=clone(c.inv||[]);const it=inv[i];if(!it||it[1]<=0)return;const u=usableOf(it[0]);if(!u)return;
+  it[1]--;await store.set('chars/'+t.id,{...c,inv:inv.filter(x=>x[1]>0)});
+  if(u.heal){const r=roll(u.heal);await post({kind:'roll',text:`${t.name} выпивает «${it[0]}»`,total:r.total,det:r.det});await applyHp(t.id,r.total,'heal');return}
+  if(u.cure&&(t.cond||[]).includes(u.cure))await store.update('tokens/'+t.id,{cond:t.cond.filter(x=>x!==u.cure)});
+  if(u.torch)await store.update('tokens/'+t.id,{light:20});
+  await post({kind:'sys',text:`${t.name} использует «${it[0]}»${u.note?': '+u.note:''}`})}
+async function giveItem(t,i,toId,qty){const c=S.chars[t.id]||{};const inv=clone(c.inv||[]);const it=inv[i];if(!it||!toId)return;qty=clamp(Math.floor(Number(qty))||1,1,it[1]);
+  const oc=S.chars[toId]||{};const oi=clone(oc.inv||[]);const ex=oi.find(x=>x[0]===it[0]);if(ex)ex[1]+=qty;else oi.push([it[0],qty,it[2]]);
+  it[1]-=qty;await store.set('chars/'+toId,{...oc,inv:oi});await store.set('chars/'+t.id,{...c,inv:inv.filter(x=>x[1]>0)});
+  await post({kind:'sys',text:`${t.name} передаёт «${it[0]}»${qty>1?' ×'+qty:''} → ${S.tokens[toId].name}`})}
+async function giveCoins(t,toId,cur,amt){const c=S.chars[t.id]||{};amt=Math.floor(Number(amt)||0);if(!toId||amt<=0)return;if((c[cur]||0)<amt)return toast('Столько монет нет.');
+  const oc=S.chars[toId]||{};await store.set('chars/'+toId,{...oc,[cur]:(oc[cur]||0)+amt});await store.set('chars/'+t.id,{...c,[cur]:(c[cur]||0)-amt});
+  await post({kind:'sys',text:`${t.name} передаёт ${amt} ${({gp:'зм',sp:'см',cp:'мм'})[cur]} → ${S.tokens[toId].name}`})}
 function paneInv(){const t=heroFor();if(!t)return[h('h3',{},'Инвентарь'),h('p',{class:'muted'},isOwner?'Выберите героя на карте.':'Сначала выберите героя во вкладке «Герой».')];
-  const c=S.chars[t.id]||{};const inv=c.inv||[];const up=p=>!readOnly&&store.set('chars/'+t.id,{...c,...p});
+  const c=S.chars[t.id]||{};const inv=c.inv||[];const gm=isGM();const up=p=>!readOnly&&store.set('chars/'+t.id,{...c,...p});const mine=gm||t.owner===myId;
   const w=inv.reduce((s,i)=>s+(Number(i[1])||0)*(Number(i[2])||0),0),cap=(c.str||10)*15;const out=[h('h3',{},'Вещи · '+t.name)];
-  out.push(h('div',{class:'grid3'},...[['gp','зм'],['sp','см'],['cp','мм']].map(([k,n])=>h('label',{class:'f'},n,h('input',{type:'number',value:c[k]||0,onchange:e=>up({[k]:Number(e.target.value)})})))));
+  out.push(h('div',{class:'grid3'},...[['gp','зм'],['sp','см'],['cp','мм']].map(([k,n])=>gm?h('label',{class:'f'},n,h('input',{type:'number',value:c[k]||0,onchange:e=>up({[k]:Number(e.target.value)})})):h('div',{class:'f'},h('span',{class:'small muted'},n),h('b',{style:'font-size:18px'},String(c[k]||0))))));
   out.push(h('p',{class:'small '+(w>cap?'':'muted')},`Вес: ${Math.round(w*10)/10} / ${cap} фунтов${w>cap?' — перегруз!':''}`));
   const others=tokList().filter(x=>x.kind!=='monster'&&x.id!==t.id);
-  out.push(h('table',{class:'inv'},h('tr',{},h('th',{},'Предмет'),h('th',{},'Кол.'),h('th',{},'Вес'),h('th',{})),...inv.map((it,i)=>h('tr',{},
-    h('td',{},h('input',{type:'text',value:it[0],style:'width:100%','aria-label':'Предмет',onchange:e=>{const n=clone(inv);n[i][0]=e.target.value;up({inv:n})}})),
-    h('td',{},h('input',{type:'number',value:it[1],style:'width:52px','aria-label':'Количество',onchange:e=>{const n=clone(inv);n[i][1]=Number(e.target.value);up({inv:n.filter(x=>x[1]>0)})}})),
-    h('td',{class:'small muted'},it[2]),
-    h('td',{},others.length?h('select',{'aria-label':'Передать',style:'width:70px',onchange:async e=>{const to=e.target.value;if(!to)return;const oc=S.chars[to]||{};const item=[it[0],1,it[2]];const oi=clone(oc.inv||[]);const ex=oi.find(x=>x[0]===it[0]);if(ex)ex[1]++;else oi.push(item);await store.set('chars/'+to,{...oc,inv:oi});const n=clone(inv);n[i][1]--;await up({inv:n.filter(x=>x[1]>0)});await post({kind:'sys',text:`${t.name} передаёт «${it[0]}» → ${S.tokens[to].name}`})}},h('option',{value:''},'Дать…'),...others.map(o=>h('option',{value:o.id},o.name))):null)))));
-  const nn=h('input',{type:'text',placeholder:'Новый предмет',list:'itemlist','aria-label':'Новый предмет',style:'flex:1'}),nq=h('input',{type:'number',value:1,'aria-label':'Количество'});
-  out.push(h('datalist',{id:'itemlist'},...ITEMS.map(i=>h('option',{value:i[0]}))));
-  out.push(h('div',{class:'row',style:'margin-top:8px'},nn,nq,h('button',{class:'btn',type:'button',onclick:()=>{if(!nn.value.trim())return;const known=ITEMS.find(i=>i[0]===nn.value);up({inv:[...inv,[nn.value.trim().slice(0,60),Number(nq.value)||1,known?known[2]:0]]})}},'Добавить')));
+  out.push(h('table',{class:'inv'},h('tr',{},h('th',{},'Предмет'),h('th',{},'Кол.'),h('th',{},'Вес'),h('th',{})),...inv.flatMap((it,i)=>{const u=usableOf(it[0]);
+    const row=h('tr',{},
+      h('td',{},gm?h('input',{type:'text',value:it[0],style:'width:100%','aria-label':'Предмет',onchange:e=>{const n=clone(inv);n[i][0]=e.target.value;up({inv:n})}}):it[0]),
+      h('td',{},gm?h('input',{type:'number',value:it[1],style:'width:52px','aria-label':'Количество',onchange:e=>{const n=clone(inv);n[i][1]=Number(e.target.value);up({inv:n.filter(x=>x[1]>0)})}}):String(it[1])),
+      h('td',{class:'small muted'},it[2]),
+      h('td',{style:'white-space:nowrap'},mine&&!readOnly&&u?h('button',{class:'btn sm pri',type:'button',title:u.heal?`Лечит ${u.heal}`:(u.note||''),onclick:()=>useItem(t,i)},u.heal?'Выпить':'Исп.'):null,
+        mine&&!readOnly&&others.length?h('button',{class:'btn sm',type:'button',onclick:()=>{giveRow=giveRow===i?null:i;renderPane(true)}},'Дать'):null,
+        mine&&!readOnly?h('button',{class:'btn sm',type:'button',title:'Выбросить 1',onclick:()=>{const n=clone(inv);n[i][1]--;up({inv:n.filter(x=>x[1]>0)})}},'✕'):null));
+    if(giveRow!==i)return[row];
+    const to=h('select',{'aria-label':'Кому'},...others.map(o=>h('option',{value:o.id},o.name))),q=h('input',{type:'number',min:1,max:it[1],value:1,'aria-label':'Сколько'});
+    return[row,h('tr',{},h('td',{colspan:4},h('div',{class:'row'},'Кому:',to,'×',q,h('button',{class:'btn sm pri',type:'button',onclick:async()=>{giveRow=null;await giveItem(t,i,to.value,q.value)}},'Передать'),h('button',{class:'btn sm',type:'button',onclick:()=>{giveRow=null;renderPane(true)}},'Отмена'))))]})));
+  if(mine&&!readOnly&&others.length){const to=h('select',{'aria-label':'Кому'},...others.map(o=>h('option',{value:o.id},o.name))),a=h('input',{type:'number',min:1,value:1,'aria-label':'Сколько'}),cu=h('select',{'aria-label':'Монеты'},h('option',{value:'gp'},'зм'),h('option',{value:'sp'},'см'),h('option',{value:'cp'},'мм'));
+    out.push(h('h3',{},'Передать монеты'),h('div',{class:'row'},a,cu,'→',to,h('button',{class:'btn sm pri',type:'button',onclick:()=>giveCoins(t,to.value,cu.value,a.value)},'Передать')))}
+  if(gm){const nn=h('input',{type:'text',placeholder:'Новый предмет',list:'itemlist','aria-label':'Новый предмет',style:'flex:1'}),nq=h('input',{type:'number',value:1,'aria-label':'Количество'});
+    out.push(h('datalist',{id:'itemlist'},...ITEMS.map(i=>h('option',{value:i[0]}))));
+    out.push(h('div',{class:'row',style:'margin-top:8px'},nn,nq,h('button',{class:'btn',type:'button',onclick:()=>{if(!nn.value.trim())return;const known=ITEMS.find(i=>i[0]===nn.value);up({inv:[...inv,[nn.value.trim().slice(0,60),Number(nq.value)||1,known?known[2]:0]]})}},'Добавить')))}
+  else out.push(h('p',{class:'small muted'},'Новые вещи и монеты выдаёт Мастер: покупки, добыча, награды. Зелья пейте кнопкой «Выпить».'));
   return out}
 
 /* ---- КУБИКИ И ЧАТ ---- */

@@ -53,7 +53,8 @@ V.onDraw('map',(g,m)=>{for(const t of V.tokList()){const a=t.aura;if(t.map!==m.i
   const R=tokR(t,m)+a.r*V.ftPx(m),col=/^#[0-9a-f]{6}$/i.test(a.color||'')?a.color:'#d9b36c';
   g.beginPath();g.arc(t.x,t.y,R,0,7);g.globalAlpha=.16;g.fillStyle=col;g.fill();g.globalAlpha=.7;g.lineWidth=2/V.cam.z;g.strokeStyle=col;g.setLineDash([8/V.cam.z,6/V.cam.z]);g.stroke();g.setLineDash([]);g.globalAlpha=1}});
 const PRESETS=[['Аура паладина',10,'#e8c46a'],['Свет факела',20,'#ffb35c'],['Тьма',15,'#5b3d8a'],['Святая аура',30,'#8fd1c4']];
-function auraEditor(t){const can=V.isOwner||t.owner===V.myId;const a=t.aura||{};
+function auraEditor(t){const can=V.isGM();// ауры ставит только Мастер
+const a=t.aura||{};
   const r=h('input',{type:'number',min:0,max:120,step:5,value:a.r||'','aria-label':'Радиус ауры, фт',placeholder:'фт'}),col=h('input',{type:'color',value:/^#[0-9a-f]{6}$/i.test(a.color||'')?a.color:'#d9b36c','aria-label':'Цвет ауры'});
   const save=(rr,cc)=>V.store.update('tokens/'+t.id,{aura:rr>0?{r:Math.min(120,Math.round(rr)),color:cc}:null});
   return h('div',{class:'card mv-aura'},h('b',{},'Аура'+(a.r?` · ${a.r} фт`:'')),
