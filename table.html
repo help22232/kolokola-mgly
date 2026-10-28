@@ -179,6 +179,7 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
         <button type="button" class="gmo" data-tool="door" title="Дверь (два клика)">🚪</button>
         <button type="button" class="gmo" data-tool="light" title="Источник света (клик)">💡</button>
         <button type="button" class="gmo" data-tool="reveal" title="Открыть игрокам скрытое место (тайный ход, дверь, тайник)">🗝</button>
+        <button type="button" class="gmo" data-tool="dark" title="Магическая тьма (клик — круг, клик по нему — убрать)">🌑</button>
         <button type="button" class="gmo" data-tool="erase" title="Ластик: стены, двери, свет, открытые места">⌫</button>
         <button type="button" class="gmo" id="btnPreview" title="Смотреть как игроки" aria-pressed="false">👁</button>
       </div>
@@ -212,12 +213,12 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 "use strict";
 /* ================= справочники ================= */
 const MAPS=[
-  {id:'01-region',name:'Бухта Солёной Мглы',src:'maps/01-region.svg',w:1400,h:1000,grid:0,amb:0},
-  {id:'02-solthaven',name:'Солтхейвен',src:'maps/02-solthaven.svg',w:1400,h:1000,grid:0,amb:.45},
+  {id:'01-region',outdoor:1,name:'Бухта Солёной Мглы',src:'maps/01-region.svg',w:1400,h:1000,grid:0,amb:0},
+  {id:'02-solthaven',outdoor:1,name:'Солтхейвен',src:'maps/02-solthaven.svg',w:1400,h:1000,grid:0,amb:.45},
   {id:'03-grot-bochek',name:'Грот Бочек',src:'maps/03-grot-bochek.svg',w:1440,h:1210,grid:40,amb:.85},
-  {id:'04-mayak',name:'Маяк Седой Бран',src:'maps/04-mayak.svg',w:1440,h:1000,grid:40,amb:.6},
-  {id:'05-paluba-tsapli',name:'Палуба «Цапли»',src:'maps/05-paluba-tsapli.svg',w:1440,h:760,grid:40,amb:.1},
-  {id:'06-monastyr-otliva',name:'Монастырь Отлива',src:'maps/06-monastyr-otliva.svg',w:1600,h:1200,grid:40,amb:.25},
+  {id:'04-mayak',outdoor:1,name:'Маяк Седой Бран',src:'maps/04-mayak.svg',w:1440,h:1000,grid:40,amb:.6},
+  {id:'05-paluba-tsapli',outdoor:1,name:'Палуба «Цапли»',src:'maps/05-paluba-tsapli.svg',w:1440,h:760,grid:40,amb:.1},
+  {id:'06-monastyr-otliva',outdoor:1,name:'Монастырь Отлива',src:'maps/06-monastyr-otliva.svg',w:1600,h:1200,grid:40,amb:.25},
   {id:'07-sklep-kolokola',name:'Склеп Серебряного колокола',src:'maps/07-sklep-kolokola.svg',w:1200,h:960,grid:40,amb:.9},
   {id:'08-is-merin',name:'Ис-Мерин',src:'maps/08-is-merin.svg',w:1600,h:1200,grid:40,amb:.5},
   {id:'09-kolokolnaya-bashnya',name:'Колокольная башня',src:'maps/09-kolokolnaya-bashnya.svg',w:1440,h:1080,grid:40,amb:.65},
@@ -370,7 +371,7 @@ function showBanner(t){$('banner').textContent=t;$('banner').hidden=!t}
 
 /* ================= состояние ================= */
 const S={state:null,tokens:{},maps:{},chars:{},log:[],gm:{},gmlog:[],ready:{},notes:{},gmnotes:{}};
-const DEF_STATE={map:'03-grot-bochek',combat:{on:false,round:1,turn:null},fog:true,grid:true,started:false,handouts:[],mist:1};
+const DEF_STATE={time:'night',map:'03-grot-bochek',combat:{on:false,round:1,turn:null},fog:true,grid:true,started:false,handouts:[],mist:1};
 const st=()=>merge(DEF_STATE,S.state||{});
 const tokList=()=>Object.values(S.tokens);
 function mapInfo(id=st().map){const b=MAPS.find(m=>m.id===id);const d=S.maps[id]||{};
@@ -429,7 +430,10 @@ const imgs={};function img(src){if(!imgs[src]){const i=new Image();i.onload=()=>
 let lightDirty=true;const explored=new Map();let LC=null; // кэш: polys зрителей, источники света
 const LS=m=>Math.min(1,1400/Math.max(m.w,m.h));
 let darkCv=document.createElement('canvas'),fogCv=document.createElement('canvas'),visCv=document.createElement('canvas');
-function segsFor(m){const md=S.maps[m.id]||{};const s=[];for(const w of md.walls||[]){if(w.d&&w.o)continue;s.push(w)}
+const defWalls={},defWallsLoading={};
+function loadDefWalls(id){if(defWalls[id]||defWallsLoading[id]||!MAPS.some(x=>x.id===id))return;defWallsLoading[id]=1;fetch('maps/walls/'+id+'.json').then(r=>r.ok?r.json():{walls:[]}).then(j=>{defWalls[id]=Array.isArray(j.walls)?j.walls:[];lightDirty=true;requestDraw()}).catch(()=>{defWalls[id]=[]})}
+function wallsOf(id=st().map){const md=S.maps[id];if(md&&Array.isArray(md.walls))return md.walls;loadDefWalls(id);return defWalls[id]||[]}
+function segsFor(m){const s=[];for(const w of wallsOf(m.id)){if(w.d&&w.o)continue;s.push(w)}
   s.push({x1:0,y1:0,x2:m.w,y2:0},{x1:m.w,y1:0,x2:m.w,y2:m.h},{x1:m.w,y1:m.h,x2:0,y2:m.h},{x1:0,y1:m.h,x2:0,y2:0});return s}
 function raySeg(px,py,dx,dy,s){const sx=s.x2-s.x1,sy=s.y2-s.y1,den=dx*sy-dy*sx;if(Math.abs(den)<1e-9)return Infinity;const ax=s.x1-px,ay=s.y1-py,t=(ax*sy-ay*sx)/den,u=(ax*dy-ay*dx)/den;return(t>=0&&u>=-1e-9&&u<=1+1e-9)?t:Infinity}
 function visPoly(px,py,segs){const ang=[];for(const s of segs){for(const [x,y] of [[s.x1,s.y1],[s.x2,s.y2]]){const a=Math.atan2(y-py,x-px);ang.push(a-1e-4,a,a+1e-4)}}
@@ -441,27 +445,35 @@ let previewTok=null; // Мастер смотрит глазами одного 
 function setPreview(on,tid){preview=!!on;previewTok=on?(tid||null):null;$('btnPreview').setAttribute('aria-pressed',String(preview));lightDirty=true;changed()}
 function viewerTokens(){if(isGM())return null;if(preview&&previewTok&&S.tokens[previewTok])return[S.tokens[previewTok]];const here=tokList().filter(t=>t.map===st().map);const mine=here.filter(t=>t.owner&&t.owner===myId);return mine.length?mine:here.filter(t=>t.kind==='pc')}
 function lightSources(m){const L=[];for(const t of tokList())if(t.map===m.id&&t.light>0&&(!t.hidden||isGM()))L.push({x:t.x,y:t.y,r:t.light});for(const l of (S.maps[m.id]||{}).lights||[])L.push({x:l.x,y:l.y,r:l.r});return L}
+const TIMES={dawn:['Рассвет','🌅',.35],day:['День','☀️',0],dusk:['Сумерки','🌆',.5],night:['Ночь','🌙',.82],deep:['Глухая ночь','🌑',.95]};
+function effAmb(m){const md=S.maps[m.id]||{};if(md.amb!=null)return md.amb;if(m.outdoor){const t=TIMES[st().time]||TIMES.night;return t[2]}return m.amb}
+// память разведанного у игрока переживает перезагрузку страницы
+const expKey=id=>'smgla-exp-'+(typeof ROOM!=='undefined'?ROOM:'art')+'-'+id;let expSaveT=0;
+function saveExplored(id,cv){clearTimeout(expSaveT);expSaveT=setTimeout(()=>{try{localStorage.setItem(expKey(id),cv.toDataURL('image/webp',.5))}catch(e){}},2500)}
+function loadExplored(id,cv){try{const u=localStorage.getItem(expKey(id));if(!u)return;const im=new Image();im.onload=()=>{cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);lightDirty=true;requestDraw()};im.src=u}catch(e){}}
 function buildLight(){
   const m=mapInfo(),s=LS(m),W=Math.ceil(m.w*s),H=Math.ceil(m.h*s),segs=segsFor(m),fp=ftPx(m);
   for(const c of[darkCv,fogCv,visCv])if(c.width!==W||c.height!==H){c.width=W;c.height=H}
-  const amb=(S.maps[m.id]&&S.maps[m.id].amb!=null)?S.maps[m.id].amb:m.amb;
+  const amb=effAmb(m);
   const viewers=viewerTokens();const lights=lightSources(m).map(l=>({...l,poly:visPoly(l.x,l.y,segs)}));
-  const vpolys=(viewers||[]).map(v=>({t:v,poly:visPoly(v.x,v.y,segs)}));
+  const vpolys=(viewers||[]).filter(v=>!has(v,'Ослеплён')).map(v=>({t:v,poly:visPoly(v.x,v.y,segs)}));
   const d=darkCv.getContext('2d');d.setTransform(1,0,0,1,0,0);d.clearRect(0,0,W,H);
   const showAmb=isGM()?amb*.45:amb;d.globalCompositeOperation='source-over';d.fillStyle=`rgba(0,0,0,${showAmb})`;d.fillRect(0,0,W,H);
   d.globalCompositeOperation='destination-out';d.setTransform(s,0,0,s,0,0);
   for(const l of lights){const R=l.r*fp*2,Rb=l.r*fp;d.save();pathPoly(d,l.poly);d.clip();const gr=d.createRadialGradient(l.x,l.y,0,l.x,l.y,R);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(Rb/R,'rgba(0,0,0,1)');gr.addColorStop(Math.min(1,Rb/R+.05),'rgba(0,0,0,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');d.fillStyle=gr;d.fillRect(l.x-R,l.y-R,R*2,R*2);d.restore()}
   for(const v of vpolys){const dv=(v.t.dv||0)*fp;if(dv<=0)continue;d.save();pathPoly(d,v.poly);d.clip();const gr=d.createRadialGradient(v.t.x,v.t.y,0,v.t.x,v.t.y,dv);gr.addColorStop(0,'rgba(0,0,0,.72)');gr.addColorStop(.85,'rgba(0,0,0,.6)');gr.addColorStop(1,'rgba(0,0,0,0)');d.fillStyle=gr;d.fillRect(v.t.x-dv,v.t.y-dv,dv*2,dv*2);d.restore()}
   d.globalCompositeOperation='source-over';
+  for(const z of (S.maps[m.id]||{}).darks||[]){d.fillStyle=isGM()?'rgba(20,0,40,.55)':'#000';d.beginPath();d.arc(z.x,z.y,z.r*fp,0,7);d.fill()}
   const f=fogCv.getContext('2d');f.setTransform(1,0,0,1,0,0);f.clearRect(0,0,W,H);
   const fogOn=st().fog&&viewers;
   if(fogOn){const v=visCv.getContext('2d');v.setTransform(1,0,0,1,0,0);v.clearRect(0,0,W,H);v.setTransform(s,0,0,s,0,0);v.fillStyle='#fff';for(const p of vpolys){pathPoly(v,p.poly);v.fill()}
-    let ex=explored.get(m.id);if(!ex||ex.width!==W){ex=document.createElement('canvas');ex.width=W;ex.height=H;explored.set(m.id,ex)}
-    const e=ex.getContext('2d');e.drawImage(visCv,0,0);
+    let ex=explored.get(m.id);if(!ex||ex.width!==W){ex=document.createElement('canvas');ex.width=W;ex.height=H;explored.set(m.id,ex);loadExplored(m.id,ex)}
+    const e=ex.getContext('2d');e.drawImage(visCv,0,0);saveExplored(m.id,ex);
     if(!vpolys.length){f.fillStyle='rgba(0,0,0,.6)';f.fillRect(0,0,W,H)}else{ // героя ещё нет — карта приглушена, существ не видно
     f.fillStyle='#000';f.fillRect(0,0,W,H);f.globalCompositeOperation='destination-out';f.globalAlpha=.5;f.drawImage(ex,0,0);f.globalAlpha=1;f.drawImage(visCv,0,0);f.globalCompositeOperation='source-over'}}
   LC={m,s,amb,lights,vpolys,fogOn,fp};lightDirty=false}
-function canSee(t){if(isGM())return true;if(t.owner&&t.owner===myId)return true;if(t.hidden)return false;if(!LC||!LC.fogOn)return true;
+function canSee(t){if(isGM())return true;if(t.owner&&t.owner===myId)return true;if(t.hidden||has(t,'Невидим'))return false;
+  if(((S.maps[st().map]||{}).darks||[]).some(z=>Math.hypot(t.x-z.x,t.y-z.y)<=z.r*ftPx(mapInfo())))return false;if(!LC||!LC.fogOn)return true;
   if(!LC.vpolys.some(v=>inPoly(t.x,t.y,v.poly)))return false;if(LC.amb<.5)return true;
   if(LC.lights.some(l=>Math.hypot(t.x-l.x,t.y-l.y)<=l.r*LC.fp*2&&inPoly(t.x,t.y,l.poly)))return true;
   return LC.vpolys.some(v=>(v.t.dv||0)>0&&Math.hypot(t.x-v.t.x,t.y-v.t.y)<=v.t.dv*LC.fp&&inPoly(t.x,t.y,v.poly))}
@@ -472,10 +484,14 @@ let sel=null,drag=null,tool='select',wallStart=null,hover=null;
 // перемещение по правилам 5e: в бою ходит только тот, чей ход, и не дальше своей скорости (Рывок — вдвое)
 const speedOf=t=>{const c=S.chars[t.id];const b=BEST[t.monster];return Number((c&&c.speed)||(b&&b.spd)||30)||30};
 const moveBudget=t=>speedOf(t)*(t.dash?2:1);
-const moveLeft=t=>Math.max(0,moveBudget(t)-(t.moved||0));
+const has=(t,c)=>!!t&&(t.cond||[]).includes(c);
+const NO_MOVE=['Схвачен','Опутан','Парализован','Окаменел','Ошеломлён','Без сознания','Недееспособен'];
+function checkMode(t,abil){const dis=has(t,'Отравлен')||has(t,'Испуган')||(abil==='dex'&&has(t,'Опутан'));if(advMode==='adv')return dis?null:'adv';return dis||advMode==='dis'?'dis':null}
+const AUTO_FAIL=['Парализован','Ошеломлён','Без сознания','Окаменел'];
+const moveLeft=t=>NO_MOVE.some(c=>has(t,c))?0:Math.max(0,moveBudget(t)-(t.moved||0));
 const gridFt=(m,ax,ay,bx,by)=>Math.round(Math.max(Math.abs(bx-ax),Math.abs(by-ay))/cellPx(m))*5;
 const inTurnLock=t=>st().combat.on&&t.inCombat&&!isGM();
-const canMove=t=>!readOnly&&(isOwner||(t.owner&&t.owner===myId))&&!(inTurnLock(t)&&st().combat.turn!==t.id);
+const canMove=t=>!readOnly&&(isOwner||(t.owner&&t.owner===myId))&&!(inTurnLock(t)&&st().combat.turn!==t.id)&&(isGM()||!NO_MOVE.some(c=>has(t,c)));
 const hpCol=k=>k<=0?'#555':k<=.5?'#e58a80':k<1?'#e8c46a':'#8fcf8a';
 function hpFrac(t){if(t.kind==='monster'){if(isOwner&&S.gm[t.id])return S.gm[t.id].hp/S.gm[t.id].hpMax;return{ok:1,hurt:.75,bloodied:.45,down:0}[t.hpState||'ok']}return t.hpMax?t.hp/t.hpMax:1}
 function drawToken(t,x,y,alpha=1){const m=mapInfo(),r=(t.size||1)*cellPx(m)/2*.9;g.save();g.globalAlpha=alpha*(t.hidden?.5:1);
@@ -510,7 +526,7 @@ function draw(){drawQueued=false;const m=mapInfo();if(lightDirty)buildLight();
   runHooks('top',m);
   if(drag){const t=S.tokens[drag.id];if(t){const ft=Math.round(Math.max(Math.abs(drag.x-drag.sx),Math.abs(drag.y-drag.sy))/cellPx(m))*5;g.save();g.font=`700 ${15/cam.z}px "IBM Plex Mono",monospace`;g.fillStyle='#ffe6a0';g.textAlign='left';const lim=inTurnLock(t)?moveLeft(t):null;g.fillStyle=lim!=null&&ft>lim?'#ff8a7a':'#ffe6a0';g.fillText(ft+' фт'+(lim!=null?` / осталось ${lim}`:''),drag.x+16/cam.z,drag.y-16/cam.z);g.restore()}}
   if(isGM()||tool!=='select'){const md=S.maps[m.id]||{};g.lineCap='round';
-    for(const w of md.walls||[]){g.strokeStyle=w.d?(w.o?'rgba(120,220,120,.9)':'rgba(230,170,70,.95)'):'rgba(229,138,128,.85)';g.lineWidth=(w.d?6:4)/cam.z;g.beginPath();g.moveTo(w.x1,w.y1);g.lineTo(w.x2,w.y2);g.stroke()}
+    for(const w of wallsOf(m.id)){g.strokeStyle=w.d?(w.o?'rgba(120,220,120,.9)':'rgba(230,170,70,.95)'):'rgba(229,138,128,.85)';g.lineWidth=(w.d?6:4)/cam.z;g.beginPath();g.moveTo(w.x1,w.y1);g.lineTo(w.x2,w.y2);g.stroke()}
     for(const l of md.lights||[]){g.fillStyle='rgba(255,210,120,.95)';g.beginPath();g.arc(l.x,l.y,7/cam.z,0,7);g.fill();g.strokeStyle='rgba(255,210,120,.35)';g.lineWidth=1/cam.z;g.beginPath();g.arc(l.x,l.y,l.r*ftPx(m),0,7);g.stroke()}
     g.setLineDash([8/cam.z,6/cam.z]);g.strokeStyle='rgba(143,209,196,.9)';g.lineWidth=2/cam.z;for(const r of md.reveals||[])g.strokeRect(r.x,r.y,r.w,r.h);g.setLineDash([]);
     if(wallStart&&hover){g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=3/cam.z;if(tool==='reveal'){g.strokeRect(Math.min(wallStart[0],hover[0]),Math.min(wallStart[1],hover[1]),Math.abs(hover[0]-wallStart[0]),Math.abs(hover[1]-wallStart[1]))}else{g.beginPath();g.moveTo(wallStart[0],wallStart[1]);g.lineTo(hover[0],hover[1]);g.stroke()}}}
@@ -548,7 +564,7 @@ const snapV=(m,x,y)=>{if(!m.grid)return[x,y];const c=m.grid,vx=Math.round(x/c)*c
 function hitToken(wx,wy){const m=mapInfo();const arr=tokList().filter(t=>t.map===m.id&&canSee(t));for(let i=arr.length-1;i>=0;i--){const t=arr[i];if(Math.hypot(wx-t.x,wy-t.y)<=(t.size||1)*cellPx(m)/2)return t}return null}
 function segX(ax,ay,bx,by,w){const d=(bx-ax)*(w.y2-w.y1)-(by-ay)*(w.x2-w.x1);if(Math.abs(d)<1e-9)return false;
   const t=((w.x1-ax)*(w.y2-w.y1)-(w.y1-ay)*(w.x2-w.x1))/d,u=((w.x1-ax)*(by-ay)-(w.y1-ay)*(bx-ax))/d;return t>.001&&t<.999&&u>=0&&u<=1}
-function blocked(ax,ay,bx,by){const md=S.maps[st().map]||{};return(md.walls||[]).some(w=>!(w.d&&w.o)&&segX(ax,ay,bx,by,w))}
+function blocked(ax,ay,bx,by){return wallsOf().some(w=>!(w.d&&w.o)&&segX(ax,ay,bx,by,w))}
 function segDist(px,py,w){const dx=w.x2-w.x1,dy=w.y2-w.y1,l=dx*dx+dy*dy||1;const k=clamp(((px-w.x1)*dx+(py-w.y1)*dy)/l,0,1);return Math.hypot(px-(w.x1+dx*k),py-(w.y1+dy*k))}
 function sxy(e){const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
 cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);const [sx,sy]=sxy(e);ptrs.set(e.pointerId,[sx,sy]);
@@ -586,29 +602,31 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'){wallStart=null;const 
 $('zoomIn').onclick=()=>zoomAt(1.25,VW/2,VH/2);$('zoomOut').onclick=()=>zoomAt(.8,VW/2,VH/2);
 $('zoomMe').onclick=()=>{const t=myToken()||(sel&&S.tokens[sel]);if(t&&t.map===st().map){if(cam.z<1)cam.z=1;centerOn(t.x,t.y)}else fitMap()};
 function ping(x,y){if(room)room.emit('ping',{x:Math.round(x),y:Math.round(y),map:st().map}).catch(()=>{});else{pings.push({x,y,t:performance.now()});requestDraw()}}
-function doorAt(x,y){const md=S.maps[st().map]||{};return(md.walls||[]).find(w=>w.d&&segDist(x,y,w)<10/cam.z+4)}
-function toggleDoor(w){if(readOnly)return;const md=S.maps[st().map]||{};const walls=(md.walls||[]).map(q=>q===w?{...q,o:q.o?0:1}:q);saveMap({walls})}
+function doorAt(x,y){return wallsOf().find(w=>w.d&&segDist(x,y,w)<10/cam.z+4)}
+function toggleDoor(w){if(readOnly)return;const walls=wallsOf().map(q=>q===w?{...q,o:q.o?0:1}:q);saveMap({walls})}
 async function saveMap(patch){const id=st().map;const cur=S.maps[id]||{};const next={...cur,...patch};delete next.id;S.maps[id]={...next,id};lightDirty=true;requestDraw();await store.set('maps/'+id,next)}
 function toolClick(wx,wy){const m=mapInfo(),md=S.maps[m.id]||{};
   if(tool==='wall'||tool==='door'){const p=snapV(m,wx,wy);if(!wallStart){wallStart=p;requestDraw();return}
     const w={x1:Math.round(wallStart[0]),y1:Math.round(wallStart[1]),x2:Math.round(p[0]),y2:Math.round(p[1])};if(tool==='door'){w.d=1;w.o=0;wallStart=null}else wallStart=p;
-    if(Math.hypot(w.x2-w.x1,w.y2-w.y1)>3)saveMap({walls:[...(md.walls||[]),w]});return}
+    if(Math.hypot(w.x2-w.x1,w.y2-w.y1)>3)saveMap({walls:[...wallsOf(m.id),w]});return}
+  if(tool==='dark'){const hit=(md.darks||[]).find(z=>Math.hypot(z.x-wx,z.y-wy)<z.r*ftPx(m));if(hit){saveMap({darks:md.darks.filter(z=>z!==hit)});return}
+    saveMap({darks:[...(md.darks||[]),{x:Math.round(wx),y:Math.round(wy),r:15}]});return}
   if(tool==='light'){const hit=(md.lights||[]).find(l=>Math.hypot(l.x-wx,l.y-wy)<14/cam.z);if(hit){saveMap({lights:md.lights.filter(l=>l!==hit)});return}
     saveMap({lights:[...(md.lights||[]),{x:Math.round(wx),y:Math.round(wy),r:Number(lightR)||20}]});return}
   if(tool==='reveal'){const p=snapV(m,wx,wy);if(!wallStart){wallStart=p;requestDraw();return}
     const r={x:Math.round(Math.min(wallStart[0],p[0])),y:Math.round(Math.min(wallStart[1],p[1])),w:Math.round(Math.abs(p[0]-wallStart[0])),h:Math.round(Math.abs(p[1]-wallStart[1]))};wallStart=null;
     if(r.w>8&&r.h>8){saveMap({reveals:[...(md.reveals||[]),r]});post({kind:'sys',text:'🗝 Мастер открыл скрытое место на карте'})}else requestDraw();return}
-  if(tool==='erase'){const rv=(md.reveals||[]).find(r=>wx>=r.x&&wx<=r.x+r.w&&wy>=r.y&&wy<=r.y+r.h&&!(md.walls||[]).some(w=>segDist(wx,wy,w)<12/cam.z));
+  if(tool==='erase'){const rv=(md.reveals||[]).find(r=>wx>=r.x&&wx<=r.x+r.w&&wy>=r.y&&wy<=r.y+r.h&&!wallsOf(m.id).some(w=>segDist(wx,wy,w)<12/cam.z));
     if(rv&&!(md.lights||[]).some(l=>Math.hypot(l.x-wx,l.y-wy)<14/cam.z)){saveMap({reveals:md.reveals.filter(r=>r!==rv)});return}
     const lt=(md.lights||[]).find(l=>Math.hypot(l.x-wx,l.y-wy)<14/cam.z);if(lt){saveMap({lights:md.lights.filter(l=>l!==lt)});return}
-    let best=null,bd=12/cam.z;for(const w of md.walls||[]){const d=segDist(wx,wy,w);if(d<bd){bd=d;best=w}}if(best)saveMap({walls:md.walls.filter(w=>w!==best)})}}
+    let best=null,bd=12/cam.z;for(const w of wallsOf(m.id)){const d=segDist(wx,wy,w);if(d<bd){bd=d;best=w}}if(best)saveMap({walls:wallsOf(m.id).filter(w=>w!==best)})}}
 let lightR=20;
 $('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.id==='btnPreview'){setPreview(!preview,null);return}
   {const prev=modTool();if(prev&&prev.cancel)try{prev.cancel()}catch(e){}}
   tool=b.dataset.tool;wallStart=null;for(const x of $('tools').querySelectorAll('[data-tool]'))x.setAttribute('aria-pressed',String(x===b));cv.classList.toggle('tool',tool!=='select');
   const ptn=modTool();if(ptn&&ptn.activate)try{ptn.activate()}catch(e){console.error(e)}
-  const H=ptn?(ptn.hint||''):{select:'',wall:'Стены: щёлкайте по точкам. Двойной клик или правая кнопка — закончить линию.',door:'Дверь: два клика — начало и конец. Клик по двери в режиме выбора открывает её.',light:'Свет: клик ставит источник (радиус задан во вкладке «Мастер»), клик по нему — убрать.',reveal:'Открыть тайное: два клика — углы области. Игроки увидят в ней карту Мастера (тайный ход, дверь, тайник). Не забудьте убрать стену или поставить дверь, чтобы через проход было видно.',erase:'Ластик: клик по стене, двери, свету или открытой области.'}[tool];
+  const H=ptn?(ptn.hint||''):{select:'',wall:'Стены: щёлкайте по точкам. Двойной клик или правая кнопка — закончить линию.',door:'Дверь: два клика — начало и конец. Клик по двери в режиме выбора открывает её.',light:'Свет: клик ставит источник (радиус задан во вкладке «Мастер»), клик по нему — убрать.',reveal:'Открыть тайное: два клика — углы области. Игроки увидят в ней карту Мастера (тайный ход, дверь, тайник). Не забудьте убрать стену или поставить дверь, чтобы через проход было видно.',erase:'Ластик: клик по стене, двери, свету или открытой области.',dark:'Магическая тьма радиусом 15 фт (как заклинание «Тьма»): внутри не видно ничего, даже тёмным зрением. Клик по кругу — убрать.'}[tool];
   $('hint').textContent=H;$('hint').hidden=!H;requestDraw()});
 
 /* ================= кубики ================= */
@@ -748,7 +766,7 @@ function mistCells(v,big){return Array.from({length:7},(_,i)=>h('i',{class:i<=v&
 async function setMist(v){const s=st();v=clamp(v,0,6);if(v===s.mist)return;await store.set('game/state',{...s,mist:v});await post({kind:'sys',text:`🌫 Шкала Мглы: ${s.mist} → ${v}. ${MIST_TXT[v]}`})}
 $('mistChip').onclick=()=>{if(isOwner){tab='gm';renderTabs();renderPane(true)}else toast(`Шкала Мглы ${st().mist} из 6. ${MIST_TXT[st().mist]}`)};
 
-function renderHeader(){const s=st(),m=mapInfo();$('mistCells').replaceChildren(...mistCells(s.mist));$('mistChip').title=`Шкала Мглы ${s.mist}/6: ${MIST_TXT[s.mist]}`;const ho=(s.handouts||[]).length;$('btnMaps').hidden=!ho;$('btnMaps').textContent='🗺 Карты'+(ho>1?` (${ho})`:'');if(!$('handov').hidden)renderHand();renderLobby();$('mapChip').textContent=m.name;$('roundChip').hidden=!s.combat.on;$('roundChip').textContent='Раунд '+s.combat.round;
+function renderHeader(){const s=st(),m=mapInfo();$('mistCells').replaceChildren(...mistCells(s.mist));$('mistChip').title=`Шкала Мглы ${s.mist}/6: ${MIST_TXT[s.mist]}`;const ho=(s.handouts||[]).length;$('btnMaps').hidden=!ho;$('btnMaps').textContent='🗺 Карты'+(ho>1?` (${ho})`:'');if(!$('handov').hidden)renderHand();renderLobby();$('mapChip').textContent=(m.outdoor?(TIMES[s.time]||TIMES.night)[1]+' ':'')+m.name;$('roundChip').hidden=!s.combat.on;$('roundChip').textContent='Раунд '+s.combat.round;
   $('roleChip').textContent=isOwner?(preview?'Мастер · глазами: '+(previewTok&&S.tokens[previewTok]?S.tokens[previewTok].name:'все герои'):'Мастер'):'Игрок';$('roleChip').className='chip'+(isOwner?' gm':'');for(const b of $('tools').querySelectorAll('.gmo'))b.hidden=!isOwner;$('tools').hidden=!$('tools').querySelector('button:not([hidden])')}
 
 /* ---- БОЙ ---- */
@@ -814,8 +832,8 @@ function paneHero(){const t=heroFor();
   out.push(h('div',{class:'row',style:'margin-top:8px'},h('label',{class:'row small'},h('input',{type:'checkbox',checked:t.light>0,onchange:e=>upT({light:e.target.checked?20:0})}),'Несёт факел (свет 20 фт)')));
   if(t.hp<=0)out.push(h('div',{class:'card'},h('b',{},'Без сознания · спасброски от смерти'),h('div',{class:'small'},`Успехи: ${'●'.repeat(t.ds||0)}${'○'.repeat(3-(t.ds||0))} · Провалы: ${'●'.repeat(t.df||0)}${'○'.repeat(3-(t.df||0))}`),
     h('button',{class:'btn pri sm',type:'button',onclick:async()=>{const r=await rollPost(t.name+': спасбросок от смерти','1d20');if(!r)return;const v=r.total;if(v===20){await upT({hp:1,ds:0,df:0});await post({kind:'sys',text:t.name+' приходит в себя с 1 хитом!'})}else if(v>=10){const ds=(t.ds||0)+1;await upT({ds});if(ds>=3)await post({kind:'sys',text:t.name+' стабилизирован.'})}else{const df=(t.df||0)+(v===1?2:1);await upT({df});if(df>=3)await post({kind:'sys',text:t.name+' погибает…'})}}},'🎲 Спасбросок от смерти')));
-  out.push(h('h3',{},'Характеристики'),h('div',{class:'stats'},ABIL.map(([k,n])=>h('div',{class:'stat'},h('b',{},n),h('input',{type:'number',value:c[k]??10,'aria-label':n,onchange:e=>up({[k]:Number(e.target.value)})}),h('div',{class:'md',role:'button',tabindex:0,title:'Бросить проверку',onclick:()=>rollPost(`${t.name}: проверка ${n}`,'1d20'+sgn(mod(c[k])),{mode:advMode})},sgn(mod(c[k])))))));
-  out.push(h('div',{class:'row small muted',style:'margin-top:6px'},'Спасброски (клик): ',...ABIL.map(([k,n])=>{const sv=(c.saves||[]).includes(k);const bonus=mod(c[k])+(sv?(c.prof||2):0);return h('span',{class:'tag','aria-pressed':String(sv),role:'button',tabindex:0,title:'Правый клик — владение',onclick:()=>rollPost(`${t.name}: спасбросок ${n}`,'1d20'+sgn(bonus),{mode:advMode}),oncontextmenu:e=>{e.preventDefault();if(!isGM())return;up({saves:sv?(c.saves||[]).filter(x=>x!==k):[...(c.saves||[]),k]})}},`${n} ${sgn(bonus)}`)})));
+  out.push(h('h3',{},'Характеристики'),h('div',{class:'stats'},ABIL.map(([k,n])=>h('div',{class:'stat'},h('b',{},n),h('input',{type:'number',value:c[k]??10,'aria-label':n,onchange:e=>up({[k]:Number(e.target.value)})}),h('div',{class:'md',role:'button',tabindex:0,title:'Бросить проверку',onclick:()=>rollPost(`${t.name}: проверка ${n}`,'1d20'+sgn(mod(c[k])),{mode:checkMode(t,k)})},sgn(mod(c[k])))))));
+  out.push(h('div',{class:'row small muted',style:'margin-top:6px'},'Спасброски (клик): ',...ABIL.map(([k,n])=>{const sv=(c.saves||[]).includes(k);const bonus=mod(c[k])+(sv?(c.prof||2):0);return h('span',{class:'tag','aria-pressed':String(sv),role:'button',tabindex:0,title:'Правый клик — владение',onclick:()=>(['str','dex'].includes(k)&&AUTO_FAIL.some(x=>has(t,x)))?post({kind:'sys',text:`${t.name}: спасбросок ${n} — автоматический провал (${t.cond.filter(x=>AUTO_FAIL.includes(x)).join(', ').toLowerCase()})`}):rollPost(`${t.name}: спасбросок ${n}`,'1d20'+sgn(bonus),{mode:checkMode(t,k)}),oncontextmenu:e=>{e.preventDefault();if(!isGM())return;up({saves:sv?(c.saves||[]).filter(x=>x!==k):[...(c.saves||[]),k]})}},`${n} ${sgn(bonus)}`)})));
   out.push(advRow());
   out.push(h('h3',{},'Атаки'));
   const tgt=h('select',{'data-ok':'1','aria-label':'Цель'},h('option',{value:''},'— цель не выбрана —'),...tokList().filter(x=>x.map===st().map&&x.id!==t.id&&canSee(x)).map(x=>h('option',{value:x.id,selected:x.id===lastTarget},x.name)));tgt.onchange=e=>{lastTarget=e.target.value};
@@ -832,9 +850,17 @@ function paneHero(){const t=heroFor();
   return out.filter(n=>!(n instanceof Element)||n.isConnected||!n.classList.contains('gm-edit'))}
 let lastTarget='',advMode=null;
 function advRow(){return h('div',{class:'row small',style:'margin-top:6px'},'Бросать:',...[[null,'обычно'],['adv','с преимуществом'],['dis','с помехой']].map(([v,n])=>h('span',{class:'tag',role:'button',tabindex:0,'aria-pressed':String(advMode===v),onclick:()=>{advMode=v;renderPane(true)}},n)))}
-async function attack(t,a,tid){const tg=tid&&S.tokens[tid];const r=roll('1d20'+sgn(a[1]),advMode);if(!r)return;const crit=r.nat===20,miss1=r.nat===1;
+function condMode(t,tg,ranged){let adv=[],dis=[];
+  if(advMode==='adv')adv.push('выбрано');if(advMode==='dis')dis.push('выбрано');
+  for(const c of ['Ослеплён','Отравлен','Испуган','Опутан','Сбит с ног'])if(has(t,c))dis.push(c.toLowerCase());if(has(t,'Невидим'))adv.push('невидим');
+  if(tg){for(const c of ['Ослеплён','Опутан','Парализован','Окаменел','Ошеломлён','Без сознания','Недееспособен'])if(has(tg,c))adv.push('цель: '+c.toLowerCase());
+    if(has(tg,'Невидим'))dis.push('цель невидима');if(has(tg,'Сбит с ног'))(ranged?dis:adv).push('цель лежит');}
+  const mode=adv.length&&!dis.length?'adv':dis.length&&!adv.length?'dis':null;return{mode,why:[...adv.map(x=>'+'+x),...dis.map(x=>'−'+x)].join(', ')}}
+async function attack(t,a,tid){const tg=tid&&S.tokens[tid];const ranged=/лук|арбалет|дротик|праща|снаряд|волна|луч|стрел|метат/i.test(a[0]);
+  const cm=condMode(t,tg,ranged);const r=roll('1d20'+sgn(a[1]),cm.mode);if(!r)return;let crit=r.nat===20;const miss1=r.nat===1;
+  if(!crit&&tg&&!miss1&&(has(tg,'Парализован')||has(tg,'Без сознания'))&&Math.hypot(t.x-tg.x,t.y-tg.y)<=cellPx(mapInfo())*1.6)crit=true;
   const dr=roll(crit?critDice(a[2]):a[2]);let hit=null;if(tg&&isOwner){const ac=tg.kind==='monster'?(S.gm[tg.id]||{}).ac:tg.ac;if(ac)hit=crit||(!miss1&&r.total>=ac)}
-  await post({kind:'roll',text:`${t.name} · ${a[0]}${tg?' → '+tg.name:''}${crit?' · КРИТ!':miss1?' · промах (1)':''}${hit===true?' · попал':hit===false?' · мимо':''}`,total:r.total,det:`атака ${r.det}${sgn(0)==='+0'?'':''} · урон ${dr?dr.total:'?'} (${dr?dr.det:''})`,nat:r.nat,target:tg?tg.id:null,dmg:dr&&!miss1?dr.total:null})}
+  await post({kind:'roll',text:`${t.name} · ${a[0]}${tg?' → '+tg.name:''}${crit?' · КРИТ!':miss1?' · промах (1)':''}${hit===true?' · попал':hit===false?' · мимо':''}`,total:r.total,det:`${cm.why?'['+cm.why+'] ':''}атака ${r.det}${sgn(0)==='+0'?'':''} · урон ${dr?dr.total:'?'} (${dr?dr.det:''})`,nat:r.nat,target:tg?tg.id:null,dmg:dr&&!miss1?dr.total:null})}
 
 const REG_URL=NET?'register.html':'https://help22232.github.io/kolokola-mgly/register.html';
 async function importHero(r){const n=v=>Number(v)||0;const id=store.newId('tokens');const m=mapInfo();const [cx,cy]=freeSpot();
@@ -931,7 +957,7 @@ async function clearLog(){for(let i=0;i<20;i++){const ids=await store.list('log'
 
 /* ---- МАСТЕР ---- */
 // вкладки Мастера: scene — ход игры, map — карта, mob — существа, mat — материалы; разделы модулей раскладываются по заголовку
-const GM_SEC_TAB=[['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Случайные','mat'],['Записки','mat']];
+const GM_SEC_TAB=[['Отдых','scene'],['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Случайные','mat'],['Записки','mat']];
 function paneGM(part='scene'){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   if(part==='scene'){
   const heroes=tokList().filter(t=>t.kind!=='monster'&&t.map===s.map);
@@ -956,14 +982,17 @@ function paneGM(part='scene'){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const
   out.push(h('h3',{},'Карта'));
   const all=[...MAPS.map(x=>[x.id,x.name]),...Object.values(S.maps).filter(x=>x.asset||x.data).map(x=>[x.id,x.name||'Своя карта'])];
   out.push(h('select',{'aria-label':'Карта',style:'width:100%',onchange:e=>{store.set('game/state',{...s,map:e.target.value})}},...all.map(([id,n])=>h('option',{value:id,selected:id===s.map},n))));
-  const amb=(md.amb!=null)?md.amb:m.amb;
+  out.push(h('label',{class:'f',style:'margin-top:8px'},'Время суток (для улицы)',h('select',{onchange:e=>{store.set('game/state',{...s,time:e.target.value});post({kind:'sys',text:'🕰 '+TIMES[e.target.value][0]})}},...Object.entries(TIMES).map(([k,v])=>h('option',{value:k,selected:s.time===k},v[1]+' '+v[0])))));
+  out.push(h('p',{class:'small muted'},m.outdoor?'Это улица: темнота зависит от времени суток (если ниже не задана своя).':'Это помещение: время суток на него не влияет, темнота задаётся ниже.'),
+    md.amb!=null&&m.outdoor?h('button',{class:'btn sm',type:'button',onclick:()=>saveMap({amb:null})},'Вернуть темноту по времени суток'):null);
+  const amb=effAmb(m);
   out.push(h('label',{class:'f',style:'margin-top:8px'},`Темнота: ${Math.round(amb*100)}% (0 — ясный день, 100 — полная тьма)`,h('input',{type:'range',min:0,max:100,value:Math.round(amb*100),onchange:e=>saveMap({amb:Number(e.target.value)/100})})));
   out.push(h('div',{class:'row',style:'margin-top:6px'},
     h('label',{class:'row small'},h('input',{type:'checkbox',checked:s.fog,onchange:e=>store.set('game/state',{...s,fog:e.target.checked})}),'Динамический свет и туман'),
     h('label',{class:'row small'},h('input',{type:'checkbox',checked:s.grid,onchange:e=>store.set('game/state',{...s,grid:e.target.checked})}),'Сетка')));
   out.push(h('div',{class:'row',style:'margin-top:6px'},h('label',{class:'f'},'Клетка, px',h('input',{type:'number',value:m.grid||40,onchange:e=>saveMap({grid:Number(e.target.value)||40})})),h('label',{class:'f'},'Радиус света, фт',h('input',{type:'number',value:lightR,onchange:e=>{lightR=Number(e.target.value)||20}})),
     h('button',{class:'btn sm',type:'button',onclick:()=>{explored.clear();lightDirty=true;requestDraw();if(room)room.emit('fogreset',{}).catch(()=>{})}},'Сбросить разведанное')));
-  out.push(h('p',{class:'small muted'},`Стен: ${(md.walls||[]).filter(w=>!w.d).length}, дверей: ${(md.walls||[]).filter(w=>w.d).length}, светильников: ${(md.lights||[]).length}. Рисуйте инструментами слева на карте.`));
+  out.push(h('p',{class:'small muted'},`Стен: ${wallsOf(m.id).filter(w=>!w.d).length}, дверей: ${wallsOf(m.id).filter(w=>w.d).length}, светильников: ${(md.lights||[]).length}. Рисуйте инструментами слева на карте.`));
   if(assets){const fi=h('input',{type:'file',accept:'image/png,image/jpeg,image/webp,image/svg+xml','aria-label':'Своя карта'});
     fi.onchange=async()=>{const f=fi.files[0];if(!f)return;toast('Загружаю карту…');try{const r=await assets.upload(f);const im=new Image();im.onload=async()=>{const id='custom-'+r.id.slice(0,10);await store.set('maps/'+id,{name:f.name.replace(/\.[^.]+$/,'').slice(0,40),asset:r.id,w:im.naturalWidth||1400,h:im.naturalHeight||1000,grid:40,amb:0});await store.set('game/state',{...st(),map:id});toast('Карта загружена')};im.src=r.url}catch(e){toast('Не удалось загрузить: '+(e.code||'ошибка'))}};
     out.push(h('label',{class:'f',style:'margin-top:6px'},'Загрузить свою карту (PNG, JPG, WebP, SVG)',fi))}
@@ -1055,7 +1084,7 @@ function modTool(){return mapTools.find(t=>t.id===tool)||null}
 function addToolButton(t){const b=h('button',{type:'button','data-tool':t.id,title:t.title||t.id,'aria-pressed':'false',class:t.gmOnly?'gmo':null},t.icon||'?');$('tools').append(b);if(t.gmOnly)b.hidden=!isOwner;$('tools').hidden=false}
 window.VTT={
   get S(){return S},st,store,h,clone,mapInfo,cellPx,ftPx,cam,toWorld,clamp,roll,rollPost,post,toast,requestDraw,changed,renderPane:()=>renderPane(true),renderTabs,
-  tokList,canSee,isGM,whoAmI,names,resolveNames,mod,sgn,rnd,showCutAll,selectToken,centerOn,ping,myToken,icOf,picker,applyHp,
+  tokList,canSee,isGM,whoAmI,names,resolveNames,mod,sgn,rnd,showCutAll,selectToken,centerOn,ping,myToken,icOf,picker,applyHp,condMode,has,checkMode,
   get myId(){return myId},get isOwner(){return isOwner},get readOnly(){return readOnly},get room(){return room},get sel(){return sel},get tool(){return tool},LIVE,NET,
   get VW(){return VW},get VH(){return VH},
   onDraw(layer,fn){drawHooks[layer].push(fn);requestDraw()},
@@ -1067,7 +1096,7 @@ window.VTT={
   onChat(fn){chatHooks.push(fn)},addLogFilter(fn){logFilters.push(fn)},addLogRenderer(fn){logRenderers.push(fn)},
   watch(col,cb,q){return store.watchCol(col,cb,q)},
   overlay(){return $('modov')}};
-for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
+for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js','mod-spells.js','mod-abilities.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
 window.__table={S,st,cam,frame:()=>draw()};
 })();
 </script>
