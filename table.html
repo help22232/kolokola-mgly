@@ -151,6 +151,7 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 .rollfx{position:absolute;right:10px;top:10px;z-index:4;display:flex;flex-direction:column;gap:6px;width:min(300px,calc(100% - 70px));pointer-events:none}
 .rcard{pointer-events:auto;display:flex;gap:10px;align-items:center;background:rgba(17,24,25,.95);border:1px solid var(--line);border-left:4px solid #d9b36c;border-radius:10px;padding:7px 10px;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:rin .25s ease-out;transition:opacity .4s,transform .4s;cursor:pointer}
 .rcard.out{opacity:0;transform:translateX(30px)}
+.rcard.conc{border-left-color:#8fb4ff}.rcard .btn.sm{min-height:32px}
 .rcard.crit{border-left-color:#7fd68a;background:rgba(20,40,26,.96)}.rcard.fail{border-left-color:#e5786f;background:rgba(44,20,20,.96)}
 .rtot{font:700 28px/1 'IBM Plex Mono',monospace;color:#ffe6a0;min-width:42px;text-align:center}
 .rcard.crit .rtot{color:#9cf0a6}.rcard.fail .rtot{color:#ff9a90}
@@ -306,9 +307,14 @@ function applyOp(op,p,d){if(op==='set')docs.set(p,clone(d));else if(op==='update
 
 /* сеть */
 const SAVE_KEY='smgla-room-'+ROOM;
-let peer=null,hostConn=null,myPeer=isOwner?'host':null;const conns=new Map();
+let peer=null,hostConn=null,myPeer=isOwner?'host':null;const conns=new Map(); // conns: DataConnection -> {conn,id,name,pres,last}
+const SIG_ERR=['network','server-error','socket-error','socket-closed'];
+const SIG_MSG=s=>`Сервер связи PeerJS (0.peerjs.com) недоступен или блокируется сетью. Повторяю через ${s} с… Если это надолго — смените сеть (Wi‑Fi ↔ мобильный интернет) или отключите VPN/блокировщик рекламы.`;
+let pending=[]; // записи игрока, сделанные без связи: уходят Мастеру после переподключения и свежего снимка
+const PEND_MAX=300,PEND_TTL=120000;
 let saveT=0;function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{if(!LSx.set(SAVE_KEY,Object.fromEntries(docs)))netStatus('Браузер не даёт сохранить игру (память переполнена). Удалите свои карты-картинки или очистите журнал.')},500)}
 function bcast(msg){for(const c of conns.values())if(c.conn.open)try{c.conn.send(msg)}catch(e){}}
+function hsend(m){if(hostConn&&hostConn.open)try{hostConn.send(m);return true}catch(e){}return false}
 let netMsg='';function netStatus(t){netMsg=t;try{showBanner(t)}catch(e){}try{renderLobby()}catch(e){}}
 window.__net={ok:()=>isOwner||!!(hostConn&&hostConn.open),msg:()=>netMsg};
 // STUN + публичный TURN (Open Relay): без ретранслятора мобильные сети часто не соединяются напрямую
@@ -318,8 +324,14 @@ const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls
   {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}]}};
 function write(op,p,d){
   if(isOwner){if(!applyOp(op,p,d))return;persist();if(!isPrivate(p))bcast({t:'doc',p,d:docs.has(p)?docs.get(p):null});return}
-  if(!hostConn||!hostConn.open){netStatus('Нет связи с Мастером — изменение не отправлено. Подождите переподключения.');return}
-  applyOp(op,p,d);hostConn.send({t:'w',op,p,d})}
+  if(hostConn&&hostConn.open&&!pending.length){applyOp(op,p,d);try{hostConn.send({t:'w',op,p,d});return}catch(e){}}
+  // нет связи: показываем изменение сразу, а Мастеру отправим после переподключения
+  if(pending.length>=PEND_MAX){toast('Нет связи с Мастером слишком долго — изменение не сохранено.');return}
+  applyOp(op,p,d);pending.push({op,p,d:d===undefined?null:clone(d),ts:Date.now()});
+  if(pending.length===1)toast('Нет связи с Мастером — изменение отправится, когда связь вернётся.')}
+function flushPending(){if(!pending.length)return;const now=Date.now(),q=pending;pending=[];let lost=0;
+  for(const w of q){if(now-w.ts>PEND_TTL){lost++;continue}applyOp(w.op,w.p,w.d);try{hostConn.send({t:'w',op:w.op,p:w.p,d:w.d})}catch(e){lost++}}
+  toast(lost?`Связь восстановлена. ${q.length-lost} изм. отправлено, ${lost} устарели (старше 2 мин) и отменены.`:`Связь восстановлена — отправлено изменений: ${q.length}.`)}
 const store={
   watchDoc(p,cb){const f=()=>cb(docs.has(p)?clone(docs.get(p)):null);queueMicrotask(f);return addL(dl,p,f)},
   watchCol(p,cb,q={}){const f=()=>{let a=[...docs].filter(([k])=>colOf(k)===p).map(([k,v])=>({id:k.split('/').pop(),...clone(v)}));if(q.order){a.sort((x,y)=>(x[q.order]>y[q.order]?1:-1)*(q.dir==='desc'?-1:1))}if(q.limit)a=a.slice(0,q.limit);cb(a)};queueMicrotask(f);return addL(cl,p,f)},
@@ -338,9 +350,9 @@ let peersT=0;function bcastPeers(){if(peersT)return;peersT=setTimeout(()=>{peers
 let presT=0;
 const room={
   on(t,f){if(!evH.has(t))evH.set(t,new Set());evH.get(t).add(f);return()=>evH.get(t).delete(f)},
-  emit:async(topic,data)=>{if(isOwner){deliverEv(topic,data,myId);bcast({t:'ev',topic,data,from:myId})}else if(hostConn&&hostConn.open)hostConn.send({t:'ev',topic,data})},
+  emit:async(topic,data)=>{if(isOwner){deliverEv(topic,data,myId);bcast({t:'ev',topic,data,from:myId})}else hsend({t:'ev',topic,data})},
   presence:async(patch)=>{for(const k in patch){if(patch[k]===null)delete myPres[k];else myPres[k]=patch[k]}
-    if(presT)return;presT=setTimeout(()=>{presT=0;if(isOwner)bcastPeers();else if(hostConn&&hostConn.open)hostConn.send({t:'pres',pres:myPres})},50)},
+    if(presT)return;presT=setTimeout(()=>{presT=0;if(isOwner)bcastPeers();else hsend({t:'pres',pres:myPres})},50)},
   onPeers(f){peersH.add(f);queueMicrotask(()=>f({peers:peerList,joined:[],left:[],updated:[]}));return()=>peersH.delete(f)}};
 const avCache={};
 function avatar(n,id){if(avCache[id+n])return avCache[id+n];const c=document.createElement('canvas');c.width=c.height=48;const x=c.getContext('2d');let hh=0;for(const ch of String(id))hh=(hh*31+ch.charCodeAt(0))%360;
@@ -351,34 +363,83 @@ const user={id:async()=>myId,isOwner:async()=>isOwner,can:async()=>true,
 if(typeof Peer!=='function'){netStatus('Не загрузилась сетевая библиотека. Проверьте интернет и обновите страницу.')}
 else if(isOwner){
   const saved=LSx.get(SAVE_KEY,null);if(saved&&typeof saved==='object')for(const k in saved)docs.set(k,saved[k]);
-  const open=()=>{peer=new Peer('smgla-'+ROOM,PEER_OPTS);
-    peer.on('open',()=>{netStatus('');bcastPeers()});
-    peer.on('error',e=>{if(e.type==='unavailable-id')netStatus(`Комната ${ROOM} уже открыта — в другой вкладке или у другого Мастера. Закройте лишнюю вкладку и обновите страницу.`);else if(e.type!=='peer-unavailable')netStatus('Сеть: '+e.type+'. Если игроки не подключаются — обновите страницу.')});
-    peer.on('disconnected',()=>{setTimeout(()=>{try{if(!peer.destroyed)peer.reconnect()}catch(e){}},2000)});
-    peer.on('connection',conn=>{conn.on('open',()=>{conns.set(conn.peer,{conn,id:null,name:'Игрок',pres:{}});const o={};for(const [k,v] of docs)if(!isPrivate(k))o[k]=v;conn.send({t:'snap',docs:o})});
-      conn.on('data',m=>{const c=conns.get(conn.peer);if(!c||!m||typeof m!=='object')return;
-        if(m.t==='hello'){c.id=String(m.id||'').slice(0,40)||conn.peer;c.name=String(m.name||'Игрок').slice(0,30);bcastPeers();deliverEv('joined',{name:c.name},c.id)}
+  // регистрация кода комнаты; после перезагрузки сервер PeerJS ещё может держать старый id — повторяем 2,4,6… до 30 с
+  let regN=0,regT=0;
+  const retry=msgOf=>{if(regT)return;regN++;const s=Math.min(30,2*regN);netStatus(msgOf(s));regT=setTimeout(()=>{regT=0;revive()},s*1000)};
+  const revive=()=>{if(!peer||peer.destroyed){open();return}if(peer.disconnected){try{peer.reconnect()}catch(e){try{peer.destroy()}catch(_){}open()}}};
+  const open=()=>{if(!regN)netStatus(`Открываю стол ${ROOM}…`);const p=new Peer('smgla-'+ROOM,PEER_OPTS);peer=p;
+    p.on('open',()=>{if(peer!==p)return;regN=0;clearTimeout(regT);regT=0;netStatus('');bcastPeers()});
+    p.on('error',e=>{if(peer!==p)return;
+      if(e.type==='unavailable-id'){try{p.destroy()}catch(_){}if(regT){clearTimeout(regT);regT=0;regN=Math.max(0,regN-1)}retry(s=>`Код стола ${ROOM} ещё занят прежней вкладкой (сервер отпускает его до минуты). Повторяю регистрацию через ${s} с… (попытка ${regN}). Если стол открыт в другой вкладке или у другого Мастера — закройте лишнюю.`)}
+      else if(SIG_ERR.includes(e.type))retry(SIG_MSG);
+      else if(e.type==='browser-incompatible')netStatus('Этот браузер не поддерживает прямую связь (WebRTC). Откройте стол в свежем Chrome, Firefox или Safari.');
+      else if(e.type!=='peer-unavailable')netStatus('Сеть: '+e.type+'. Если игроки не подключаются — обновите страницу.')});
+    // потеря сигнального сервера не рвёт уже открытые соединения с игроками — просто переподключаемся к нему
+    // (откладываем: при «id занят» PeerJS сначала шлёт disconnected, а уже потом ошибку unavailable-id)
+    p.on('disconnected',()=>setTimeout(()=>{if(peer===p&&!p.destroyed&&p.disconnected)retry(SIG_MSG)},0));
+    p.on('connection',conn=>{
+      conn.on('open',()=>{conns.set(conn,{conn,id:null,name:'Игрок',pres:{},last:Date.now()});const o={};for(const [k,v] of docs)if(!isPrivate(k))o[k]=v;conn.send({t:'snap',docs:o})});
+      conn.on('data',m=>{const c=conns.get(conn);if(!c||!m||typeof m!=='object')return;c.last=Date.now();
+        if(m.t==='ping'){try{conn.send({t:'pong'})}catch(e){}}
+        else if(m.t==='hello'){c.id=String(m.id||'').slice(0,40)||conn.peer;c.name=String(m.name||'Игрок').slice(0,30);
+          // тот же игрок переподключился — старое соединение убираем, чтобы не было дублей
+          let again=false;for(const [k,o] of conns)if(k!==conn&&o.id===c.id){again=true;conns.delete(k);try{k.close()}catch(e){}}
+          bcastPeers();if(!again)deliverEv('joined',{name:c.name},c.id)}
         else if(m.t==='w'){if(!okPath(m.p))return;if(!applyOp(m.op,m.p,m.d))return;persist();bcast({t:'doc',p:m.p,d:docs.has(m.p)?docs.get(m.p):null})}
         else if(m.t==='ev'&&typeof m.topic==='string'&&!['fogreset','cutscene','view','sfx','handout'].includes(m.topic)){deliverEv(m.topic,m.data,c.id);bcast({t:'ev',topic:m.topic,data:m.data,from:c.id})}
         else if(m.t==='pres'&&m.pres&&typeof m.pres==='object'){c.pres=m.pres;bcastPeers()}});
-      conn.on('close',()=>{conns.delete(conn.peer);bcastPeers()});conn.on('error',()=>{})})};
+      conn.on('close',()=>{if(conns.delete(conn))bcastPeers()});conn.on('error',()=>{})})};
+  // игроки пингуют раз в 5 с; молчащее дольше 40 с соединение — мёртвое (вкладка закрыта без прощания)
+  setInterval(()=>{const now=Date.now();let ch=false;for(const [k,o] of conns)if(now-o.last>40000){conns.delete(k);ch=true;try{k.close()}catch(e){}}if(ch)bcastPeers()},10000);
+  const wake=()=>{if(document.visibilityState==='hidden')return;if(!peer||peer.destroyed||peer.disconnected){clearTimeout(regT);regT=0;revive()}};
+  document.addEventListener('visibilitychange',wake);window.addEventListener('online',wake);window.addEventListener('pageshow',wake);
   open();
 }else{
-  let dialT=0;
-  const dial=()=>{clearTimeout(dialT);if(hostConn&&hostConn.open)return;const c=peer.connect('smgla-'+ROOM,{reliable:true});hostConn=c;
-    setTimeout(()=>{if(hostConn===c&&!c.open){netStatus('Не получается соединиться с Мастером, пробую снова… Если это длится больше минуты — переключитесь на Wi‑Fi или обновите страницу.');hostConn=null;try{c.close()}catch(e){}dialT=setTimeout(dial,1000)}},15000);
-    c.on('open',()=>{c.send({t:'hello',id:myId,name:myName});netStatus('')});
-    c.on('data',m=>{if(!m||typeof m!=='object')return;
-      if(m.t==='snap'&&m.docs){docs.clear();for(const k in m.docs)docs.set(k,m.docs[k]);fireAll()}
+  // игрок: бесконечные переподключения 2→4→8→15 с, пинг раз в 5 с, тишина >15 с = обрыв
+  let tryN=0,retryT=0,lastRx=0,was=false,peerBorn=0,probeT=0,sigDown=false,lastS=2;
+  const lostMsg=()=>!myPeer&&!was?`Подключаюсь к серверу связи… (попытка ${tryN})`:was?`Связь с Мастером потеряна, переподключаюсь… (попытка ${tryN})`:`Мастер ещё не открыл стол ${ROOM} (или перезагружает страницу). Жду… (попытка ${tryN})`;
+  const later=()=>{if(retryT)return;tryN++;const s=lastS=Math.min(15,2**tryN);netStatus(sigDown?SIG_MSG(s):lostMsg());retryT=setTimeout(()=>{retryT=0;connectNow()},s*1000)};
+  const drop=c=>{if(hostConn!==c)return;hostConn=null;try{c.close()}catch(e){}};
+  const newPeer=()=>{if(peer)try{peer.destroy()}catch(e){}const p=new Peer(PEER_OPTS);peer=p;myPeer=null;peerBorn=Date.now();
+    p.on('open',id=>{if(peer!==p)return;sigDown=false;myPeer=id;if(!was)netStatus('Подключаюсь к столу '+ROOM+'…');dial()});
+    p.on('error',e=>{if(peer!==p)return;
+      if(e.type==='peer-unavailable'){drop(hostConn);later()}
+      else if(SIG_ERR.includes(e.type)){if(hostConn&&hostConn.open)return;sigDown=true;if(retryT)netStatus(SIG_MSG(lastS));else later()}
+      else if(e.type==='browser-incompatible')netStatus('Этот браузер не поддерживает прямую связь (WebRTC). Откройте стол в свежем Chrome, Firefox или Safari.');
+      else{drop(hostConn);later()}});
+    // сигнальный сервер пропал: открытое соединение с Мастером живёт само, но к серверу вернёмся
+    p.on('disconnected',()=>{if(peer!==p||p.destroyed)return;if(hostConn&&hostConn.open)setTimeout(()=>{if(peer===p&&p.disconnected&&!p.destroyed)try{p.reconnect()}catch(e){}},3000);else later()})};
+  const connectNow=()=>{clearTimeout(retryT);retryT=0;if(hostConn&&hostConn.open)return;
+    if(!peer||peer.destroyed){newPeer();return}
+    if(peer.disconnected){try{peer.reconnect()}catch(e){newPeer()}return}
+    if(!peer.open){if(Date.now()-peerBorn>10000)newPeer();else later();return}
+    dial()};
+  const dial=()=>{if(hostConn&&hostConn.open)return;if(hostConn)drop(hostConn);
+    const c=peer.connect('smgla-'+ROOM,{reliable:true});hostConn=c;
+    setTimeout(()=>{if(hostConn===c&&!c.open){drop(c);later()}},12000);
+    c.on('open',()=>{if(hostConn!==c)return;lastRx=Date.now();tryN=0;was=true;c.send({t:'hello',id:myId,name:myName});c.send({t:'pres',pres:myPres});netStatus('')});
+    c.on('data',m=>{if(hostConn!==c||!m||typeof m!=='object')return;lastRx=Date.now();
+      // полный снимок: заменяем документы и будим всех подписчиков watchDoc/watchCol — интерфейс обновится без перезагрузки
+      if(m.t==='snap'&&m.docs){docs.clear();for(const k in m.docs)docs.set(k,m.docs[k]);fireAll();flushPending()}
       else if(m.t==='doc'&&typeof m.p==='string'){if(m.d==null)docs.delete(m.p);else docs.set(m.p,m.d);fire(m.p)}
       else if(m.t==='ev')deliverEv(m.topic,m.data,m.from);
       else if(m.t==='peers')setPeers(m.list)});
-    c.on('close',()=>{if(hostConn!==c)return;hostConn=null;netStatus('Связь с Мастером потеряна. Переподключаюсь…');dialT=setTimeout(dial,3000)})};
-  peer=new Peer(PEER_OPTS);myPeer=null;
-  peer.on('open',id=>{myPeer=id;netStatus('Подключаюсь к столу '+ROOM+'…');dial()});
-  peer.on('error',e=>{if(e.type==='peer-unavailable'){netStatus(`Мастер ещё не открыл стол ${ROOM}. Жду…`);dialT=setTimeout(dial,4000)}else netStatus('Сеть: '+e.type+'. Обновите страницу, если не подключится.')});
-  peer.on('disconnected',()=>{setTimeout(()=>{try{if(!peer.destroyed)peer.reconnect()}catch(e){}},2000)});
+    c.on('close',()=>{if(hostConn!==c)return;hostConn=null;later()});
+    c.on('error',()=>{if(hostConn!==c)return;drop(c);later()})};
+  setInterval(()=>{const c=hostConn;
+    if(c&&c.open){if(Date.now()-lastRx>15000){drop(c);later()}else hsend({t:'ping'})}
+    else if(!retryT&&!c)later()},5000);
+  // вернулись из фона / сменилась сеть: проверяем связь сразу
+  const wake=()=>{if(document.visibilityState==='hidden')return;const c=hostConn;
+    if(!c||!c.open||!peer||peer.destroyed){if(c&&!c.open)return;connectNow();return}
+    const t0=Date.now();hsend({t:'ping'});clearTimeout(probeT);
+    probeT=setTimeout(()=>{if(hostConn===c&&lastRx<t0){drop(c);connectNow()}},3000);
+    if(peer.disconnected)try{peer.reconnect()}catch(e){}};
+  document.addEventListener('visibilitychange',wake);window.addEventListener('online',wake);window.addEventListener('pageshow',wake);
+  newPeer();
 }
+// уходя, отпускаем код комнаты на сервере сразу — иначе после перезагрузки он «занят» ещё до минуты
+window.addEventListener('pagehide',()=>{if(isOwner)LSx.set(SAVE_KEY,Object.fromEntries(docs));try{if(peer)peer.destroy()}catch(e){}});
 window.addEventListener('beforeunload',()=>{if(isOwner)LSx.set(SAVE_KEY,Object.fromEntries(docs))});
 /* код комнаты и приглашение — в шапке */
 {const chip=document.createElement('button');chip.type='button';chip.className='chip gm';chip.style.cursor='pointer';chip.textContent='Стол '+ROOM;if(isOwner){const s=document.createElement('span');s.className='hide-m';s.textContent=' · пригласить';chip.append(s)}
@@ -679,14 +740,27 @@ async function rollPost(label,expr,opt={}){const r=roll(expr,opt.mode);if(!r){to
 function fxBox(){let b=$('rollFx');if(!b){b=h('div',{id:'rollFx',class:'rollfx','aria-live':'polite'});$('board').appendChild(b)}return b}
 function floatNum(tid,delta){const t=S.tokens[tid];if(!t||!canSee(t))return;const sx=t.x*cam.z+cam.ox,sy=t.y*cam.z+cam.oy;
   const n=h('div',{class:'fnum '+(delta<0?'dmg':'heal')},(delta<0?'−':'+')+Math.abs(delta));n.style.left=sx+'px';n.style.top=sy+'px';$('board').appendChild(n);setTimeout(()=>n.remove(),1900)}
-function showFx(m){if(m.tid&&m.delta)floatNum(m.tid,m.delta);if(m.kind!=='roll'||m.total==null)return;
+function showFx(m){if(m.tid&&m.delta){floatNum(m.tid,m.delta);if(m.delta<0)concCheck(m.tid,-m.delta)}if(m.kind!=='roll'||m.total==null)return;
   const crit=m.nat===20,fail=m.nat===1,tg=m.target&&S.tokens[m.target];
   const c=h('div',{class:'rcard'+(crit?' crit':fail?' fail':''),onclick:()=>c.remove()},
     h('div',{class:'rtot'},String(m.total)),
     h('div',{class:'rtxt'},h('b',{},m.text||''),m.who?h('div',{class:'small muted'},m.who):null,
-      m.dmg!=null?h('div',{class:'rdmg'},`урон ${m.dmg}${tg?' → '+tg.name:''}`):null,
+      m.dmg!=null?h('div',{class:'rdmg'},`урон ${m.dmg}${tg?' → '+tg.name:''}${m.applied?' ✓':''}`):null,
+      m.dmg!=null&&tg&&!m.applied&&isGM()&&!readOnly?h('div',{class:'row',style:'margin-top:4px;gap:4px'},
+        h('button',{class:'btn sm bad',type:'button',onclick:e=>{e.stopPropagation();applyHp(tg.id,m.dmg,'dmg');c.remove()}},`💥 −${m.dmg}`),
+        h('button',{class:'btn sm',type:'button',title:'Половина (успешный спасбросок, сопротивление)',onclick:e=>{e.stopPropagation();applyHp(tg.id,Math.floor(m.dmg/2),'dmg');c.remove()}},`½ −${Math.floor(m.dmg/2)}`)):null,
       h('div',{class:'rdet'},(m.det||'').slice(0,110))));
-  const b=fxBox();b.prepend(c);while(b.children.length>3)b.lastChild.remove();setTimeout(()=>{c.classList.add('out');setTimeout(()=>c.remove(),400)},crit||fail?7000:5000)}
+  const b=fxBox();b.prepend(c);while(b.children.length>3)b.lastChild.remove();const keep=m.dmg!=null&&tg&&!m.applied&&isGM();setTimeout(()=>{c.classList.add('out');setTimeout(()=>c.remove(),400)},keep?15000:crit||fail?7000:5000)}
+// концентрация: после урона владелец (или Мастер за существ) сразу бросает спасбросок Телосложения
+function concCheck(tid,dmg){setTimeout(async()=>{const t=S.tokens[tid];if(!t||!has(t,'Концентрация')||readOnly)return;
+  const mine=t.owner&&t.owner===myId&&!isOwner,gmSide=isOwner&&(t.kind!=='pc'||!t.owner);if(!mine&&!gmSide)return;
+  const drop=async why=>{const x=S.tokens[tid];if(!x||!has(x,'Концентрация'))return;await store.update('tokens/'+tid,{cond:x.cond.filter(c=>c!=='Концентрация')});await post({kind:'sys',text:`${x.name} теряет концентрацию${why?' ('+why+')':''}`})};
+  const hpNow=t.kind==='monster'?((S.gm[tid]||{}).hp??1):t.hp;if(hpNow<=0){await drop('без сознания');return}
+  const dc=Math.max(10,Math.floor(dmg/2)),c=S.chars[tid]||{},bonus=t.kind==='monster'?0:mod(c.con)+((c.saves||[]).includes('con')?(c.prof||2):0);
+  const card=h('div',{class:'rcard conc'},h('div',{class:'rtot'},'🧠'),h('div',{class:'rtxt'},h('b',{},`${t.name}: концентрация`),h('div',{class:'small muted'},`Спасбросок Телосложения, СЛ ${dc}`),
+    h('div',{class:'row',style:'margin-top:4px;gap:4px'},h('button',{class:'btn sm pri',type:'button',onclick:async e=>{e.stopPropagation();card.remove();const r=await rollPost(`${t.name}: спасбросок концентрации (СЛ ${dc})`,'1d20'+sgn(bonus),{mode:checkMode(t,'con')});if(r&&r.total<dc)await drop('провал')}},`🎲 Бросить ${sgn(bonus)}`),
+      h('button',{class:'btn sm',type:'button',onclick:e=>{e.stopPropagation();card.remove()}},'Позже'))));
+  fxBox().prepend(card)},600)}
 function toast(t){showBanner(t);clearTimeout(toast.t);toast.t=setTimeout(()=>showBanner(readOnly?$('banner').textContent:''),3500)}
 
 /* ================= правила игры: урон, лечение, хиты монстров ================= */
@@ -751,8 +825,8 @@ function renderPane(force){const a=document.activeElement;if(!force&&a&&pane.con
   resolveNames([...tokList().map(t=>t.owner),...S.log.map(l=>l.by)])}
 /* ---- катсцены за столом: Мастер запускает, видят все ---- */
 const CUTS=[['intro','Пролог'],['c1','1. Голос из моря'],['c2','2. Отплытие «Цапли»'],['c3','3. Отлив'],['c4','4. Купол на дне'],['c5','5. Спуск в Ис-Мерин'],['c6','6. Певчая на троне'],['c7','7. Рассвет'],['c8','8. Город поднимается']];
-function openCut(id){if(!CUTS.some(x=>x[0]===id))return;$('csFrame').src=id==='intro'?'cs/intro.html#embed':'cs/cutscenes.html#embed-'+id;$('csov').hidden=false;$('csClose').textContent=isOwner?'✕ Закончить у всех':'✕ Закрыть'}
-function closeCut(){$('csov').hidden=true;$('csFrame').src='about:blank'}
+function openCut(id){if(!CUTS.some(x=>x[0]===id))return;window.dispatchEvent(new Event('cs-open'));$('csFrame').src=id==='intro'?'cs/intro.html#embed':'cs/cutscenes.html#embed-'+id;$('csov').hidden=false;$('csClose').textContent=isOwner?'✕ Закончить у всех':'✕ Закрыть'}
+function closeCut(){window.dispatchEvent(new Event('cs-close'));$('csov').hidden=true;$('csFrame').src='about:blank'}
 window.addEventListener('message',e=>{if(e.source===$('csFrame').contentWindow&&e.data&&e.data.t==='cs-done')setTimeout(closeCut,1200)});
 $('csClose').onclick=()=>{if(isOwner&&room)room.emit('cutscene',{stop:true}).catch(()=>{});closeCut()};
 async function showCutAll(id){if(room)await room.emit('cutscene',{id}).catch(()=>openCut(id));else openCut(id);post({kind:'sys',text:'🎬 Катсцена: '+CUTS.find(x=>x[0]===id)[1]})}
@@ -783,10 +857,10 @@ function renderLobby(){const el=$('lobby');const s=st();if(!el)return;if(s.start
     el.replaceChildren(st().ended?h('div',{class:'lcard',style:'border-color:#d9b36c'},h('h3',{},'⏹ Сессия завершена'),h('p',{class:'muted',style:'margin:0'},`Мастер закончил игру ${new Date(st().ended).toLocaleString('ru',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})}. Герой и вещи сохранены — до следующей сессии!`)):null,h('div',{class:'lcard'},h('h3',{},'Скоро начнём'),h('p',{class:'muted',style:'margin:0'},'Подготовьте героя и нажмите «Готово». Игру начнёт Мастер.'),net,...rows),heroCard,h('div',{class:'readybar'},readyBtn))}}
 let lobbyMini=false,lobbyDirty=false;const netOk=()=>!window.__net||window.__net.ok();
 $('lobby').addEventListener('focusout',()=>setTimeout(()=>{if(lobbyDirty&&!$('lobby').contains(document.activeElement))renderLobby()},0));
-async function startGame(){lobbyForce=false;await store.set('game/state',{...st(),started:true,ended:null});await post({kind:'sys',text:'▶ Игра началась!'});if(lobbyIntro)showCutAll('intro')}
+async function startGame(){lobbyForce=false;await store.set('game/state',{...st(),started:true,ended:null,startedAt:Date.now()});await post({kind:'sys',text:'▶ Игра началась!'});if(lobbyIntro)showCutAll('intro')}
 async function endSession(){if(!isOwner||readOnly)return;if(!confirm('Завершить сессию? Бой остановится, все вернутся в лобби. Герои, карты и журнал сохранятся.'))return;
   const s=st();await store.set('game/state',{...s,started:false,combat:{on:false,round:1,turn:null},ended:Date.now()});
-  for(const id of Object.keys(S.ready))await store.del('ready/'+id);await post({kind:'sys',text:'⏹ Сессия завершена. Спасибо за игру!'})}
+  for(const id of Object.keys(S.ready))await store.del('ready/'+id);await post({kind:'sys',text:'⏹ Сессия завершена. Спасибо за игру!'});window.dispatchEvent(new CustomEvent('vtt-session-end',{detail:{startedAt:s.startedAt||null}}))}
 async function toLobby(){await store.set('game/state',{...st(),started:false});for(const id of Object.keys(S.ready))await store.del('ready/'+id)}
 
 /* ---- карты отряда: что Мастер выдал, игроки открывают в любой момент ---- */
@@ -828,8 +902,14 @@ async function rollInit(t){const c=S.chars[t.id]||{};const b=BEST[t.monster];con
 function paneCombat(){const s=st(),o=combatOrder(),out=[];
   out.push(h('h3',{},s.combat.on?`Бой · раунд ${s.combat.round}`:'Бой'));
   if(isOwner){out.push(h('div',{class:'row'},s.combat.on?[h('button',{class:'btn pri',type:'button',onclick:nextTurn},'Следующий ход ▸'),h('button',{class:'btn bad',type:'button',onclick:endCombat},'Закончить бой')]:h('button',{class:'btn pri',type:'button',onclick:startCombat},'⚔ Начать бой на этой карте')))}
-  if(s.combat.on){const cur=S.tokens[s.combat.turn];if(cur&&cur.owner===myId&&!isOwner)out.push(h('div',{class:'card',style:'border-color:rgba(217,179,108,.7)'},h('b',{},`Ваш ход, ${cur.name}!`),h('div',{class:'small',style:'margin:6px 0'},`Перемещение: осталось ${moveLeft(cur)} из ${moveBudget(cur)} фт${cur.dash?' (Рывок)':''}. Ещё есть действие, бонусное действие и реакция.`),h('div',{class:'row'},cur.dash?null:h('button',{class:'btn sm',type:'button',onclick:()=>{store.update('tokens/'+cur.id,{dash:true});post({kind:'sys',text:`${cur.name} совершает Рывок: +${speedOf(cur)} фт перемещения`})}},'🏃 Рывок (действие)'),h('button',{class:'btn pri',type:'button',onclick:nextTurn},'✓ Закончить ход'))));
+  if(s.combat.on){const cur=S.tokens[s.combat.turn];
+    if(cur&&cur.owner===myId&&!isOwner&&cur.kind==='pc'&&cur.hp<=0)out.push(h('div',{class:'card',style:'border-color:#e5786f'},h('b',{},`Ваш ход, ${cur.name} — вы без сознания`),
+      h('div',{class:'small',style:'margin:6px 0'},`Успехи ${'●'.repeat(cur.ds||0)}${'○'.repeat(Math.max(0,3-(cur.ds||0)))} · Провалы ${'●'.repeat(cur.df||0)}${'○'.repeat(Math.max(0,3-(cur.df||0)))}. 10+ — успех, 20 — встаёте с 1 хитом, 1 — два провала.`),
+      h('div',{class:'row'},(cur.ds||0)<3&&(cur.df||0)<3?h('button',{class:'btn pri',type:'button',onclick:async()=>{await deathSave(S.tokens[cur.id]);const x=S.tokens[cur.id];if(x&&x.hp<=0)nextTurn()}},'🎲 Спасбросок от смерти'):null,h('button',{class:'btn',type:'button',onclick:nextTurn},'✓ Закончить ход'))));
+    else if(cur&&cur.owner===myId&&!isOwner)out.push(h('div',{class:'card',style:'border-color:rgba(217,179,108,.7)'},h('b',{},`Ваш ход, ${cur.name}!`),h('div',{class:'small',style:'margin:6px 0'},`Перемещение: осталось ${moveLeft(cur)} из ${moveBudget(cur)} фт${cur.dash?' (Рывок)':''}. Ещё есть действие, бонусное действие и реакция.`),h('div',{class:'row'},cur.dash?null:h('button',{class:'btn sm',type:'button',onclick:()=>{store.update('tokens/'+cur.id,{dash:true});post({kind:'sys',text:`${cur.name} совершает Рывок: +${speedOf(cur)} фт перемещения`})}},'🏃 Рывок (действие)'),h('button',{class:'btn pri',type:'button',onclick:nextTurn},'✓ Закончить ход'))));
+    else if(cur&&isOwner&&cur.kind==='monster'&&BEST[cur.monster])out.push(monsterTurnCard(cur));
     else if(cur)out.push(h('p',{class:'small muted'},`Сейчас ходит: ${cur.hidden&&!isOwner?'кто-то':cur.name}${isOwner?` · перемещение ${moveLeft(cur)}/${moveBudget(cur)} фт`:''}`));
+    if(isOwner){const noInit=tokList().filter(t=>t.map===s.map&&!t.hidden&&t.init==null);if(noInit.length)out.push(h('div',{class:'row'},h('button',{class:'btn sm',type:'button',onclick:async()=>{for(const t of noInit)await rollInit(t)}},`🎲 Инициатива за всех без неё (${noInit.length})`)))}
     for(const t of myTokens())if(t.inCombat&&t.init==null||(!t.inCombat&&s.combat.on&&t.map===s.map))out.push(h('div',{class:'row'},h('button',{class:'btn pri',type:'button',onclick:()=>rollInit(t)},`🎲 Инициатива: ${t.name}`)))}
   if(!o.length)out.push(h('p',{class:'muted'},s.combat.on?'Пока никого. Мастер добавляет участников кнопкой «В бой» во вкладке «Мастер».':'Бой не идёт. На карте можно свободно ходить.'));
   for(const t of o){const f=clamp(hpFrac(t),0,1);const row=h('div',{class:'ini'+(s.combat.turn===t.id?' cur':''),onclick:()=>{selectToken(t.id);if(canSee(t))centerOn(t.x,t.y)}},
@@ -839,6 +919,18 @@ function paneCombat(){const s=st(),o=combatOrder(),out=[];
     out.push(row)}
   const t=sel&&S.tokens[sel];if(t&&canSee(t))out.push(h('hr',{class:'sep'}),selectedCard(t));
   return out}
+async function deathSave(t){const upT=p=>store.update('tokens/'+t.id,p);const r=await rollPost(t.name+': спасбросок от смерти','1d20');if(!r)return;const v=r.total;
+  if(v===20){await upT({hp:1,ds:0,df:0});await post({kind:'sys',tid:t.id,delta:1,text:t.name+' приходит в себя с 1 хитом! (20 на кубике)'})}
+  else if(v>=10){const ds=(t.ds||0)+1;await upT({ds});await post({kind:'sys',text:`${t.name}: успех ${ds}/3${ds>=3?' — стабилизирован':''}`})}
+  else{const df=Math.min(3,(t.df||0)+(v===1?2:1));await upT({df});await post({kind:'sys',text:`${t.name}: провал ${df}/3${v===1?' (1 — два провала)':''}${df>=3?' — погибает…':''}`})}}
+function monsterTurnCard(t){const b=BEST[t.monster],m=mapInfo(),g2=S.gm[t.id]||{};
+  const foes=tokList().filter(x=>x.map===t.map&&x.kind!=='monster'&&!x.hidden&&x.hp>0).sort((p,q)=>gridFt(m,t.x,t.y,p.x,p.y)-gridFt(m,t.x,t.y,q.x,q.y));
+  const tgt=h('select',{'aria-label':'Цель'},...foes.map(x=>h('option',{value:x.id},`${x.name} · ${gridFt(m,t.x,t.y,x.x,x.y)} фт · КД ${x.ac}`)));
+  return h('div',{class:'card',style:'border-color:rgba(229,120,111,.7)'},h('b',{},`Ход: ${t.name}`),h('div',{class:'small muted'},`ХП ${g2.hp??'?'}/${g2.hpMax??'?'} · КД ${g2.ac??b.ac} · перемещение ${moveLeft(t)}/${moveBudget(t)} фт`),
+    foes.length?h('div',{class:'row',style:'margin-top:6px'},'Цель: ',tgt):h('p',{class:'small muted'},'Рядом нет целей.'),
+    h('div',{class:'row',style:'margin-top:4px;flex-wrap:wrap'},...b.atk.map(a=>h('button',{class:'btn sm pri',type:'button',disabled:!foes.length,onclick:()=>attack(t,a,tgt.value)},`⚔ ${a[0]} ${sgn(a[1])} · ${a[2]}`))),
+    h('label',{class:'row small',style:'margin-top:6px'},h('input',{type:'checkbox',checked:autoDmg,onchange:e=>{autoDmg=e.target.checked;try{localStorage.setItem('smgla-autodmg',autoDmg?'1':'0')}catch(_){}}}),'Попал — урон наносится сразу'),
+    h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn pri',type:'button',onclick:nextTurn},'Следующий ход ▸')))}
 function selectedCard(t){const kids=[h('b',{},t.name),h('div',{class:'small muted'},({pc:'Герой',npc:'Союзник',monster:t.monster||'Существо'})[t.kind]+' · '+hpText(t))];
   const can=isOwner||t.owner===myId;
   if(isGM()&&!readOnly){const inp=h('input',{type:'number',min:0,value:'',placeholder:'0','aria-label':'Сколько хитов'});
@@ -877,7 +969,7 @@ function paneHero(){const t=heroFor();
     h('label',{class:'f'},'Тёмное зрение, фт',h('input',{type:'number',value:t.dv||0,step:30,onchange:e=>upT({dv:Number(e.target.value)})}))));
   out.push(h('div',{class:'row',style:'margin-top:8px'},h('label',{class:'row small'},h('input',{type:'checkbox',checked:t.light>0,onchange:e=>upT({light:e.target.checked?20:0})}),'Несёт факел (свет 20 фт)')));
   if(t.hp<=0)out.push(h('div',{class:'card'},h('b',{},'Без сознания · спасброски от смерти'),h('div',{class:'small'},`Успехи: ${'●'.repeat(t.ds||0)}${'○'.repeat(3-(t.ds||0))} · Провалы: ${'●'.repeat(t.df||0)}${'○'.repeat(3-(t.df||0))}`),
-    h('button',{class:'btn pri sm',type:'button',onclick:async()=>{const r=await rollPost(t.name+': спасбросок от смерти','1d20');if(!r)return;const v=r.total;if(v===20){await upT({hp:1,ds:0,df:0});await post({kind:'sys',text:t.name+' приходит в себя с 1 хитом!'})}else if(v>=10){const ds=(t.ds||0)+1;await upT({ds});if(ds>=3)await post({kind:'sys',text:t.name+' стабилизирован.'})}else{const df=(t.df||0)+(v===1?2:1);await upT({df});if(df>=3)await post({kind:'sys',text:t.name+' погибает…'})}}},'🎲 Спасбросок от смерти')));
+    (t.ds||0)>=3?h('div',{class:'small',style:'color:var(--ok)'},'Стабилизирован: без сознания, но не умирает. Придёт в себя через 1к4 часа или от лечения.'):(t.df||0)>=3?h('div',{class:'small',style:'color:#ff9a90'},'Герой погиб.'):h('button',{class:'btn pri sm',type:'button',onclick:()=>deathSave(t)},'🎲 Спасбросок от смерти')));
   out.push(h('h3',{},'Характеристики'),h('div',{class:'stats'},ABIL.map(([k,n])=>h('div',{class:'stat'},h('b',{},n),h('input',{type:'number',value:c[k]??10,'aria-label':n,onchange:e=>up({[k]:Number(e.target.value)})}),h('div',{class:'md',role:'button',tabindex:0,title:'Бросить проверку',onclick:()=>rollPost(`${t.name}: проверка ${n}`,'1d20'+sgn(mod(c[k])),{mode:checkMode(t,k)})},sgn(mod(c[k])))))));
   out.push(h('div',{class:'row small muted',style:'margin-top:6px'},'Спасброски (клик): ',...ABIL.map(([k,n])=>{const sv=(c.saves||[]).includes(k);const bonus=mod(c[k])+(sv?(c.prof||2):0);return h('span',{class:'tag','aria-pressed':String(sv),role:'button',tabindex:0,title:'Правый клик — владение',onclick:()=>(['str','dex'].includes(k)&&AUTO_FAIL.some(x=>has(t,x)))?post({kind:'sys',text:`${t.name}: спасбросок ${n} — автоматический провал (${t.cond.filter(x=>AUTO_FAIL.includes(x)).join(', ').toLowerCase()})`}):rollPost(`${t.name}: спасбросок ${n}`,'1d20'+sgn(bonus),{mode:checkMode(t,k)}),oncontextmenu:e=>{e.preventDefault();if(!isGM())return;up({saves:sv?(c.saves||[]).filter(x=>x!==k):[...(c.saves||[]),k]})}},`${n} ${sgn(bonus)}`)})));
   out.push(advRow());
@@ -896,17 +988,32 @@ function paneHero(){const t=heroFor();
   return out.filter(n=>!(n instanceof Element)||n.isConnected||!n.classList.contains('gm-edit'))}
 let lastTarget='',advMode=null;
 function advRow(){return h('div',{class:'row small',style:'margin-top:6px'},'Бросать:',...[[null,'обычно'],['adv','с преимуществом'],['dis','с помехой']].map(([v,n])=>h('span',{class:'tag',role:'button',tabindex:0,'aria-pressed':String(advMode===v),onclick:()=>{advMode=v;renderPane(true)}},n)))}
-function condMode(t,tg,ranged){let adv=[],dis=[];
+function condMode(t,tg,ranged,extra=[]){let adv=[],dis=[...extra];
   if(advMode==='adv')adv.push('выбрано');if(advMode==='dis')dis.push('выбрано');
   for(const c of ['Ослеплён','Отравлен','Испуган','Опутан','Сбит с ног'])if(has(t,c))dis.push(c.toLowerCase());if(has(t,'Невидим'))adv.push('невидим');
   if(tg){for(const c of ['Ослеплён','Опутан','Парализован','Окаменел','Ошеломлён','Без сознания','Недееспособен'])if(has(tg,c))adv.push('цель: '+c.toLowerCase());
     if(has(tg,'Невидим'))dis.push('цель невидима');if(has(tg,'Сбит с ног'))(ranged?dis:adv).push('цель лежит');}
   const mode=adv.length&&!dis.length?'adv':dis.length&&!adv.length?'dis':null;return{mode,why:[...adv.map(x=>'+'+x),...dis.map(x=>'−'+x)].join(', ')}}
+// дальность по Книге игрока: обычная/максимальная, досягаемость ближнего боя
+const RANGES=[[/ручной арбалет/i,30,120],[/л[её]гкий арбалет/i,80,320],[/т[яе]ж[её]лый арбалет/i,100,400],[/короткий лук/i,80,320],[/лук/i,150,600],[/праща/i,30,120],[/дротик/i,20,60],[/метательн|джавелин/i,30,120],[/сеть/i,5,15],
+  [/кинжал|ручной топор|копь[её]|трезубец|л[её]гкий молот|гарпун/i,20,60]];
+const REACH=/кнут|глефа|алебарда|пика|щупальц|длинное копь/i;
+function atkRange(t,a,tg){const m=mapInfo();const sz=((t.size||1)-1+(tg.size||1)-1)*2.5;const dist=Math.max(0,Math.round((gridFt(m,t.x,t.y,tg.x,tg.y)-sz)/5)*5);
+  const ranged=/лук|арбалет|дротик|праща|снаряд|стрел|метат/i.test(a[0]);const reach=REACH.test(a[0])?10:5;const rg=RANGES.find(r=>r[0].test(a[0]));
+  if(!ranged&&dist<=reach)return{dist,ok:true,dis:[]};
+  if(rg){if(dist>rg[2])return{dist,ok:false,max:rg[2]};const dis=[];if(dist>rg[1])dis.push(`дальняя дистанция ${dist} фт`);
+    const foe=tokList().find(x=>x.id!==t.id&&x.map===t.map&&!x.hidden&&(x.kind==='monster')!==(t.kind==='monster')&&!has(x,'Без сознания')&&(x.kind==='monster'?(S.gm[x.id]||{hp:1}).hp>0:x.hp>0)&&gridFt(m,t.x,t.y,x.x,x.y)<=5);
+    if(foe)dis.push('враг рядом');return{dist,ok:true,dis,thrown:!ranged}}
+  if(/волна|луч/i.test(a[0]))return{dist,ok:true,dis:[]};return{dist,ok:false,max:reach}}
 async function attack(t,a,tid){const tg=tid&&S.tokens[tid];const ranged=/лук|арбалет|дротик|праща|снаряд|волна|луч|стрел|метат/i.test(a[0]);
-  const cm=condMode(t,tg,ranged);const r=roll('1d20'+sgn(a[1]),cm.mode);if(!r)return;let crit=r.nat===20;const miss1=r.nat===1;
+  const rr=tg&&tg.map===t.map?atkRange(t,a,tg):null;
+  if(rr&&!rr.ok){const msg=`${tg.name} в ${rr.dist} фт — ${a[0]} достаёт только на ${rr.max} фт.`;if(!isOwner){toast('Слишком далеко: '+msg);return}if(!confirm(msg+' Всё равно атаковать?'))return}
+  const cm=condMode(t,tg,ranged||(rr&&rr.thrown),rr?rr.dis:[]);const r=roll('1d20'+sgn(a[1]),cm.mode);if(!r)return;let crit=r.nat===20;const miss1=r.nat===1;
   if(!crit&&tg&&!miss1&&(has(tg,'Парализован')||has(tg,'Без сознания'))&&Math.hypot(t.x-tg.x,t.y-tg.y)<=cellPx(mapInfo())*1.6)crit=true;
   const dr=roll(crit?critDice(a[2]):a[2]);let hit=null;if(tg&&isOwner){const ac=tg.kind==='monster'?(S.gm[tg.id]||{}).ac:tg.ac;if(ac)hit=crit||(!miss1&&r.total>=ac)}
-  await post({kind:'roll',text:`${t.name} · ${a[0]}${tg?' → '+tg.name:''}${crit?' · КРИТ!':miss1?' · промах (1)':''}${hit===true?' · попал':hit===false?' · мимо':''}`,total:r.total,det:`${cm.why?'['+cm.why+'] ':''}атака ${r.det}${sgn(0)==='+0'?'':''} · урон ${dr?dr.total:'?'} (${dr?dr.det:''})`,nat:r.nat,target:tg?tg.id:null,dmg:dr&&!miss1?dr.total:null})}
+  await post({kind:'roll',text:`${t.name} · ${a[0]}${tg?' → '+tg.name:''}${crit?' · КРИТ!':miss1?' · промах (1)':''}${hit===true?' · попал':hit===false?' · мимо':''}`,total:r.total,det:`${cm.why?'['+cm.why+'] ':''}атака ${r.det}${sgn(0)==='+0'?'':''} · урон ${dr?dr.total:'?'} (${dr?dr.det:''})`,nat:r.nat,target:tg?tg.id:null,dmg:dr&&!miss1?dr.total:null,applied:!!(autoDmg&&isOwner&&hit===true&&dr)});
+  if(autoDmg&&isOwner&&hit===true&&dr)await applyHp(tg.id,dr.total,'dmg')}
+let autoDmg=true;try{autoDmg=localStorage.getItem('smgla-autodmg')!=='0'}catch(e){}
 
 const REG_URL=NET?'register.html':'https://help22232.github.io/kolokola-mgly/register.html';
 async function importHero(r){const n=v=>Number(v)||0;const id=store.newId('tokens');const m=mapInfo();const [cx,cy]=freeSpot();
@@ -1003,7 +1110,7 @@ async function clearLog(){for(let i=0;i<20;i++){const ids=await store.list('log'
 
 /* ---- МАСТЕР ---- */
 // вкладки Мастера: scene — ход игры, map — карта, mob — существа, mat — материалы; разделы модулей раскладываются по заголовку
-const GM_SEC_TAB=[['Отдых','scene'],['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Случайные','mat'],['Записки','mat']];
+const GM_SEC_TAB=[['Отдых','scene'],['Итоги','scene'],['Резервн','scene'],['Отмен','scene'],['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Случайные','mat'],['Записки','mat']];
 function paneGM(part='scene'){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   if(part==='scene'){
   const heroes=tokList().filter(t=>t.kind!=='monster'&&t.map===s.map);
@@ -1056,7 +1163,7 @@ function paneGM(part='scene'){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const
   const t=sel&&S.tokens[sel];out.push(h('h3',{},'Выбранная фишка'));
   if(!t)out.push(h('p',{class:'muted'},'Щёлкните по фишке на карте.'));else out.push(gmTokenCard(t));
   }
-  for(const f of gmSections){try{const n=f();if(!n)continue;const arr=[n].flat().filter(Boolean);const head=(arr[0]&&arr[0].textContent)||'';const hit=GM_SEC_TAB.find(([k])=>head.startsWith(k));if((hit?hit[1]:'mat')===part)out.push(...arr)}catch(e){console.error(e)}}
+  for(const f of gmSections){try{const n=f();if(!n)continue;const arr=[n].flat().filter(Boolean);const head=(arr[0]&&arr[0].textContent)||'';const hit=GM_SEC_TAB.find(([k])=>head.replace(/^[^А-Яа-яЁёA-Za-z]+/,'').startsWith(k));if((hit?hit[1]:'mat')===part)out.push(...arr)}catch(e){console.error(e)}}
   if(part==='mat')out.push(h('p',{class:'credit'},CREDIT));return out}
 function freeSpot(){const m=mapInfo();let [cx,cy]=toWorld(VW/2,VH/2);cx=clamp(cx,40,m.w-40);cy=clamp(cy,40,m.h-40);const c=cellPx(m);for(let r=0;r<12;r++)for(let i=-r;i<=r;i++)for(let j=-r;j<=r;j++){if(Math.max(Math.abs(i),Math.abs(j))!==r)continue;const [x,y]=snap(m,cx+i*c,cy+j*c);if(x<0||y<0||x>m.w||y>m.h)continue;if(!tokList().some(t=>t.map===m.id&&Math.hypot(t.x-x,t.y-y)<c*.6))return[x,y]}return snap(m,cx,cy)}
 async function addToken(p){const id=store.newId('tokens');const [x,y]=freeSpot();await store.set('tokens/'+id,{color:COLORS[Math.floor(Math.random()*COLORS.length)],size:1,map:st().map,hpTemp:0,dv:0,light:0,owner:null,hidden:false,cond:[],inCombat:false,init:null,...p,x,y});
@@ -1131,6 +1238,7 @@ function addToolButton(t){const b=h('button',{type:'button','data-tool':t.id,tit
 window.VTT={
   get S(){return S},st,store,h,clone,mapInfo,cellPx,ftPx,cam,toWorld,clamp,roll,rollPost,post,toast,requestDraw,changed,renderPane:()=>renderPane(true),renderTabs,
   tokList,canSee,isGM,whoAmI,names,resolveNames,mod,sgn,rnd,showCutAll,selectToken,centerOn,ping,myToken,icOf,picker,applyHp,condMode,has,checkMode,
+  BEST,combatOrder,nextTurn,rollInit,attack,hpText,myTokens,endSession,speedOf,moveLeft,gridFt,
   get myId(){return myId},get isOwner(){return isOwner},get readOnly(){return readOnly},get room(){return room},get sel(){return sel},get tool(){return tool},LIVE,NET,
   get VW(){return VW},get VH(){return VH},
   onDraw(layer,fn){drawHooks[layer].push(fn);requestDraw()},
@@ -1142,7 +1250,7 @@ window.VTT={
   onChat(fn){chatHooks.push(fn)},addLogFilter(fn){logFilters.push(fn)},addLogRenderer(fn){logRenderers.push(fn)},
   watch(col,cb,q){return store.watchCol(col,cb,q)},
   overlay(){return $('modov')}};
-for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js','mod-spells.js','mod-abilities.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
+for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js','mod-spells.js','mod-abilities.js','mod-undo.js','mod-backup.js','mod-summary.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
 window.__table={S,st,cam,frame:()=>draw()};
 })();
 </script>

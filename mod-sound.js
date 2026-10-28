@@ -36,11 +36,26 @@ function initAudio(){if(ctx)return;const AC=window.AudioContext||window.webkitAu
   for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2)}reverb.buffer=ir;
   const rv=ctx.createGain();rv.gain.value=.55;reverb.connect(rv);rv.connect(master);
   whiteBuf=makeNoise('white',3);brownBuf=makeNoise('brown',5);applyPref();
-  setInterval(tick,120);ctx.onstatechange=renderBtn}
-function applyPref(){if(master)master.gain.setTargetAtTime(pref.mute?0:pref.vol,ctx.currentTime,.08)}
+  setInterval(tick,120);ctx.onstatechange=()=>{if(!running())armGesture();else{hideHint();applyWant()}renderBtn()}}
+let duck=false; // идёт катсцена: фон стола приглушён до ~10%
+function applyPref(tc){if(!master)return;const g=master.gain,t=ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);
+  g.setTargetAtTime(pref.mute?0:pref.vol*(duck?.1:1),t,tc||.08)}
+addEventListener('cs-open',()=>{duck=true;applyPref(.5/3)});addEventListener('cs-close',()=>{duck=false;applyPref(.5/3)});
 function running(){return ctx&&ctx.state==='running'}
-async function unlock(){initAudio();if(!ctx)return;try{if(ctx.state!=='running')await ctx.resume()}catch(e){}if(running())applyWant();renderBtn()}
-['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{if(!running())unlock()},{passive:true,capture:true}));
+// iOS: звук Web Audio подчиняется переключателю «Без звука»; 'playback' — играть как медиа (iOS 17+, где есть)
+try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+// Разблокировка: создать/возобновить контекст СИНХРОННО внутри жеста, на iOS ещё и проиграть беззвучный буфер.
+function silentKick(){try{const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(0)}catch(e){}}
+async function unlock(){initAudio();if(!ctx)return;silentKick();try{if(ctx.state!=='running')await ctx.resume()}catch(e){}if(running()){hideHint();applyWant()}renderBtn()}
+// по первому касанию/клику/клавише где угодно; снимается, когда звук пошёл, и ставится снова, если контекст «уснул»
+const GEST=['pointerdown','touchend','click','keydown'];let armed=false;
+function onGesture(){if(running())return disarmGesture();unlock().then(()=>{if(running())disarmGesture()})}
+function armGesture(){if(armed)return;armed=true;GEST.forEach(ev=>document.addEventListener(ev,onGesture,{passive:true,capture:true}))}
+function disarmGesture(){if(!armed)return;armed=false;GEST.forEach(ev=>document.removeEventListener(ev,onGesture,{capture:true}))}
+armGesture();
+// вернулись во вкладку / из фона: пробуем возобновить (без жеста может не выйти — тогда сработает следующее касание)
+function wake(){if(document.visibilityState!=='visible'||!ctx)return;if(!running()){armGesture();ctx.resume().then(()=>{if(running()){applyWant();renderBtn()}}).catch(()=>{})}}
+document.addEventListener('visibilitychange',wake);addEventListener('pageshow',wake);addEventListener('focus',wake);
 
 /* ---------- кирпичики звука ---------- */
 function gainNode(v,dest){const g=ctx.createGain();g.gain.value=v;if(dest)g.connect(dest);return g}
@@ -166,9 +181,9 @@ function playSfx(id){if(!running())return;const t=ctx.currentTime+.03,o=sfxBus,w
 
 /* ---------- синхронизация ---------- */
 V.store.watchDoc('game/audio',d=>{if(d&&typeof d.track==='string'&&TRACKS.some(t=>t[0]===d.track)){want={track:d.track,vol:d.vol==null?.7:Number(d.vol)}}else want={track:'silence',vol:.7};
-  if(running())applyWant();renderBtn();if(V.isOwner)V.renderPane()});
+  if(running())applyWant();else if(want.track!=='silence')needHint();renderBtn();if(V.isOwner)V.renderPane()});
 let sfxOn=false;
-function hookRoom(){const r=V.room;if(r&&!sfxOn){sfxOn=true;r.on('sfx',m=>{const d=m&&m.data;if(d&&typeof d.id==='string')playSfx(d.id)})}}
+function hookRoom(){const r=V.room;if(r&&!sfxOn){sfxOn=true;r.on('sfx',m=>{const d=m&&m.data;if(d&&typeof d.id==='string'){if(running())playSfx(d.id);else needHint()}})}}
 hookRoom();setTimeout(hookRoom,1500);
 async function gmSetTrack(track,vol){if(!V.isOwner||V.readOnly)return;if(!running())await unlock();await V.store.set('game/audio',{track,vol:vol==null?want.vol:vol,ts:Date.now()})}
 async function gmSfx(id){if(!running())await unlock();const r=V.room;if(r)r.emit('sfx',{id}).catch(()=>playSfx(id));else playSfx(id)}
@@ -194,13 +209,24 @@ const css=document.createElement('style');css.textContent=`
 .msnd-grid button[aria-pressed="true"]{border-color:var(--brass,#d9b36c);background:#231d10}
 .msnd-grid button:focus-visible{outline:2px solid var(--sea,#8fd1c4)}
 .msnd-vol{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted,#8e9e9b)}
-.msnd-vol input{flex:1;accent-color:#d9b36c}`;
+.msnd-vol input{flex:1;accent-color:#d9b36c}
+/* плашка «нажмите, чтобы включить звук» — один раз, компактно под кнопкой звука */
+.msnd-hint{position:fixed;z-index:21;max-width:min(230px,calc(100vw - 24px));padding:7px 11px;border-radius:10px;border:1px solid rgba(232,196,106,.6);
+  background:rgba(17,24,25,.95);color:#e8c46a;font:500 13px/1.25 var(--f-body,system-ui,sans-serif);cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.msnd-hint:focus-visible{outline:2px solid var(--sea,#8fd1c4)}`;
 document.head.append(css);
 const fab=h('button',{type:'button',class:'msnd-fab','aria-haspopup':'dialog'}),pop=h('div',{class:'msnd-pop',role:'dialog','aria-label':'Звук'});pop.hidden=true;
-(V.overlay()||document.body).append(fab,pop);
+const hint=h('button',{type:'button',class:'msnd-hint'},'🔊 Нажмите, чтобы включить звук');hint.hidden=true;
+(V.overlay()||document.body).append(fab,pop,hint);
+let hintShown=false,hintTimer=0;
+// Мастер включил фон/эффект, а у нас звук заблокирован: показать плашку один раз (на ПК кнопка и так подписана)
+function needHint(){if(hintShown||running()||pref.mute||(window.innerWidth||800)>=600)return;hintShown=true;hint.hidden=false;place();hintTimer=setTimeout(hideHint,15000)}
+function hideHint(){hint.hidden=true;clearTimeout(hintTimer)}
+hint.onclick=()=>{hideHint();unlock()};
 function place(){const b=document.getElementById('board');const r=b?b.getBoundingClientRect():{left:0,top:0,right:innerWidth,bottom:innerHeight};
   if((window.innerWidth||800)<600){fab.style.left=Math.round(r.right-50)+'px';fab.style.top=Math.round(r.top+10)+'px';
-    pop.style.left=Math.round(Math.max(12,r.right-10-(pop.offsetWidth||270)))+'px';pop.style.top=Math.round(r.top+56)+'px';return}
+    pop.style.left=Math.round(Math.max(12,r.right-10-(pop.offsetWidth||270)))+'px';pop.style.top=Math.round(r.top+56)+'px';
+    if(!hint.hidden){hint.style.left=Math.round(Math.max(12,r.right-10-(hint.offsetWidth||230)))+'px';hint.style.top=Math.round(r.top+56)+'px'}return}
   fab.style.left=Math.round(r.left+10)+'px';fab.style.top=Math.round(r.bottom-46)+'px';
   pop.style.left=Math.round(Math.max(12,r.left+10))+'px';pop.style.top=Math.round(Math.max(12,r.bottom-56-(pop.offsetHeight||190)))+'px'}
 const bd=document.getElementById('board');if(bd&&window.ResizeObserver)new ResizeObserver(place).observe(bd);addEventListener('resize',()=>{renderBtn()});addEventListener('scroll',place,true);setInterval(place,2000);
