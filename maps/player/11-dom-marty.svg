@@ -99,7 +99,27 @@
 </defs>
 
 <rect x="0" y="0" width="1040" height="840" fill="#f1e2bf" stroke="none"/>
+<clipPath id="bandtop"><rect x="0" y="0" width="1040" height="80" fill="#000000" stroke="none"/></clipPath>
+<clipPath id="bandbot"><rect x="0" y="680" width="1040" height="160" fill="#000000" stroke="none"/></clipPath>
 <clipPath id="mapclip"><rect x="0" y="80" width="1040" height="600" fill="#000000" stroke="none"/></clipPath>
+<g clip-path="url(#bandtop)"><g transform="matrix(1 0 0 -1 0 160)">
+<rect x="0" y="80" width="1040" height="600" fill="url(#grass)" stroke="none" stroke-width="0"/>
+<path d="M744,80 L1040,80 L1040,680 L688,680 L704,620 L736,568 L756,500 L768,448 L772,160 Z" fill="url(#sandp)" stroke="none" stroke-width="0"/>
+<path d="M896,80 L1040,80 L1040,680 L824,680 L840,624 L868,560 L884,488 L904,424 L916,360 L908,280 L892,200 L904,140 Z" fill="url(#seap)" stroke="none" stroke-width="0"/>
+<path d="M892,120 Q880,240 896,340 T872,520 T832,672" fill="none" stroke="#f4f7f2" stroke-width="3" stroke-opacity="0.8"/>
+<path d="M100,480 V680" fill="none" stroke="#a88a5c" stroke-width="44" stroke-opacity="0.45"/>
+<rect x="480" y="440" width="280" height="48" fill="url(#dirt)" stroke="none" stroke-width="0"/>
+</g>
+</g>
+<g clip-path="url(#bandbot)"><g transform="matrix(1 0 0 -1 0 1360)">
+<rect x="0" y="80" width="1040" height="600" fill="url(#grass)" stroke="none" stroke-width="0"/>
+<path d="M744,80 L1040,80 L1040,680 L688,680 L704,620 L736,568 L756,500 L768,448 L772,160 Z" fill="url(#sandp)" stroke="none" stroke-width="0"/>
+<path d="M896,80 L1040,80 L1040,680 L824,680 L840,624 L868,560 L884,488 L904,424 L916,360 L908,280 L892,200 L904,140 Z" fill="url(#seap)" stroke="none" stroke-width="0"/>
+<path d="M892,120 Q880,240 896,340 T872,520 T832,672" fill="none" stroke="#f4f7f2" stroke-width="3" stroke-opacity="0.8"/>
+<path d="M100,480 V680" fill="none" stroke="#a88a5c" stroke-width="44" stroke-opacity="0.45"/>
+<rect x="480" y="440" width="280" height="48" fill="url(#dirt)" stroke="none" stroke-width="0"/>
+</g>
+</g>
 <g clip-path="url(#mapclip)">
 <rect x="0" y="80" width="1040" height="600" fill="url(#grass)" stroke="none" stroke-width="0"/>
 <path d="M744,80 L1040,80 L1040,680 L688,680 L704,620 L736,568 L756,500 L768,448 L772,160 Z" fill="url(#sandp)" stroke="none" stroke-width="0"/>
@@ -113,7 +133,8 @@
 <rect x="200" y="360" width="280" height="120" fill="url(#planksD)" stroke="none" stroke-width="0"/>
 <rect x="520" y="160" width="240" height="280" fill="url(#dirt)" stroke="none" stroke-width="0"/>
 <rect x="348" y="288" width="104" height="64" rx="3" fill="#5a6d7a" stroke="#3b2412" stroke-width="1.5"/><rect x="354" y="294" width="92" height="52" fill="none" stroke="#d9b26a" stroke-width="2.5"/><path d="M364,320 L400,304 L436,320 L400,336 Z" fill="none" stroke="#d9b26a" stroke-width="1.6"/>
-<rect x="0" y="80" width="1040" height="600" fill="#ffffff" filter="url(#paper)" stroke="none"/>
+</g>
+<rect x="0" y="0" width="1040" height="840" fill="#ffffff" filter="url(#paper)" stroke="none"/>
 <rect x="48" y="128" width="88" height="88" rx="4" fill="url(#brick)" stroke="#3b2412" stroke-width="2.4"/><rect x="54" y="134" width="18" height="18" fill="#7a4430" stroke="#3b2412" stroke-width="1.5"/><rect x="58" y="138" width="10" height="10" fill="#1d140c" stroke="none"/><rect x="124" y="158" width="12" height="28" rx="4" fill="#2a1a10" stroke="#3b2412" stroke-width="1.4"/><circle cx="130" cy="172" r="5" fill="#e8562a" fill-opacity="0.85" stroke="none"/>
 <circle cx="154" cy="172" r="11.2" fill="#2c2a28" stroke="#3b2412" stroke-width="2"/><circle cx="154" cy="172" r="7.2" fill="#c9a25a" stroke="none"/><circle cx="151" cy="170" r="2" fill="#d8f0d0" stroke="none"/><circle cx="158" cy="175" r="1.5" fill="#d8f0d0" stroke="none"/>
 <rect x="168" y="224" width="104" height="32" rx="2" fill="#a87443" stroke="#3b2412" stroke-width="2"/><line x1="171" y1="240" x2="269" y2="240" stroke="#6d4522" stroke-width="0.9" fill="none"/>
@@ -188,7 +209,7 @@
 <use href="#stone" transform="translate(800,460)"/>
 <use href="#stone" transform="translate(792,544)"/>
 <use href="#stone" transform="translate(824,184)"/>
-<path d="M0,80 V680 M40,80 V680 M80,80 V680 M120,80 V680 M160,80 V680 M200,80 V680 M240,80 V680 M280,80 V680 M320,80 V680 M360,80 V680 M400,80 V680 M440,80 V680 M480,80 V680 M520,80 V680 M560,80 V680 M600,80 V680 M640,80 V680 M680,80 V680 M720,80 V680 M760,80 V680 M800,80 V680 M840,80 V680 M880,80 V680 M920,80 V680 M960,80 V680 M1000,80 V680 M1040,80 V680 M0,80 H1040 M0,120 H1040 M0,160 H1040 M0,200 H1040 M0,240 H1040 M0,280 H1040 M0,320 H1040 M0,360 H1040 M0,400 H1040 M0,440 H1040 M0,480 H1040 M0,520 H1040 M0,560 H1040 M0,600 H1040 M0,640 H1040 M0,680 H1040" fill="none" stroke="#3b2412" stroke-width="1" stroke-opacity="0.3"/>
+<path d="M0,0 V840 M40,0 V840 M80,0 V840 M120,0 V840 M160,0 V840 M200,0 V840 M240,0 V840 M280,0 V840 M320,0 V840 M360,0 V840 M400,0 V840 M440,0 V840 M480,0 V840 M520,0 V840 M560,0 V840 M600,0 V840 M640,0 V840 M680,0 V840 M720,0 V840 M760,0 V840 M800,0 V840 M840,0 V840 M880,0 V840 M920,0 V840 M960,0 V840 M1000,0 V840 M1040,0 V840 M0,0 H1040 M0,40 H1040 M0,80 H1040 M0,120 H1040 M0,160 H1040 M0,200 H1040 M0,240 H1040 M0,280 H1040 M0,320 H1040 M0,360 H1040 M0,400 H1040 M0,440 H1040 M0,480 H1040 M0,520 H1040 M0,560 H1040 M0,600 H1040 M0,640 H1040 M0,680 H1040 M0,720 H1040 M0,760 H1040 M0,800 H1040 M0,840 H1040" fill="none" stroke="#3b2412" stroke-width="1" stroke-opacity="0.3"/>
 <line x1="40" y1="120" x2="480" y2="120" stroke="#2b1b0e" stroke-width="14" stroke-linecap="square" fill="none"/>
 <line x1="480" y1="120" x2="480" y2="480" stroke="#2b1b0e" stroke-width="14" stroke-linecap="square" fill="none"/>
 <line x1="480" y1="480" x2="40" y2="480" stroke="#2b1b0e" stroke-width="14" stroke-linecap="square" fill="none"/>
@@ -223,35 +244,5 @@
 <rect x="751" y="243" width="18" height="114" fill="url(#dirt)" stroke="none"/><rect x="751" y="241" width="18" height="4" fill="#2b1b0e" stroke="none"/><rect x="751" y="355" width="18" height="4" fill="#2b1b0e" stroke="none"/><g transform="translate(760,300) rotate(90)"><rect x="-54" y="-4" width="54" height="8" fill="#8a5a2b" stroke="#3b2412" stroke-width="1.6"/><rect x="0" y="-4" width="54" height="8" fill="#8a5a2b" stroke="#3b2412" stroke-width="1.6"/><circle cx="-3" cy="0" r="1.6" fill="#e0c060" stroke="none"/><circle cx="3" cy="0" r="1.6" fill="#e0c060" stroke="none"/></g>
 <rect x="563" y="431" width="34" height="18" fill="url(#dirt)" stroke="none"/><rect x="561" y="431" width="4" height="18" fill="#2b1b0e" stroke="none"/><rect x="595" y="431" width="4" height="18" fill="#2b1b0e" stroke="none"/><g transform="translate(580,440) rotate(0)"><rect x="-14" y="-4" width="28" height="8" fill="#8a5a2b" stroke="#3b2412" stroke-width="1.6"/><line x1="-11" y1="0" x2="11" y2="0" stroke="#3b2412" stroke-width="0.8" fill="none"/><circle cx="9" cy="0" r="1.6" fill="#e0c060" stroke="none"/></g>
 <rect x="516.5" y="284" width="7" height="32" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/><line x1="520" y1="284" x2="520" y2="316" stroke="#3b2412" stroke-width="1" fill="none"/>
-<line x1="100" y1="668" x2="100" y2="514" stroke="#b3201c" stroke-width="6" fill="none"/><polygon points="100,498 112,514 88,514" fill="#b3201c" stroke="#5a0f0c" stroke-width="1.5"/>
-<text x="184" y="306" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Горница</text>
-<text x="412" y="330" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Спальня</text>
-<text x="124" y="424" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Сени</text>
-<text x="372" y="422" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Кладовка</text>
-<text x="640" y="220" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Сарай</text>
-<text x="300" y="582" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">вешала с сетями</text>
-<text x="300" y="662" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">двор</text>
-<text x="832" y="238" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">слип</text>
-<text x="976" y="440" font-family="Georgia, 'Times New Roman', serif" font-size="18" fill="#e6f1ee" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#2f6d70" stroke-width="4" stroke-linejoin="round" paint-order="stroke">М О Р Е</text>
-<text x="808" y="616" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">берег</text>
-<text x="160" y="660" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">в город</text>
-</g>
-<rect x="0" y="80" width="1040" height="600" fill="none" stroke="#3b2412" stroke-width="3"/>
-<text x="520" y="44" font-family="Georgia, 'Times New Roman', serif" font-size="32" fill="#3b2412" text-anchor="middle" font-weight="bold">Дом Марты и Тобиаса Грей</text>
-<text x="520" y="67" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#3b2412" text-anchor="middle" font-style="italic">Солтхейвен · рыбацкий дом у воды · боевая карта · для игроков</text>
-<rect x="12" y="690" width="1016" height="140" rx="6" fill="#efe0b9" stroke="#3b2412" stroke-width="1.5"/>
-<text x="940" y="714" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-weight="bold">1 клетка = 5 футов</text>
-<rect x="920" y="726" width="40" height="40" fill="#e6d4a8" stroke="#3b2412" stroke-width="2"/>
-<path d="M900,804 h80 M900,800 v8 M940,800 v8 M980,800 v8" fill="none" stroke="#3b2412" stroke-width="2"/>
-<text x="900" y="827" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle">0</text>
-<text x="980" y="827" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle">10 фт</text>
-<rect x="699" y="703" width="28" height="12" fill="#2b1b0e" stroke="none"/><rect x="702" y="705" width="22" height="8" fill="#8a5a2b" stroke="#3b2412" stroke-width="1.5"/>
-<text x="737" y="714" font-family="Georgia, 'Times New Roman', serif" font-size="13.5" fill="#3b2412">дверь</text>
-<rect x="699" y="724" width="28" height="12" fill="#2b1b0e" stroke="none"/><rect x="702" y="727" width="22" height="7" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/>
-<text x="737" y="735" font-family="Georgia, 'Times New Roman', serif" font-size="13.5" fill="#3b2412">окно</text>
-<line x1="699" y1="752" x2="717" y2="752" stroke="#b3201c" stroke-width="5" fill="none"/><polygon points="715,744 715,760 727,752" fill="#b3201c" stroke="none"/>
-<text x="737" y="757" font-family="Georgia, 'Times New Roman', serif" font-size="13.5" fill="#3b2412">вход / выход</text>
-<text x="347.5" y="741.5" font-family="Georgia, 'Times New Roman', serif" font-size="20" fill="#3b2412" text-anchor="middle" font-style="italic">Дом Марты и Тобиаса Грей</text>
-<text x="347.5" y="767" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-style="italic">Солтхейвен, Бухта Солёной Мглы</text>
 <rect x="0" y="0" width="1040" height="840" fill="url(#vign)" stroke="none"/>
 </svg>

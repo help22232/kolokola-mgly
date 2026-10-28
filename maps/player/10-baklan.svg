@@ -99,7 +99,21 @@
 </defs>
 
 <rect x="0" y="0" width="1200" height="960" fill="#f1e2bf" stroke="none"/>
+<clipPath id="bandtop"><rect x="0" y="0" width="1200" height="80" fill="#000000" stroke="none"/></clipPath>
+<clipPath id="bandbot"><rect x="0" y="800" width="1200" height="160" fill="#000000" stroke="none"/></clipPath>
 <clipPath id="mapclip"><rect x="0" y="80" width="1200" height="720" fill="#000000" stroke="none"/></clipPath>
+<g clip-path="url(#bandtop)"><g transform="matrix(1 0 0 -1 0 160)">
+<rect x="0" y="80" width="1200" height="720" fill="url(#grass)" stroke="none" stroke-width="0"/>
+<rect x="0" y="680" width="820" height="120" fill="url(#cobble)" stroke="none" stroke-width="0"/>
+<rect x="0" y="80" width="820" height="40" fill="url(#dirt)" stroke="none" stroke-width="0"/>
+</g>
+</g>
+<g clip-path="url(#bandbot)"><g transform="matrix(1 0 0 -1 0 1600)">
+<rect x="0" y="80" width="1200" height="720" fill="url(#grass)" stroke="none" stroke-width="0"/>
+<rect x="0" y="680" width="820" height="120" fill="url(#cobble)" stroke="none" stroke-width="0"/>
+<rect x="0" y="80" width="820" height="40" fill="url(#dirt)" stroke="none" stroke-width="0"/>
+</g>
+</g>
 <g clip-path="url(#mapclip)">
 <rect x="0" y="80" width="1200" height="720" fill="url(#grass)" stroke="none" stroke-width="0"/>
 <rect x="0" y="680" width="820" height="120" fill="url(#cobble)" stroke="none" stroke-width="0"/>
@@ -115,7 +129,8 @@
 <rect x="830" y="92" width="360" height="612" fill="#efe0b9" stroke="#3b2412" stroke-width="2.5"/>
 <rect x="834" y="96" width="352" height="604" fill="none" stroke="#3b2412" stroke-width="1"/>
 <rect x="1056" y="276" width="88" height="76" rx="3" fill="#3f5f7a" stroke="#3b2412" stroke-width="1.5"/><rect x="1062" y="282" width="76" height="64" fill="none" stroke="#d9b26a" stroke-width="2.5"/><path d="M1072,314 L1100,292 L1128,314 L1100,336 Z" fill="none" stroke="#d9b26a" stroke-width="1.6"/>
-<rect x="0" y="80" width="1200" height="720" fill="#ffffff" filter="url(#paper)" stroke="none"/>
+</g>
+<rect x="0" y="0" width="1200" height="960" fill="#ffffff" filter="url(#paper)" stroke="none"/>
 <rect x="48" y="128" width="80" height="152" fill="#c9a77a" stroke="#3b2412" stroke-width="2"/><line x1="48" y1="141.8" x2="128" y2="141.8" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="155.6" x2="128" y2="155.6" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="169.5" x2="128" y2="169.5" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="183.3" x2="128" y2="183.3" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="197.1" x2="128" y2="197.1" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="210.9" x2="128" y2="210.9" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="224.7" x2="128" y2="224.7" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="238.5" x2="128" y2="238.5" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="252.4" x2="128" y2="252.4" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="48" y1="266.2" x2="128" y2="266.2" stroke="#3b2412" stroke-width="1.5" fill="none"/><line x1="88" y1="252.6" x2="88" y2="155.4" stroke="#3b2412" stroke-width="2.4" fill="none"/><polygon points="88,147.4 95,155.4 81,155.4" fill="#3b2412" stroke="none"/>
 <rect x="18" y="376" width="22" height="128" fill="url(#stonep)" stroke="#3b2412" stroke-width="2"/>
 <rect x="40" y="384" width="36" height="112" fill="url(#stonep)" stroke="#3b2412" stroke-width="2.2"/><rect x="49" y="393" width="27" height="94" fill="#3a2a1c" stroke="#3b2412" stroke-width="1.2"/><circle cx="62.5" cy="440" r="30" fill="#ef9d3a" fill-opacity="0.25" stroke="none"/><path d="M53.5,446 q4,-14 10,-16 q2,9 8,16 Z" fill="#e8562a" stroke="#7a2a0c" stroke-width="1"/><path d="M58.5,446 q2,-7 5,-9 q1,5 4,9 Z" fill="#f7d34a" stroke="none"/>
@@ -251,10 +266,7 @@
 <rect x="1048" y="500" width="16" height="92" fill="#7a4a24" stroke="#3b2412" stroke-width="1.8"/><rect x="1052.5" y="501.5" width="7" height="7" fill="#b4834b" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="510.5" width="7" height="7" fill="#8a8a86" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="519.5" width="7" height="7" fill="#c9a86a" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="528.5" width="7" height="7" fill="#5c5a55" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="537.5" width="7" height="7" fill="#b4834b" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="546.5" width="7" height="7" fill="#8a8a86" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="555.5" width="7" height="7" fill="#c9a86a" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="564.5" width="7" height="7" fill="#5c5a55" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="573.5" width="7" height="7" fill="#b4834b" stroke="#22180e" stroke-width="0.6"/><rect x="1052.5" y="582.5" width="7" height="7" fill="#8a8a86" stroke="#22180e" stroke-width="0.6"/>
 <use href="#chair" transform="translate(1104,492)"/>
 <rect x="1088" y="504" width="36" height="28" rx="2" fill="#a87443" stroke="#3b2412" stroke-width="2"/><line x1="1091" y1="518" x2="1121" y2="518" stroke="#6d4522" stroke-width="0.9" fill="none"/>
-<path d="M840,160 V600 M880,160 V600 M920,160 V600 M960,160 V600 M1000,160 V600 M1040,160 V600 M1080,160 V600 M1120,160 V600 M1160,160 V600 M840,160 H1160 M840,200 H1160 M840,240 H1160 M840,280 H1160 M840,320 H1160 M840,360 H1160 M840,400 H1160 M840,440 H1160 M840,480 H1160 M840,520 H1160 M840,560 H1160 M840,600 H1160" fill="none" stroke="#3b2412" stroke-width="1" stroke-opacity="0.3"/>
-<path d="M0,80 V800 M40,80 V800 M80,80 V800 M120,80 V800 M160,80 V800 M200,80 V800 M240,80 V800 M280,80 V800 M320,80 V800 M360,80 V800 M400,80 V800 M440,80 V800 M480,80 V800 M520,80 V800 M560,80 V800 M600,80 V800 M640,80 V800 M680,80 V800 M720,80 V800 M760,80 V800 M800,80 V800 M0,80 H820 M0,120 H820 M0,160 H820 M0,200 H820 M0,240 H820 M0,280 H820 M0,320 H820 M0,360 H820 M0,400 H820 M0,440 H820 M0,480 H820 M0,520 H820 M0,560 H820 M0,600 H820 M0,640 H820 M0,680 H820 M0,720 H820 M0,760 H820 M0,800 H820" fill="none" stroke="#3b2412" stroke-width="1" stroke-opacity="0.3"/>
-<path d="M800,704 V800 M840,704 V800 M880,704 V800 M920,704 V800 M960,704 V800 M1000,704 V800 M1040,704 V800 M1080,704 V800 M1120,704 V800 M1160,704 V800 M1200,704 V800 M820,680 H1200 M820,720 H1200 M820,760 H1200 M820,800 H1200" fill="none" stroke="#3b2412" stroke-width="1" stroke-opacity="0.3"/>
-<path d="M1160,80 V704 M1200,80 V704 M1190,80 H1200 M1190,120 H1200 M1190,160 H1200 M1190,200 H1200 M1190,240 H1200 M1190,280 H1200 M1190,320 H1200 M1190,360 H1200 M1190,400 H1200 M1190,440 H1200 M1190,480 H1200 M1190,520 H1200 M1190,560 H1200 M1190,600 H1200 M1190,640 H1200 M1190,680 H1200" fill="none" stroke="#3b2412" stroke-width="1" stroke-opacity="0.3"/>
+<path d="M0,0 V960 M40,0 V960 M80,0 V960 M120,0 V960 M160,0 V960 M200,0 V960 M240,0 V960 M280,0 V960 M320,0 V960 M360,0 V960 M400,0 V960 M440,0 V960 M480,0 V960 M520,0 V960 M560,0 V960 M600,0 V960 M640,0 V960 M680,0 V960 M720,0 V960 M760,0 V960 M800,0 V960 M840,0 V960 M880,0 V960 M920,0 V960 M960,0 V960 M1000,0 V960 M1040,0 V960 M1080,0 V960 M1120,0 V960 M1160,0 V960 M1200,0 V960 M0,0 H1200 M0,40 H1200 M0,80 H1200 M0,120 H1200 M0,160 H1200 M0,200 H1200 M0,240 H1200 M0,280 H1200 M0,320 H1200 M0,360 H1200 M0,400 H1200 M0,440 H1200 M0,480 H1200 M0,520 H1200 M0,560 H1200 M0,600 H1200 M0,640 H1200 M0,680 H1200 M0,720 H1200 M0,760 H1200 M0,800 H1200 M0,840 H1200 M0,880 H1200 M0,920 H1200 M0,960 H1200" fill="none" stroke="#3b2412" stroke-width="1" stroke-opacity="0.3"/>
 <line x1="40" y1="120" x2="800" y2="120" stroke="#2b1b0e" stroke-width="14" stroke-linecap="square" fill="none"/>
 <line x1="800" y1="120" x2="800" y2="680" stroke="#2b1b0e" stroke-width="14" stroke-linecap="square" fill="none"/>
 <line x1="800" y1="680" x2="40" y2="680" stroke="#2b1b0e" stroke-width="14" stroke-linecap="square" fill="none"/>
@@ -297,7 +309,6 @@
 <rect x="204" y="116.5" width="32" height="7" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/><line x1="204" y1="120" x2="236" y2="120" stroke="#3b2412" stroke-width="1" fill="none"/>
 <rect x="324" y="116.5" width="32" height="7" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/><line x1="324" y1="120" x2="356" y2="120" stroke="#3b2412" stroke-width="1" fill="none"/>
 <rect x="796.5" y="264" width="7" height="32" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/><line x1="800" y1="264" x2="800" y2="296" stroke="#3b2412" stroke-width="1" fill="none"/>
-<line x1="280" y1="788" x2="280" y2="718" stroke="#b3201c" stroke-width="6" fill="none"/><polygon points="280,702 292,718 268,718" fill="#b3201c" stroke="#5a0f0c" stroke-width="1.5"/>
 <rect x="951" y="223" width="18" height="34" fill="url(#planks)" stroke="none"/><rect x="951" y="221" width="18" height="4" fill="#2b1b0e" stroke="none"/><rect x="951" y="255" width="18" height="4" fill="#2b1b0e" stroke="none"/><g transform="translate(960,240) rotate(90)"><rect x="-14" y="-4" width="28" height="8" fill="#8a5a2b" stroke="#3b2412" stroke-width="1.6"/><line x1="-11" y1="0" x2="11" y2="0" stroke="#3b2412" stroke-width="0.8" fill="none"/><circle cx="9" cy="0" r="1.6" fill="#e0c060" stroke="none"/></g>
 <rect x="951" y="383" width="18" height="34" fill="url(#planks)" stroke="none"/><rect x="951" y="381" width="18" height="4" fill="#2b1b0e" stroke="none"/><rect x="951" y="415" width="18" height="4" fill="#2b1b0e" stroke="none"/><g transform="translate(960,400) rotate(90)"><rect x="-14" y="-4" width="28" height="8" fill="#8a5a2b" stroke="#3b2412" stroke-width="1.6"/><line x1="-11" y1="0" x2="11" y2="0" stroke="#3b2412" stroke-width="0.8" fill="none"/><circle cx="9" cy="0" r="1.6" fill="#e0c060" stroke="none"/></g>
 <rect x="1031" y="243" width="18" height="34" fill="url(#planks)" stroke="none"/><rect x="1031" y="241" width="18" height="4" fill="#2b1b0e" stroke="none"/><rect x="1031" y="275" width="18" height="4" fill="#2b1b0e" stroke="none"/><g transform="translate(1040,260) rotate(90)"><rect x="-14" y="-4" width="28" height="8" fill="#8a5a2b" stroke="#3b2412" stroke-width="1.6"/><line x1="-11" y1="0" x2="11" y2="0" stroke="#3b2412" stroke-width="0.8" fill="none"/><circle cx="9" cy="0" r="1.6" fill="#e0c060" stroke="none"/></g>
@@ -309,41 +320,5 @@
 <rect x="884" y="156.5" width="32" height="7" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/><line x1="884" y1="160" x2="916" y2="160" stroke="#3b2412" stroke-width="1" fill="none"/>
 <rect x="1084" y="156.5" width="32" height="7" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/><line x1="1084" y1="160" x2="1116" y2="160" stroke="#3b2412" stroke-width="1" fill="none"/>
 <rect x="884" y="596.5" width="32" height="7" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/><line x1="884" y1="600" x2="916" y2="600" stroke="#3b2412" stroke-width="1" fill="none"/>
-<text x="88" y="302" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">вверх</text>
-<text x="224" y="770" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">вход</text>
-<text x="580" y="772" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">улица к причалу</text>
-<text x="300" y="108" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">задний двор</text>
-<text x="260" y="264" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Общий зал</text>
-<text x="660" y="200" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Кухня</text>
-<text x="656" y="654" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Кладовая</text>
-<text x="474" y="480" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">стойка</text>
-<text x="112" y="528" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">камин</text>
-<text x="1010" y="134" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Второй этаж (врезка)</text>
-<text x="942" y="582" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">вниз</text>
-<text x="920" y="250" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Комн. 1</text>
-<text x="924" y="352" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Комн. 2</text>
-<text x="1100" y="264" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Комн. 3</text>
-<text x="1104" y="470" font-family="Georgia, 'Times New Roman', serif" font-size="12.5" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Хозяйка</text>
-<text x="1000" y="340" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">коридор</text>
-</g>
-<rect x="0" y="80" width="1200" height="720" fill="none" stroke="#3b2412" stroke-width="3"/>
-<text x="600" y="44" font-family="Georgia, 'Times New Roman', serif" font-size="32" fill="#3b2412" text-anchor="middle" font-weight="bold">Таверна «Пьяный Баклан»</text>
-<text x="600" y="67" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#3b2412" text-anchor="middle" font-style="italic">Солтхейвен · хозяйка Ингрид · боевая карта · для игроков</text>
-<rect x="12" y="810" width="1176" height="140" rx="6" fill="#efe0b9" stroke="#3b2412" stroke-width="1.5"/>
-<text x="1100" y="834" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-weight="bold">1 клетка = 5 футов</text>
-<rect x="1080" y="846" width="40" height="40" fill="#e6d4a8" stroke="#3b2412" stroke-width="2"/>
-<path d="M1060,924 h80 M1060,920 v8 M1100,920 v8 M1140,920 v8" fill="none" stroke="#3b2412" stroke-width="2"/>
-<text x="1060" y="947" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle">0</text>
-<text x="1140" y="947" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle">10 фт</text>
-<rect x="859" y="823" width="28" height="12" fill="#2b1b0e" stroke="none"/><rect x="862" y="825" width="22" height="8" fill="#8a5a2b" stroke="#3b2412" stroke-width="1.5"/>
-<text x="897" y="834" font-family="Georgia, 'Times New Roman', serif" font-size="13.5" fill="#3b2412">дверь</text>
-<rect x="859" y="844" width="28" height="12" fill="#2b1b0e" stroke="none"/><rect x="862" y="847" width="22" height="7" fill="#cfe3e6" stroke="#3b2412" stroke-width="1.5"/>
-<text x="897" y="855" font-family="Georgia, 'Times New Roman', serif" font-size="13.5" fill="#3b2412">окно</text>
-<rect x="860" y="865" width="26" height="15" fill="#c9a77a" stroke="#3b2412" stroke-width="1.5"/><path d="M867,865 v15 M873,865 v15 M879,865 v15" stroke="#3b2412" stroke-width="1.2" fill="none"/>
-<text x="897" y="877" font-family="Georgia, 'Times New Roman', serif" font-size="13.5" fill="#3b2412">лестница</text>
-<line x1="859" y1="893" x2="877" y2="893" stroke="#b3201c" stroke-width="5" fill="none"/><polygon points="875,885 875,901 887,893" fill="#b3201c" stroke="none"/>
-<text x="897" y="898" font-family="Georgia, 'Times New Roman', serif" font-size="13.5" fill="#3b2412">вход / выход</text>
-<text x="427.5" y="861.5" font-family="Georgia, 'Times New Roman', serif" font-size="20" fill="#3b2412" text-anchor="middle" font-style="italic">Таверна «Пьяный Баклан»</text>
-<text x="427.5" y="887" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-style="italic">Солтхейвен, Бухта Солёной Мглы</text>
 <rect x="0" y="0" width="1200" height="960" fill="url(#vign)" stroke="none"/>
 </svg>

@@ -37,7 +37,7 @@ header .sp{flex:1}
 .board{position:relative;min-width:0;min-height:0;background:#050707;touch-action:none;overflow:hidden}
 .board canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
 .board canvas.tool{cursor:crosshair}
-.tools{position:absolute;left:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.tools{position:absolute;left:10px;top:10px;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:6px;z-index:2;max-height:calc(100% - 76px)}
 .tools button,.zoom button{width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:rgba(17,24,25,.9);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 .tools button[aria-pressed="true"]{border-color:var(--brass);color:var(--brass);background:#231d10}
 .tools button:focus-visible,.zoom button:focus-visible{outline:2px solid var(--sea)}
@@ -107,6 +107,23 @@ label.f{display:grid;gap:3px;font-size:12px;color:var(--muted)}
 .pp .ava img{width:30px;height:30px}
 details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 .credit{font-size:11px;color:var(--muted);margin-top:18px}
+.zoom button[aria-pressed="true"]{border-color:var(--brass);background:#231d10}
+.notepop{position:absolute;z-index:5;width:min(300px,calc(100% - 20px));background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.notepop textarea{min-height:70px}
+.notepop .who{font-size:12px;color:var(--muted);margin-bottom:4px}
+.notepop .txt{white-space:pre-wrap;margin:4px 0 8px}
+.mist{display:flex;align-items:center;gap:6px;cursor:pointer;background:none}
+.mist .cells{display:flex;gap:2px}
+.mist .cells i{width:7px;height:12px;border-radius:2px;background:#26383a}
+.mist .cells i.on{background:#7fd0a8}
+.mist .cells i.on.hi{background:#e8c46a}
+.mist .cells i.on.max{background:#e58a80}
+.mistbox{display:flex;align-items:center;gap:10px;margin:6px 0}
+.mistbox .cells{display:flex;gap:4px}
+.mistbox .cells i{width:22px;height:22px;border-radius:5px;background:#26383a;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;color:var(--muted)}
+.mistbox .cells i.on{background:#2f6f5c;color:#fff}
+.mistbox .cells i.on.hi{background:#8a6d22}
+.mistbox .cells i.on.max{background:#8a3a33}
 .csov{position:fixed;inset:0;z-index:50;background:#000}
 .csov iframe{width:100%;height:100%;border:0;display:block}
 #csClose{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 12px);z-index:2;opacity:.8}
@@ -116,7 +133,7 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 .hand-view{overflow:auto}
 .hand-view img{display:block;max-width:none;margin:0 auto}
 .lobby{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;background:rgba(5,8,9,.88);padding:16px}
-.lobby.gm{inset:10px 10px auto auto;width:min(340px,calc(100% - 70px));background:none;padding:0;display:block}
+.lobby.gm{inset:10px 10px auto auto;width:min(340px,calc(100% - 120px));background:none;padding:0;display:flex;justify-content:flex-end;align-items:flex-start}
 .lcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;max-width:440px;width:100%;max-height:100%;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .lobby.pl{position:fixed;inset:0;z-index:30;display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:var(--bg);
   padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 96px) max(16px,env(safe-area-inset-left,0px))}
@@ -131,7 +148,10 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 @media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,56fr) minmax(0,44fr)}
   aside.panel{border-left:0;border-top:1px solid var(--line)}
-  header .ttl{font-size:16px}
+  header .ttl{display:none}
+  header.top{gap:6px}
+  .mist>span:first-child{display:none}
+  .peers img{width:20px;height:20px}
   .hide-m{display:none}
 }
 </style>
@@ -145,6 +165,7 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
     <span class="chip hide-m" id="mapChip">—</span>
     <span class="chip round" id="roundChip" hidden>Раунд 1</span>
     <span class="sp"></span>
+    <button class="chip mist" id="mistChip" type="button" title="Шкала Мглы"><span>Мгла</span><span class="cells" id="mistCells"></span></button>
     <button class="chip" id="btnMaps" type="button" hidden>🗺 Карты</button>
     <div class="peers" id="peers"></div>
     <span class="chip" id="roleChip">…</span>
@@ -154,20 +175,22 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
       <canvas id="cv"></canvas>
       <div class="tools" id="tools" hidden>
         <button type="button" data-tool="select" title="Выбор и перемещение" aria-pressed="true">✋</button>
-        <button type="button" data-tool="wall" title="Стены (клик — точка, двойной клик — конец)">▰</button>
-        <button type="button" data-tool="door" title="Дверь (два клика)">🚪</button>
-        <button type="button" data-tool="light" title="Источник света (клик)">💡</button>
-        <button type="button" data-tool="reveal" title="Открыть игрокам скрытое место (тайный ход, дверь, тайник)">🗝</button>
-        <button type="button" data-tool="erase" title="Ластик: стены, двери, свет, открытые места">⌫</button>
-        <button type="button" id="btnPreview" title="Смотреть как игроки" aria-pressed="false">👁</button>
+        <button type="button" class="gmo" data-tool="wall" title="Стены (клик — точка, двойной клик — конец)">▰</button>
+        <button type="button" class="gmo" data-tool="door" title="Дверь (два клика)">🚪</button>
+        <button type="button" class="gmo" data-tool="light" title="Источник света (клик)">💡</button>
+        <button type="button" class="gmo" data-tool="reveal" title="Открыть игрокам скрытое место (тайный ход, дверь, тайник)">🗝</button>
+        <button type="button" class="gmo" data-tool="erase" title="Ластик: стены, двери, свет, открытые места">⌫</button>
+        <button type="button" class="gmo" id="btnPreview" title="Смотреть как игроки" aria-pressed="false">👁</button>
       </div>
       <div class="hint" id="hint" hidden></div>
       <div class="banner" id="banner" hidden></div>
       <div class="lobby" id="lobby" hidden></div>
+      <div class="notepop" id="notepop" hidden></div>
       <div class="zoom">
         <button type="button" id="zoomOut" title="Отдалить">−</button>
         <button type="button" id="zoomIn" title="Приблизить">+</button>
         <button type="button" id="zoomMe" title="К моему герою">◎</button>
+        <button type="button" id="btnNote" title="Заметка на карте: нажмите, потом коснитесь места" aria-pressed="false">📝</button>
       </div>
     </section>
     <aside class="panel">
@@ -178,6 +201,7 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 </div>
 <div class="csov" id="csov" hidden><iframe id="csFrame" title="Катсцена" allow="autoplay; fullscreen"></iframe><button class="btn" id="csClose" type="button">✕ Закрыть</button></div>
 <div class="csov" id="handov" hidden></div>
+<div id="modov"></div>
 <div class="csov" id="luov" hidden style="background:var(--bg);overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 14px) max(14px,env(safe-area-inset-right,0px)) 40px max(14px,env(safe-area-inset-left,0px))"><div id="luBox" style="max-width:640px;margin:0 auto"></div></div>
 
 <script src="herocode.js"></script>
@@ -254,7 +278,7 @@ const fire=p=>{(dl.get(p)||[]).forEach(f=>f());(cl.get(colOf(p))||[]).forEach(f=
 const fireAll=()=>{dl.forEach(s=>s.forEach(f=>f()));cl.forEach(s=>s.forEach(f=>f()))};
 const addL=(m,k,f)=>{if(!m.has(k))m.set(k,new Set());m.get(k).add(f);return()=>m.get(k).delete(f)};
 const isPrivate=p=>p.startsWith('gm/');
-const okPath=p=>typeof p==='string'&&/^(tokens|chars|log|maps|ready)\/[A-Za-z0-9_\-]{1,40}$|^game\/state$/.test(p);
+const okPath=p=>typeof p==='string'&&/^(tokens|chars|log|maps|ready|notes|shapes|drawings|handouts)\/[A-Za-z0-9_\-]{1,40}$|^game\/(state|audio)$/.test(p);
 function applyOp(op,p,d){if(op==='set')docs.set(p,clone(d));else if(op==='update'){if(!docs.has(p))return false;docs.set(p,merge(docs.get(p),clone(d)))}else if(op==='del')docs.delete(p);else return false;fire(p);return true}
 
 /* сеть */
@@ -312,7 +336,7 @@ else if(isOwner){
       conn.on('data',m=>{const c=conns.get(conn.peer);if(!c||!m||typeof m!=='object')return;
         if(m.t==='hello'){c.id=String(m.id||'').slice(0,40)||conn.peer;c.name=String(m.name||'Игрок').slice(0,30);bcastPeers();deliverEv('joined',{name:c.name},c.id)}
         else if(m.t==='w'){if(!okPath(m.p))return;if(!applyOp(m.op,m.p,m.d))return;persist();bcast({t:'doc',p:m.p,d:docs.has(m.p)?docs.get(m.p):null})}
-        else if(m.t==='ev'&&typeof m.topic==='string'&&m.topic!=='fogreset'&&m.topic!=='cutscene'){deliverEv(m.topic,m.data,c.id);bcast({t:'ev',topic:m.topic,data:m.data,from:c.id})}
+        else if(m.t==='ev'&&typeof m.topic==='string'&&!['fogreset','cutscene','view','sfx','handout'].includes(m.topic)){deliverEv(m.topic,m.data,c.id);bcast({t:'ev',topic:m.topic,data:m.data,from:c.id})}
         else if(m.t==='pres'&&m.pres&&typeof m.pres==='object'){c.pres=m.pres;bcastPeers()}});
       conn.on('close',()=>{conns.delete(conn.peer);bcastPeers()});conn.on('error',()=>{})})};
   open();
@@ -334,17 +358,19 @@ else if(isOwner){
 }
 window.addEventListener('beforeunload',()=>{if(isOwner)LSx.set(SAVE_KEY,Object.fromEntries(docs))});
 /* код комнаты и приглашение — в шапке */
-{const chip=document.createElement('button');chip.type='button';chip.className='chip gm';chip.style.cursor='pointer';chip.textContent='Стол '+ROOM+(isOwner?' · пригласить':'');
+{const chip=document.createElement('button');chip.type='button';chip.className='chip gm';chip.style.cursor='pointer';chip.textContent='Стол '+ROOM;if(isOwner){const s=document.createElement('span');s.className='hide-m';s.textContent=' · пригласить';chip.append(s)}
   chip.title='Скопировать ссылку для игроков';chip.onclick=async()=>{const url=location.href.replace(/table\.html.*$/,'index.html?room='+ROOM);try{await navigator.clipboard.writeText(url);toast('Ссылка скопирована: '+url)}catch(e){toast('Ссылка для игроков: '+url)}};
   document.querySelector('header.top .sp').after(chip)}
 /*PLATFORM-END*/
 let readOnly=false;
+// списки подключений модулей mod-*.js (объявлены рано: ими пользуются отрисовка и вкладки с самого старта)
+const drawHooks={map:[],tokens:[],top:[]},mapTools=[],extraTabs=[],chatHooks=[],logFilters=[],logRenderers=[],gmSections=[],heroSections=[];let activePT=null;
 function dbErr(e){if(e&&e.code==='invalid_argument'&&!readOnly){readOnly=true;showBanner('Изменения не сохраняются: у вас доступ только для просмотра. Попросите Мастера дать вам доступ «Редактор».')}else if(e&&e.code==='quota_exceeded')showBanner('Хранилище стола заполнено. Мастеру стоит очистить журнал.');}
 function showBanner(t){$('banner').textContent=t;$('banner').hidden=!t}
 
 /* ================= состояние ================= */
-const S={state:null,tokens:{},maps:{},chars:{},log:[],gm:{},gmlog:[],ready:{}};
-const DEF_STATE={map:'03-grot-bochek',combat:{on:false,round:1,turn:null},fog:true,grid:true,started:false,handouts:[]};
+const S={state:null,tokens:{},maps:{},chars:{},log:[],gm:{},gmlog:[],ready:{},notes:{},gmnotes:{}};
+const DEF_STATE={map:'03-grot-bochek',combat:{on:false,round:1,turn:null},fog:true,grid:true,started:false,handouts:[],mist:1};
 const st=()=>merge(DEF_STATE,S.state||{});
 const tokList=()=>Object.values(S.tokens);
 function mapInfo(id=st().map){const b=MAPS.find(m=>m.id===id);const d=S.maps[id]||{};
@@ -368,9 +394,10 @@ store.watchDoc('game/state',d=>{const prev=S.state&&S.state.map;S.state=d;if(pre
 store.watchCol('tokens',a=>{S.tokens=Object.fromEntries(a.map(t=>[t.id,t]));lightDirty=true;changed()});
 store.watchCol('maps',a=>{S.maps=Object.fromEntries(a.map(m=>[m.id,m]));lightDirty=true;changed()});
 store.watchCol('chars',a=>{S.chars=Object.fromEntries(a.map(c=>[c.id,c]));changed('panel')});
+store.watchCol('notes',a=>{S.notes=Object.fromEntries(a.map(n=>[n.id,n]));requestDraw()});
 store.watchCol('ready',a=>{S.ready=Object.fromEntries(a.map(r=>[r.id,r]));changed('panel')});
 store.watchCol('log',a=>{S.log=a.reverse();changed('panel')},{order:'ts',dir:'desc',limit:80});
-if(isOwner){store.watchCol('gm',a=>{S.gm=Object.fromEntries(a.filter(d=>d.id.startsWith('mon_')).map(d=>[d.id.slice(4),d]));S.gmlog=a.filter(d=>d.id.startsWith('roll_'));changed('panel')})}
+if(isOwner){store.watchCol('gm',a=>{S.gm=Object.fromEntries(a.filter(d=>d.id.startsWith('mon_')).map(d=>[d.id.slice(4),d]));S.gmnotes=Object.fromEntries(a.filter(d=>d.id.startsWith('note_')).map(d=>[d.id,{...d,gm:true}]));S.gmlog=a.filter(d=>d.id.startsWith('roll_'));changed('panel')})}
 
 /* ================= комната: пинги и живое перетаскивание ================= */
 const peerDrag=new Map(),pings=[];let peersList=[];
@@ -392,7 +419,9 @@ function resize(){DPR=Math.min(2,window.devicePixelRatio||1);VW=board.clientWidt
 new ResizeObserver(resize).observe(board);
 const toWorld=(sx,sy)=>[(sx-cam.ox)/cam.z,(sy-cam.oy)/cam.z];
 function fitMap(){const m=mapInfo();if(!VW)return;const z=Math.min(VW/m.w,VH/m.h)*.95;cam.z=z;cam.ox=(VW-m.w*z)/2;cam.oy=(VH-m.h*z)/2;requestDraw()}
-function zoomAt(f,sx,sy){camTouched=true;const [wx,wy]=toWorld(sx,sy);cam.z=clamp(cam.z*f,.15,6);cam.ox=sx-wx*cam.z;cam.oy=sy-wy*cam.z;requestDraw()}
+function zoomAt(f,sx,sy){camTouched=true;const [wx,wy]=toWorld(sx,sy);cam.z=clamp(cam.z*f,.15,6);cam.ox=sx-wx*cam.z;cam.oy=sy-wy*cam.z;clampCam();requestDraw()}
+// карта не уезжает с экрана: её край не дальше середины окна
+function clampCam(){const m=mapInfo(),W=m.w*cam.z,H=m.h*cam.z;const lim=(o,view,size)=>{const a=Math.min(view*.5-size,(view-size)/2),b=Math.max(view*.5,(view-size)/2);return clamp(o,a,b)};cam.ox=lim(cam.ox,VW,W);cam.oy=lim(cam.oy,VH,H)}
 function centerOn(x,y){cam.ox=VW/2-x*cam.z;cam.oy=VH/2-y*cam.z;requestDraw()}
 const imgs={};function img(src){if(!imgs[src]){const i=new Image();i.onload=()=>{lightDirty=true;requestDraw()};i.src=src;imgs[src]=i}return imgs[src]}
 
@@ -452,7 +481,7 @@ function drawToken(t,x,y,alpha=1){const m=mapInfo(),r=(t.size||1)*cellPx(m)/2*.9
   if(sel===t.id){g.beginPath();g.arc(x,y,r+3,0,7);g.strokeStyle='#fff';g.lineWidth=2;g.stroke()}
   if(!hasIc){g.fillStyle='#fff';g.font=`700 ${Math.round(r*.9)}px "Alegreya Sans",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText(((t.name||'?').trim()[0]||'?').toUpperCase(),x,y+1)}
   const f=clamp(hpFrac(t),0,1);g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x-r,y+r+3,r*2,5);g.fillStyle=hpCol(f);g.fillRect(x-r,y+r+3,r*2*f,5);
-  if((t.cond||[]).length){g.fillStyle='#e58a80';for(let i=0;i<Math.min(4,t.cond.length);i++){g.beginPath();g.arc(x+r*.7-i*8,y-r*.75,3.5,0,7);g.fill()}}
+  if((t.cond||[]).length&&!window.VTT_VIEW){g.fillStyle='#e58a80';for(let i=0;i<Math.min(4,t.cond.length);i++){g.beginPath();g.arc(x+r*.7-i*8,y-r*.75,3.5,0,7);g.fill()}} // при модуле mod-view — его значки
   g.restore()}
 function drawLabel(t,x,y){const m=mapInfo(),r=(t.size||1)*cellPx(m)/2*.9;g.save();g.font='500 13px "Alegreya Sans",sans-serif';g.textAlign='center';g.textBaseline='top';const s=t.name||'';const w=g.measureText(s).width+8;
   g.fillStyle='rgba(0,0,0,.65)';g.fillRect(x-w/2,y+r+10,w,17);g.fillStyle='#eee';g.fillText(s,x,y+r+12);g.restore()}
@@ -463,12 +492,16 @@ function draw(){drawQueued=false;const m=mapInfo();if(lightDirty)buildLight();
   const reveals=(S.maps[m.id]||{}).reveals||[];
   if(reveals.length&&m.gmSrc&&m.src!==m.gmSrc){const gi=img(m.gmSrc);if(gi.complete&&gi.naturalWidth)for(const r of reveals){g.save();g.beginPath();g.rect(r.x,r.y,r.w,r.h);g.clip();g.drawImage(gi,0,0,m.w,m.h);g.restore()}}
   if(st().grid&&m.grid){g.strokeStyle='rgba(255,255,255,.07)';g.lineWidth=1/cam.z;g.beginPath();for(let x=0;x<=m.w;x+=m.grid){g.moveTo(x,0);g.lineTo(x,m.h)}for(let y=0;y<=m.h;y+=m.grid){g.moveTo(0,y);g.lineTo(m.w,y)}g.stroke()}
+  runHooks('map',m);
   const vis=tokList().filter(t=>t.map===m.id&&canSee(t));
   for(const t of vis){if(drag&&drag.id===t.id)continue;drawToken(t,t.x,t.y)}
   for(const [,d] of peerDrag){const t=S.tokens[d.id];if(t&&d.map===m.id&&canSee(t))drawToken(t,d.x,d.y,.55)}
   if(drag){const t=S.tokens[drag.id];if(t){g.strokeStyle='rgba(255,230,160,.8)';g.lineWidth=2/cam.z;g.setLineDash([6/cam.z,5/cam.z]);g.beginPath();g.moveTo(drag.sx,drag.sy);g.lineTo(drag.x,drag.y);g.stroke();g.setLineDash([]);drawToken(t,drag.x,drag.y,.85)}}
+  runHooks('tokens',m);
   if(LC){g.drawImage(darkCv,0,0,m.w,m.h);if(LC.fogOn)g.drawImage(fogCv,0,0,m.w,m.h)}
   for(const t of vis){if(drag&&drag.id===t.id)continue;if(t.kind!=='monster'||isOwner||!LC||LC.amb<.95)drawLabel(t,t.x,t.y)}
+  drawNotes();
+  runHooks('top',m);
   if(drag){const t=S.tokens[drag.id];if(t){const ft=Math.round(Math.max(Math.abs(drag.x-drag.sx),Math.abs(drag.y-drag.sy))/cellPx(m))*5;g.save();g.font=`700 ${15/cam.z}px "IBM Plex Mono",monospace`;g.fillStyle='#ffe6a0';g.textAlign='left';g.fillText(ft+' фт',drag.x+16/cam.z,drag.y-16/cam.z);g.restore()}}
   if(isGM()||tool!=='select'){const md=S.maps[m.id]||{};g.lineCap='round';
     for(const w of md.walls||[]){g.strokeStyle=w.d?(w.o?'rgba(120,220,120,.9)':'rgba(230,170,70,.95)'):'rgba(229,138,128,.85)';g.lineWidth=(w.d?6:4)/cam.z;g.beginPath();g.moveTo(w.x1,w.y1);g.lineTo(w.x2,w.y2);g.stroke()}
@@ -476,38 +509,71 @@ function draw(){drawQueued=false;const m=mapInfo();if(lightDirty)buildLight();
     g.setLineDash([8/cam.z,6/cam.z]);g.strokeStyle='rgba(143,209,196,.9)';g.lineWidth=2/cam.z;for(const r of md.reveals||[])g.strokeRect(r.x,r.y,r.w,r.h);g.setLineDash([]);
     if(wallStart&&hover){g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=3/cam.z;if(tool==='reveal'){g.strokeRect(Math.min(wallStart[0],hover[0]),Math.min(wallStart[1],hover[1]),Math.abs(hover[0]-wallStart[0]),Math.abs(hover[1]-wallStart[1]))}else{g.beginPath();g.moveTo(wallStart[0],wallStart[1]);g.lineTo(hover[0],hover[1]);g.stroke()}}}
   const now=performance.now();for(let i=pings.length-1;i>=0;i--){const p=pings[i],k=(now-p.t)/1400;if(k>1){pings.splice(i,1);continue}g.strokeStyle=`rgba(255,220,120,${1-k})`;g.lineWidth=3/cam.z;for(const o of[0,.3])if(k>o){g.beginPath();g.arc(p.x,p.y,(k-o)*90/cam.z+4/cam.z,0,7);g.stroke()}}
-  if(pings.length)requestDraw()}
+  if(pings.length)requestDraw();
+  const mist=st().mist;if(mist>=3){g.setTransform(DPR,0,0,DPR,0,0);const vg=g.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*.3,VW/2,VH/2,Math.max(VW,VH)*.75);vg.addColorStop(0,'rgba(70,150,120,0)');vg.addColorStop(1,`rgba(70,150,120,${(mist-2)*.08})`);g.fillStyle=vg;g.fillRect(0,0,VW,VH)}}
+
+/* ================= заметки на карте ================= */
+let noteMode=false,noteEditing=false;
+const allNotes=()=>[...Object.values(S.notes),...(isGM()?Object.values(S.gmnotes):[])].filter(n=>n.map===st().map);
+const notePath=n=>n.gm?'gm/'+n.id:'notes/'+n.id;
+function noteAt(wx,wy){const r=18/cam.z;return allNotes().find(n=>Math.hypot(n.x-wx,n.y-wy)<=r)}
+function drawNotes(){for(const n of allNotes()){const z=cam.z,r=11/z;g.save();g.fillStyle=n.gm?'#8a6d22':'#2f6f5c';g.strokeStyle='#fff';g.lineWidth=2/z;g.beginPath();g.arc(n.x,n.y,r,0,7);g.fill();g.stroke();
+  g.fillStyle='#fff';g.font=`${13/z}px sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText('✎',n.x,n.y+1/z);
+  if(z>.55){const s=String(n.text||'').split('\n')[0].slice(0,26);g.font=`500 ${12/z}px "Alegreya Sans",sans-serif`;const w=g.measureText(s).width+8/z;g.fillStyle='rgba(0,0,0,.72)';g.fillRect(n.x+r+3/z,n.y-8/z,w,16/z);g.fillStyle='#ffe6a0';g.textAlign='left';g.fillText(s,n.x+r+7/z,n.y+1/z)}
+  g.restore()}}
+function closeNote(){$('notepop').hidden=true;noteEditing=false;requestDraw()}
+function openNote(n,wx,wy){const pop=$('notepop'),isNew=!n,mine=n&&(n.by===myId||isOwner);
+  const px=(n?n.x:wx)*cam.z+cam.ox,py=(n?n.y:wy)*cam.z+cam.oy;pop.style.left=clamp(px+14,8,Math.max(8,VW-310))+'px';pop.style.top=clamp(py+14,8,Math.max(8,VH-210))+'px';
+  const kids=[];
+  if(isNew||noteEditing){const ta=h('textarea',{rows:3,placeholder:'Что здесь? Заметку увидит весь отряд.','aria-label':'Текст заметки'});ta.value=n?n.text:'';const hid=isOwner&&isNew?h('input',{type:'checkbox'}):null;
+    kids.push(ta,hid?h('label',{class:'row small',style:'margin-top:4px'},hid,'Скрытая — видит только Мастер'):null,
+      h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn pri sm',type:'button',onclick:async()=>{const text=ta.value.trim().slice(0,500);if(!text)return;
+        if(n)await store.update(notePath(n),{text,ts:Date.now()});else{const id=store.newId('notes');const doc={map:st().map,x:Math.round(wx),y:Math.round(wy),text,by:myId,who:whoAmI(),ts:Date.now()};await store.set(hid&&hid.checked?'gm/note_'+id:'notes/'+id,doc)}closeNote()}},'Сохранить'),
+        h('button',{class:'btn sm',type:'button',onclick:closeNote},'Отмена')));setTimeout(()=>ta.focus(),0)}
+  else{kids.push(h('div',{class:'who'},(n.gm?'🔒 Скрытая · ':'')+(n.who||'Игрок')+' · '+new Date(n.ts).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})),h('div',{class:'txt'},n.text||''),
+    h('div',{class:'row'},mine&&!readOnly?h('button',{class:'btn sm',type:'button',onclick:()=>{noteEditing=true;openNote(n)}},'Изменить'):null,mine&&!readOnly?h('button',{class:'btn sm bad',type:'button',onclick:async()=>{await store.del(notePath(n));closeNote()}},'Удалить'):null,h('button',{class:'btn sm',type:'button',onclick:closeNote},'Закрыть')))}
+  pop.replaceChildren(...kids);pop.hidden=false}
+$('btnNote').onclick=()=>{if(readOnly)return;noteMode=!noteMode;$('btnNote').setAttribute('aria-pressed',String(noteMode));$('hint').textContent=noteMode?'Коснитесь места на карте, где оставить заметку.':'';$('hint').hidden=!noteMode};
 
 /* ================= ввод ================= */
 const ptrs=new Map();let pinch=null,downInfo=null,longT=0;
 const snap=(m,x,y,sz=1)=>{if(!m.grid)return[x,y];const c=m.grid,off=(sz%2)?c/2:0;return[Math.round((x-off)/c)*c+off,Math.round((y-off)/c)*c+off]};
 const snapV=(m,x,y)=>{if(!m.grid)return[x,y];const c=m.grid,vx=Math.round(x/c)*c,vy=Math.round(y/c)*c;return Math.hypot(vx-x,vy-y)<c*.3?[vx,vy]:[x,y]};
 function hitToken(wx,wy){const m=mapInfo();const arr=tokList().filter(t=>t.map===m.id&&canSee(t));for(let i=arr.length-1;i>=0;i--){const t=arr[i];if(Math.hypot(wx-t.x,wy-t.y)<=(t.size||1)*cellPx(m)/2)return t}return null}
+function segX(ax,ay,bx,by,w){const d=(bx-ax)*(w.y2-w.y1)-(by-ay)*(w.x2-w.x1);if(Math.abs(d)<1e-9)return false;
+  const t=((w.x1-ax)*(w.y2-w.y1)-(w.y1-ay)*(w.x2-w.x1))/d,u=((w.x1-ax)*(by-ay)-(w.y1-ay)*(bx-ax))/d;return t>.001&&t<.999&&u>=0&&u<=1}
+function blocked(ax,ay,bx,by){const md=S.maps[st().map]||{};return(md.walls||[]).some(w=>!(w.d&&w.o)&&segX(ax,ay,bx,by,w))}
 function segDist(px,py,w){const dx=w.x2-w.x1,dy=w.y2-w.y1,l=dx*dx+dy*dy||1;const k=clamp(((px-w.x1)*dx+(py-w.y1)*dy)/l,0,1);return Math.hypot(px-(w.x1+dx*k),py-(w.y1+dy*k))}
 function sxy(e){const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
 cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);const [sx,sy]=sxy(e);ptrs.set(e.pointerId,[sx,sy]);
   if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2};drag=null;downInfo=null;clearTimeout(longT);return}
   const [wx,wy]=toWorld(sx,sy),m=mapInfo();
+  if(!$('notepop').hidden)closeNote();
+  if(noteMode){noteMode=false;$('btnNote').setAttribute('aria-pressed','false');$('hint').hidden=true;openNote(null,clamp(wx,0,m.w),clamp(wy,0,m.h));return}
+  const pt=modTool();if(pt){activePT=pt;try{pt.down&&pt.down(wx,wy,e)}catch(err){console.error(err)}return}
   if(tool!=='select'&&isOwner){toolClick(wx,wy,e);return}
   const t=hitToken(wx,wy);downInfo={sx,sy,wx,wy,t,moved:false,cam:{...cam}};
   if(t&&canMove(t)){drag={id:t.id,sx:t.x,sy:t.y,x:t.x,y:t.y,offx:wx-t.x,offy:wy-t.y}}
   longT=setTimeout(()=>{if(downInfo&&!downInfo.moved&&!drag)ping(wx,wy)},600)});
-cv.addEventListener('pointermove',e=>{const [sx,sy]=sxy(e);if(!ptrs.has(e.pointerId)){hover=snapV(mapInfo(),...toWorld(sx,sy));if(wallStart)requestDraw();return}
+cv.addEventListener('pointermove',e=>{const [sx,sy]=sxy(e);{const pt=activePT||modTool();if(pt&&(activePT||pt.hover)){const [wx,wy]=toWorld(sx,sy);try{(activePT?pt.move:pt.hover)&&(activePT?pt.move:pt.hover)(wx,wy,e)}catch(err){console.error(err)}if(activePT){ptrs.set(e.pointerId,[sx,sy]);return}}}if(!ptrs.has(e.pointerId)){hover=snapV(mapInfo(),...toWorld(sx,sy));if(wallStart)requestDraw();return}
   ptrs.set(e.pointerId,[sx,sy]);
   if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]),cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2;zoomAt(d/pinch.d,cx,cy);cam.ox+=cx-pinch.cx;cam.oy+=cy-pinch.cy;pinch={d,cx,cy};return}
   if(!downInfo)return;if(Math.hypot(sx-downInfo.sx,sy-downInfo.sy)>5)downInfo.moved=true;
-  if(drag){const [wx,wy]=toWorld(sx,sy);drag.x=wx-drag.offx;drag.y=wy-drag.offy;if(room)room.presence({drag:{id:drag.id,x:Math.round(drag.x),y:Math.round(drag.y),map:st().map}}).catch(()=>{});requestDraw()}
-  else if(downInfo.moved){camTouched=true;cam.ox=downInfo.cam.ox+(sx-downInfo.sx);cam.oy=downInfo.cam.oy+(sy-downInfo.sy);requestDraw()}});
-function endPtr(e){ptrs.delete(e.pointerId);clearTimeout(longT);if(ptrs.size<2)pinch=null;if(!downInfo)return;const di=downInfo;downInfo=null;
+  if(drag){const [wx,wy]=toWorld(sx,sy),mm=mapInfo();drag.x=clamp(wx-drag.offx,0,mm.w);drag.y=clamp(wy-drag.offy,0,mm.h);if(room)room.presence({drag:{id:drag.id,x:Math.round(drag.x),y:Math.round(drag.y),map:st().map}}).catch(()=>{});requestDraw()}
+  else if(downInfo.moved){camTouched=true;cam.ox=downInfo.cam.ox+(sx-downInfo.sx);cam.oy=downInfo.cam.oy+(sy-downInfo.sy);clampCam();requestDraw()}});
+function endPtr(e){ptrs.delete(e.pointerId);clearTimeout(longT);if(ptrs.size<2)pinch=null;if(activePT){const pt=activePT;activePT=null;const [sx,sy]=sxy(e);const [wx,wy]=toWorld(sx,sy);try{pt.up&&pt.up(wx,wy,e)}catch(err){console.error(err)}return}if(!downInfo)return;const di=downInfo;downInfo=null;
   if(drag){const d=drag;drag=null;if(room)room.presence({drag:null}).catch(()=>{});
-    if(di.moved){const t=S.tokens[d.id],m=mapInfo();const [x,y]=snap(m,clamp(d.x,0,m.w),clamp(d.y,0,m.h),t.size||1);t.x=x;t.y=y;lightDirty=true;store.update('tokens/'+d.id,{x,y})}
+    if(di.moved){const t=S.tokens[d.id],m=mapInfo();const r=(t.size||1)*cellPx(m)/2;const [x,y]=snap(m,clamp(d.x,r,m.w-r),clamp(d.y,r,m.h-r),t.size||1);
+      // игрок не проходит сквозь стены и закрытые двери (Мастер — может)
+      if(!isGM()&&blocked(d.sx,d.sy,x,y)){toast('Туда не пройти: путь преграждает стена или закрытая дверь.')}
+      else{t.x=x;t.y=y;lightDirty=true;store.update('tokens/'+d.id,{x,y})}}
     else selectToken(d.id);requestDraw();return}
-  if(!di.moved){if(di.t){selectToken(di.t.id)}else{const w=doorAt(di.wx,di.wy);if(w)toggleDoor(w);else{sel=null;changed('panel')}}}requestDraw()}
+  if(!di.moved){const nt=!di.t&&noteAt(di.wx,di.wy);if(nt){openNote(nt);return}if(di.t){selectToken(di.t.id)}else{const w=doorAt(di.wx,di.wy);if(w)toggleDoor(w);else{sel=null;changed('panel')}}}requestDraw()}
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 cv.addEventListener('dblclick',e=>{const [sx,sy]=sxy(e);const [wx,wy]=toWorld(sx,sy);if(tool==='wall'){wallStart=null;requestDraw();return}if(tool==='select'&&!hitToken(wx,wy))ping(wx,wy)});
 cv.addEventListener('contextmenu',e=>{e.preventDefault();wallStart=null;requestDraw()});
 cv.addEventListener('wheel',e=>{e.preventDefault();const [sx,sy]=sxy(e);zoomAt(Math.exp(-e.deltaY*.0015),sx,sy)},{passive:false});
-window.addEventListener('keydown',e=>{if(e.key==='Escape'){wallStart=null;requestDraw()}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){wallStart=null;const pt=modTool();if(pt&&pt.cancel)pt.cancel();requestDraw()}});
 $('zoomIn').onclick=()=>zoomAt(1.25,VW/2,VH/2);$('zoomOut').onclick=()=>zoomAt(.8,VW/2,VH/2);
 $('zoomMe').onclick=()=>{const t=myToken()||(sel&&S.tokens[sel]);if(t&&t.map===st().map){if(cam.z<1)cam.z=1;centerOn(t.x,t.y)}else fitMap()};
 function ping(x,y){if(room)room.emit('ping',{x:Math.round(x),y:Math.round(y),map:st().map}).catch(()=>{});else{pings.push({x,y,t:performance.now()});requestDraw()}}
@@ -530,8 +596,10 @@ function toolClick(wx,wy){const m=mapInfo(),md=S.maps[m.id]||{};
 let lightR=20;
 $('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.id==='btnPreview'){setPreview(!preview,null);return}
+  {const prev=modTool();if(prev&&prev.cancel)try{prev.cancel()}catch(e){}}
   tool=b.dataset.tool;wallStart=null;for(const x of $('tools').querySelectorAll('[data-tool]'))x.setAttribute('aria-pressed',String(x===b));cv.classList.toggle('tool',tool!=='select');
-  const H={select:'',wall:'Стены: щёлкайте по точкам. Двойной клик или правая кнопка — закончить линию.',door:'Дверь: два клика — начало и конец. Клик по двери в режиме выбора открывает её.',light:'Свет: клик ставит источник (радиус задан во вкладке «Мастер»), клик по нему — убрать.',reveal:'Открыть тайное: два клика — углы области. Игроки увидят в ней карту Мастера (тайный ход, дверь, тайник). Не забудьте убрать стену или поставить дверь, чтобы через проход было видно.',erase:'Ластик: клик по стене, двери, свету или открытой области.'}[tool];
+  const ptn=modTool();if(ptn&&ptn.activate)try{ptn.activate()}catch(e){console.error(e)}
+  const H=ptn?(ptn.hint||''):{select:'',wall:'Стены: щёлкайте по точкам. Двойной клик или правая кнопка — закончить линию.',door:'Дверь: два клика — начало и конец. Клик по двери в режиме выбора открывает её.',light:'Свет: клик ставит источник (радиус задан во вкладке «Мастер»), клик по нему — убрать.',reveal:'Открыть тайное: два клика — углы области. Игроки увидят в ней карту Мастера (тайный ход, дверь, тайник). Не забудьте убрать стену или поставить дверь, чтобы через проход было видно.',erase:'Ластик: клик по стене, двери, свету или открытой области.'}[tool];
   $('hint').textContent=H;$('hint').hidden=!H;requestDraw()});
 
 /* ================= кубики ================= */
@@ -574,7 +642,7 @@ const sgn=n=>(n>=0?'+':'')+n;
 
 /* ================= панели ================= */
 let tab='combat';
-function tabsFor(){const t=[['combat','Бой'],['hero','Герой'],['inv','Вещи'],['dice','Кубики']];if(isOwner)t.push(['gm','Мастер'],['lore','Лор'],['ai','Правила · ИИ']);return t}
+function tabsFor(){const t=[['combat','Бой'],['hero','Герой'],['inv','Вещи'],['dice','Кубики']];for(const x of extraTabs)if(!x.gm)t.push([x.id,x.label]);if(isOwner){t.push(['gm','Мастер'],['lore','Лор']);for(const x of extraTabs)if(x.gm)t.push([x.id,x.label]);t.push(['ai','Правила · ИИ'])}return t}
 
 /* ---- прокачка: Мастер выдаёт уровень, игрок проходит мастер повышения ---- */
 async function grantLevel(ids,party){for(const id of ids)await store.update('tokens/'+id,{lvlUp:true});
@@ -609,7 +677,7 @@ const pane=$('pane');let paneDirty=false;
 pane.addEventListener('focusout',()=>setTimeout(()=>{if(paneDirty&&!pane.contains(document.activeElement))renderPane()},0));
 function changed(what){if(what!=='panel'){requestDraw()}renderHeader();renderPane()}
 function renderPane(force){const a=document.activeElement;if(!force&&a&&pane.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){paneDirty=true;return}paneDirty=false;
-  const sc=pane.scrollTop;const f={combat:paneCombat,hero:paneHero,inv:paneInv,dice:paneDice,gm:paneGM,lore:paneLore,ai:paneAI}[tab]||paneCombat;pane.replaceChildren(...[f()].flat());if(!force)pane.scrollTop=sc;
+  const sc=pane.scrollTop;const xt=extraTabs.find(x=>x.id===tab);const f=xt?()=>xt.render():({combat:paneCombat,hero:paneHero,inv:paneInv,dice:paneDice,gm:paneGM,lore:paneLore,ai:paneAI}[tab]||paneCombat);pane.replaceChildren(...[f()].flat());if(!force)pane.scrollTop=sc;
   resolveNames([...tokList().map(t=>t.owner),...S.log.map(l=>l.by)])}
 /* ---- катсцены за столом: Мастер запускает, видят все ---- */
 const CUTS=[['intro','Пролог'],['c1','1. Голос из моря'],['c2','2. Отплытие «Цапли»'],['c3','3. Отлив'],['c4','4. Купол на дне'],['c5','5. Спуск в Ис-Мерин'],['c6','6. Певчая на троне'],['c7','7. Рассвет'],['c8','8. Город поднимается']];
@@ -620,15 +688,16 @@ $('csClose').onclick=()=>{if(isOwner&&room)room.emit('cutscene',{stop:true}).cat
 async function showCutAll(id){if(room)await room.emit('cutscene',{id}).catch(()=>openCut(id));else openCut(id);post({kind:'sys',text:'🎬 Катсцена: '+CUTS.find(x=>x[0]===id)[1]})}
 
 /* ---- лобби: игроки жмут «Готово», Мастер — «Начать» ---- */
-let lobbyIntro=true,lobbyForce=false;
+let lobbyIntro=true,lobbyForce=false,lobbyGmMin=(window.innerWidth||800)<820;
 function lobbyIds(){const fromRoom=isOwner?peersList.map(p=>p.by).filter(id=>id&&id!==myId):[];
   return[...new Set([...fromRoom,...Object.keys(S.ready),...tokList().filter(t=>t.kind==='pc'&&t.owner).map(t=>t.owner),...(isOwner?[]:[myId])])].filter(id=>id&&!(isOwner&&id===myId))}
 function renderLobby(){const el=$('lobby');const s=st();if(!el)return;if(s.started){el.hidden=true;return}el.hidden=false;el.className='lobby'+(isOwner?' gm':'');
   const ids=lobbyIds();resolveNames(ids);const isReady=id=>!!(S.ready[id]&&S.ready[id].ready);const heroOf=id=>tokList().find(t=>t.owner===id&&t.kind==='pc');
   const rows=ids.map(id=>h('div',{class:'lrow'},h('span',{},(id===myId?'Вы':(names[id]||'Игрок'))+(heroOf(id)?' · '+heroOf(id).name:'')),h('b',{style:`color:${isReady(id)?'var(--ok)':'var(--muted)'};white-space:nowrap`},isReady(id)?'✓ готов':'готовится…')));
+  if(isOwner&&lobbyGmMin){const n=ids.filter(isReady).length;el.replaceChildren(h('button',{class:'btn pri sm',type:'button',onclick:()=>{lobbyGmMin=false;renderLobby()}},`Лобби: готовы ${n} из ${ids.length} ▸`));return}
   if(isOwner){const n=ids.filter(isReady).length,all=ids.length>0&&n===ids.length;
     const pro=h('input',{type:'checkbox',checked:lobbyIntro,onchange:e=>{lobbyIntro=e.target.checked}});
-    el.replaceChildren(h('div',{class:'lcard'},h('h3',{},'Лобби · игра не начата'),h('p',{class:'small muted'},ids.length?`Готовы ${n} из ${ids.length}. Игроки видят экран ожидания, вы можете готовить карту.`:'Игроки ещё не подключились — пошлите им приглашение.'),...rows,
+    el.replaceChildren(h('div',{class:'lcard'},h('div',{class:'row',style:'justify-content:space-between'},h('h3',{style:'margin:0'},'Лобби · игра не начата'),h('button',{class:'btn sm',type:'button','aria-label':'Свернуть лобби',onclick:()=>{lobbyGmMin=true;renderLobby()}},'▾')),h('p',{class:'small muted'},ids.length?`Готовы ${n} из ${ids.length}. Игроки видят экран ожидания, вы можете готовить карту.`:'Игроки ещё не подключились — пошлите им приглашение.'),...rows,
       h('label',{class:'row small',style:'margin-top:8px'},pro,'Начать с пролога (видят все)'),
       h('button',{class:'btn pri',type:'button',style:'margin-top:8px;width:100%',disabled:readOnly,onclick:()=>{if(!all&&!lobbyForce){lobbyForce=true;toast('Не все готовы. Нажмите «Начать игру» ещё раз, чтобы начать без них.');return}startGame()}},'▶ Начать игру')))}
   else{const a=document.activeElement;if(a&&el.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){lobbyDirty=true;return}lobbyDirty=false;
@@ -659,8 +728,19 @@ function renderHand(){const ids=st().handouts||[];if(!ids.length){$('handov').hi
 $('btnMaps').onclick=()=>{renderHand();$('handov').hidden=false};
 async function toggleHandout(id,on){const s=st();const cur=s.handouts||[];const next=on?[...new Set([...cur,id])]:cur.filter(x=>x!==id);await store.set('game/state',{...s,handouts:next});if(on)post({kind:'sys',text:'🗺 Отряд получил карту: '+mapInfo(id).name})}
 
-function renderHeader(){const s=st(),m=mapInfo();const ho=(s.handouts||[]).length;$('btnMaps').hidden=!ho;$('btnMaps').textContent='🗺 Карты'+(ho>1?` (${ho})`:'');if(!$('handov').hidden)renderHand();renderLobby();$('mapChip').textContent=m.name;$('roundChip').hidden=!s.combat.on;$('roundChip').textContent='Раунд '+s.combat.round;
-  $('roleChip').textContent=isOwner?(preview?'Мастер · глазами: '+(previewTok&&S.tokens[previewTok]?S.tokens[previewTok].name:'все герои'):'Мастер'):'Игрок';$('roleChip').className='chip'+(isOwner?' gm':'');$('tools').hidden=!isOwner}
+/* ---- Шкала Мглы: открыто на столе, меняет только Мастер ---- */
+const MIST_TXT=['Туман рассеялся. Бухта дышит спокойно.','Туман по ночам, редкий звон. Обычная тревога.','Мгла густеет: звон слышен каждую ночь, вода у берега холодная и мутная.',
+  'Мгла сгущается. В начале длинного отдыха — спасбросок Мудрости СЛ 11, иначе герой просыпается по колено в воде и получает 1 уровень истощения.',
+  'Мгла не уходит даже днём. Купол над Ис-Мерином трещит. Действует правило длинного отдыха (СЛ 11).',
+  'Мгла почти победила. Вейре в финале поможет водяной элементаль. Правило длинного отдыха действует.',
+  'Город поднимается! Немедленно — финал.'];
+const mistCls=v=>v>=5?'on max':v>=3?'on hi':'on';
+function mistCells(v,big){return Array.from({length:7},(_,i)=>h('i',{class:i<=v&&i>0?mistCls(v):(i===0&&v===0?'on':'')},big?String(i):null)).slice(big?0:1)}
+async function setMist(v){const s=st();v=clamp(v,0,6);if(v===s.mist)return;await store.set('game/state',{...s,mist:v});await post({kind:'sys',text:`🌫 Шкала Мглы: ${s.mist} → ${v}. ${MIST_TXT[v]}`})}
+$('mistChip').onclick=()=>{if(isOwner){tab='gm';renderTabs();renderPane(true)}else toast(`Шкала Мглы ${st().mist} из 6. ${MIST_TXT[st().mist]}`)};
+
+function renderHeader(){const s=st(),m=mapInfo();$('mistCells').replaceChildren(...mistCells(s.mist));$('mistChip').title=`Шкала Мглы ${s.mist}/6: ${MIST_TXT[s.mist]}`;const ho=(s.handouts||[]).length;$('btnMaps').hidden=!ho;$('btnMaps').textContent='🗺 Карты'+(ho>1?` (${ho})`:'');if(!$('handov').hidden)renderHand();renderLobby();$('mapChip').textContent=m.name;$('roundChip').hidden=!s.combat.on;$('roundChip').textContent='Раунд '+s.combat.round;
+  $('roleChip').textContent=isOwner?(preview?'Мастер · глазами: '+(previewTok&&S.tokens[previewTok]?S.tokens[previewTok].name:'все герои'):'Мастер'):'Игрок';$('roleChip').className='chip'+(isOwner?' gm':'');for(const b of $('tools').querySelectorAll('.gmo'))b.hidden=!isOwner;$('tools').hidden=!$('tools').querySelector('button:not([hidden])')}
 
 /* ---- БОЙ ---- */
 function combatOrder(){return tokList().filter(t=>t.inCombat&&t.map===st().map&&(isOwner||!t.hidden)).sort((a,b)=>(b.init??-99)-(a.init??-99)||(a.name>b.name?1:-1))}
@@ -731,6 +811,7 @@ function paneHero(){const t=heroFor();
   const an=h('input',{type:'text',placeholder:'Название','aria-label':'Название атаки',style:'flex:1'}),ab=h('input',{type:'number',placeholder:'+5','aria-label':'Бонус атаки'}),ad=h('input',{type:'text',placeholder:'1d8+3','aria-label':'Урон',style:'width:80px'});
   out.push(h('div',{class:'row'},an,ab,ad,h('button',{class:'btn sm',type:'button',onclick:()=>{if(!an.value||!roll(ad.value))return toast('Укажите название и урон, например 1d8+3');up({attacks:[...atks,[an.value.slice(0,40),Number(ab.value)||0,ad.value]]})}},'+')));
   out.push(h('h3',{},'Заметки'),h('textarea',{rows:4,value:c.notes||'',placeholder:'Заклинания, умения, предыстория…',onchange:e=>up({notes:e.target.value.slice(0,4000)})}));
+  for(const f of heroSections){try{const n=f(t,c);if(n)out.push(...[n].flat())}catch(e){console.error(e)}}
   out.push(selectedCard(t));return out}
 let lastTarget='',advMode=null;
 function advRow(){return h('div',{class:'row small',style:'margin-top:6px'},'Бросать:',...[[null,'обычно'],['adv','с преимуществом'],['dis','с помехой']].map(([v,n])=>h('span',{class:'tag',role:'button',tabindex:0,'aria-pressed':String(advMode===v),onclick:()=>{advMode=v;renderPane(true)}},n)))}
@@ -791,12 +872,12 @@ function paneDice(){const out=[h('h3',{},'Кубики')];
   out.push(h('div',{class:'dice'},...[4,6,8,10,12,20,100].map(f=>h('button',{type:'button',onclick:()=>rollPost('d'+f,'1d'+f,{mode:f===20?advMode:null,secret})},'d'+f))));
   out.push(advRow());
   const fx=h('input',{type:'text',placeholder:'2d6+3 или сообщение','aria-label':'Формула или сообщение',style:'flex:1'});
-  const go=()=>{const v=fx.value.trim();if(!v)return;if(roll(v))rollPost(v,v,{mode:advMode,secret});else post({kind:'chat',text:v.slice(0,500)},secret);fx.value=''};fx.onkeydown=e=>{if(e.key==='Enter')go()};
+  const go=()=>{const v=fx.value.trim();if(!v)return;if(chatHooks.some(f=>{try{return f(v,{secret,mode:advMode})}catch(e){console.error(e);return false}})){fx.value='';return}if(roll(v))rollPost(v,v,{mode:advMode,secret});else post({kind:'chat',text:v.slice(0,500)},secret);fx.value=''};fx.onkeydown=e=>{if(e.key==='Enter')go()};
   out.push(h('div',{class:'row',style:'margin-top:8px'},fx,h('button',{class:'btn pri',type:'button',onclick:go},'↵')));
   if(isOwner)out.push(h('label',{class:'row small',style:'margin-top:6px'},h('input',{type:'checkbox',checked:secret,onchange:e=>{secret=e.target.checked}}),'Скрытый бросок (видит только Мастер)'));
   out.push(h('h3',{},'Журнал'));
-  const all=[...S.log,...(isOwner?S.gmlog:[])].sort((a,b)=>a.ts-b.ts).slice(-80);
-  const box=h('div',{class:'log'},...all.slice().reverse().map(m=>{const kids=[h('div',{class:'who'},`${m.who||''} · ${new Date(m.ts).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})}`),h('div',{},m.text||'')];
+  const all=[...S.log,...(isOwner?S.gmlog:[])].filter(m=>logFilters.every(f=>{try{return f(m)}catch(e){return true}})).sort((a,b)=>a.ts-b.ts).slice(-80);
+  const box=h('div',{class:'log'},...all.slice().reverse().map(m=>{for(const r of logRenderers){try{const n=r(m);if(n)return n}catch(e){console.error(e)}}const kids=[h('div',{class:'who'},`${m.who||''} · ${new Date(m.ts).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})}`),h('div',{},m.text||'')];
     if(m.kind==='roll'||m.kind==='secret'){kids.push(h('div',{},h('span',{class:'tot'},m.total),' ',h('span',{class:'det'},m.det||'')));
       if(isOwner&&m.target&&m.dmg!=null&&S.tokens[m.target])kids.push(h('button',{class:'btn sm bad',type:'button',onclick:()=>applyHp(m.target,m.dmg,'dmg')},`Нанести ${m.dmg} урона: ${S.tokens[m.target].name}`))}
     return h('div',{class:'msg '+(m.kind||'')},kids)}));
@@ -809,6 +890,8 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   out.push(h('h3',{},'Глазами игрока'),h('select',{'aria-label':'Смотреть глазами',style:'width:100%',onchange:e=>{const v=e.target.value;setPreview(v!=='',v==='all'?null:v)}},
     h('option',{value:'',selected:!preview},'Выкл — я вижу всё'),h('option',{value:'all',selected:preview&&!previewTok},'Все герои вместе'),...heroes.map(t=>h('option',{value:t.id,selected:preview&&previewTok===t.id},t.name+(t.owner&&names[t.owner]?' · '+names[t.owner]:'')))),
     h('p',{class:'small muted'},'Показывает карту без секретов, свет, туман и только тех существ, кого видит выбранный герой. Кнопка 👁 на карте включает и выключает этот режим.'));
+  out.push(h('h3',{},'Шкала Мглы'),h('div',{class:'mistbox'},h('button',{class:'btn',type:'button','aria-label':'Мгла слабее',onclick:()=>setMist(s.mist-1)},'−'),h('span',{class:'cells'},...mistCells(s.mist,true)),h('button',{class:'btn',type:'button','aria-label':'Мгла сильнее',onclick:()=>setMist(s.mist+1)},'+')),
+    h('p',{class:'small muted'},MIST_TXT[s.mist]+' Игроки видят шкалу в шапке; каждое изменение пишется в журнал.'));
   const pcs=tokList().filter(t=>t.kind==='pc');
   out.push(h('h3',{},'Игра'),h('div',{class:'row',style:'margin-bottom:6px'},h('button',{class:'btn sm pri',type:'button',disabled:!pcs.length,onclick:()=>grantLevel(pcs.map(t=>t.id),true)},'⚓ Новый уровень всему отряду'),h('span',{class:'small muted'},pcs.filter(t=>t.lvlUp).length?`ждут повышения: ${pcs.filter(t=>t.lvlUp).map(t=>t.name).join(', ')}`:'')),
     s.started?h('div',{class:'row'},h('span',{class:'small muted'},'Игра идёт.'),h('button',{class:'btn sm',type:'button',onclick:toLobby},'Вернуть всех в лобби (новая сессия)'))
@@ -843,6 +926,7 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   out.push(h('div',{class:'row',style:'margin-top:10px'},nn,h('button',{class:'btn',type:'button',onclick:()=>{if(nn.value.trim())addToken({name:nn.value.trim(),kind:'npc',hp:14,hpMax:14,ac:13})}},'+ Союзник'),h('button',{class:'btn',type:'button',onclick:()=>{if(nn.value.trim())addToken({name:nn.value.trim(),kind:'pc',hp:18,hpMax:18,ac:14})}},'+ Герой')));
   const t=sel&&S.tokens[sel];out.push(h('h3',{},'Выбранная фишка'));
   if(!t)out.push(h('p',{class:'muted'},'Щёлкните по фишке на карте.'));else out.push(gmTokenCard(t));
+  for(const f of gmSections){try{const n=f();if(n)out.push(...[n].flat())}catch(e){console.error(e)}}
   out.push(h('p',{class:'credit'},CREDIT));return out}
 function freeSpot(){const m=mapInfo();let [cx,cy]=toWorld(VW/2,VH/2);cx=clamp(cx,40,m.w-40);cy=clamp(cy,40,m.h-40);const c=cellPx(m);for(let r=0;r<12;r++)for(let i=-r;i<=r;i++)for(let j=-r;j<=r;j++){if(Math.max(Math.abs(i),Math.abs(j))!==r)continue;const [x,y]=snap(m,cx+i*c,cy+j*c);if(x<0||y<0||x>m.w||y>m.h)continue;if(!tokList().some(t=>t.map===m.id&&Math.hypot(t.x-x,t.y-y)<c*.6))return[x,y]}return snap(m,cx,cy)}
 async function addToken(p){const id=store.newId('tokens');const [x,y]=freeSpot();await store.set('tokens/'+id,{color:COLORS[Math.floor(Math.random()*COLORS.length)],size:1,map:st().map,hpTemp:0,dv:0,light:0,owner:null,hidden:false,cond:[],inCombat:false,init:null,...p,x,y});
@@ -909,7 +993,27 @@ if(!LIVE)showBanner('Демо-режим: изменения видны толь
 else if(!canWrite){readOnly=true;showBanner('У вас доступ только для просмотра. Попросите Мастера дать вам доступ «Редактор».')}
 if(!isOwner)tab='hero';
 renderTabs();resize();fitMap();changed();
-window.__table={S,st,frame:()=>draw()};
+
+/* ================= API для модулей mod-*.js (см. vtt-api.md) ================= */
+function runHooks(layer,m){for(const f of drawHooks[layer]){g.save();try{f(g,m,cam)}catch(e){console.error(e)}g.restore()}}
+function modTool(){return mapTools.find(t=>t.id===tool)||null}
+function addToolButton(t){const b=h('button',{type:'button','data-tool':t.id,title:t.title||t.id,'aria-pressed':'false',class:t.gmOnly?'gmo':null},t.icon||'?');$('tools').append(b);if(t.gmOnly)b.hidden=!isOwner;$('tools').hidden=false}
+window.VTT={
+  get S(){return S},st,store,h,clone,mapInfo,cellPx,ftPx,cam,toWorld,clamp,roll,rollPost,post,toast,requestDraw,changed,renderPane:()=>renderPane(true),renderTabs,
+  tokList,canSee,isGM,whoAmI,names,resolveNames,mod,sgn,rnd,showCutAll,selectToken,centerOn,ping,myToken,icOf,picker,applyHp,
+  get myId(){return myId},get isOwner(){return isOwner},get readOnly(){return readOnly},get room(){return room},get sel(){return sel},get tool(){return tool},LIVE,NET,
+  get VW(){return VW},get VH(){return VH},
+  onDraw(layer,fn){drawHooks[layer].push(fn);requestDraw()},
+  addTool(t){mapTools.push(t);addToolButton(t)},
+  setTool(id){const b=$('tools').querySelector(`[data-tool="${id}"]`);if(b)b.click()},
+  setHint(t){$('hint').textContent=t||'';$('hint').hidden=!t},
+  addTab(t){extraTabs.push(t);renderTabs()},
+  addGmSection(fn){gmSections.push(fn)},addHeroSection(fn){heroSections.push(fn)},
+  onChat(fn){chatHooks.push(fn)},addLogFilter(fn){logFilters.push(fn)},addLogRenderer(fn){logRenderers.push(fn)},
+  watch(col,cb,q){return store.watchCol(col,cb,q)},
+  overlay(){return $('modov')}};
+for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
+window.__table={S,st,cam,frame:()=>draw()};
 })();
 </script>
 

@@ -26,11 +26,9 @@
 <g id="tree"><circle cx="0" cy="0" r="7" fill="#8fa06a" stroke="#4a3a1c" stroke-width="1.2"/><circle cx="-2" cy="-2" r="2.5" fill="#a9b783" stroke="none"/></g>
 <g id="hill"><path d="M-16,4 Q-8,-12 0,-12 Q8,-12 16,4" fill="#dcc391" stroke="#5a3e1c" stroke-width="1.6"/><path d="M-2,-8 L4,2 M4,-9 L9,1" stroke="#5a3e1c" stroke-width="1" fill="none"/></g>
 <g id="rock"><path d="M-6,3 L-4,-4 L1,-6 L6,-1 L5,4 Z" fill="#6b5a45" stroke="#2e2215" stroke-width="1"/></g>
-
 </defs>
 <rect x="0" y="0" width="1400" height="1000" fill="url(#sea)" stroke="none"/>
 <ellipse cx="990" cy="790" rx="95" ry="45" fill="#c3dbd2" stroke="#7fa79f" stroke-width="1.2" stroke-dasharray="3 4"/>
-<text x="960.0" y="818.0" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#2f5a55" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#c3dbd2" stroke-width="3" stroke-linejoin="round" paint-order="stroke">мелководье</text>
 <path d="M0.0,0.0 L12.1,-0.4 L24.2,0.5 L36.3,3.8 L48.4,-0.3 L60.5,0.1 L72.6,0.8 L84.7,-2.8 L96.8,0.1 L108.9,1.2 L121.1,2.6 L133.2,-3.7 L145.3,-1.8 L157.4,-3.7 L169.5,2.8 L181.6,1.7 L193.7,-4.1 L205.8,4.3 L217.9,4.2 L230.0,0.0 L235.2,12.7 L241.9,24.5 L251.9,34.5 L259.5,45.9 L262.0,60.0 L259.7,73.3 L261.9,87.3 L258.8,100.4 L256.3,113.7 L256.2,127.3 L250.0,140.0 L255.3,151.3 L260.5,162.6 L262.2,175.5 L269.8,185.8 L273.8,197.6 L280.0,208.6 L285.0,220.0 L281.4,233.1 L281.0,246.7 L280.5,260.3 L271.9,272.6 L269.8,286.0 L272.0,300.0 L273.5,312.7 L278.9,324.0 L286.6,334.4 L291.6,345.8 L295.4,357.7 L298.0,370.0 L303.8,383.2 L299.6,397.8 L304.9,411.1 L306.0,425.0 L305.6,440.5 L312.3,454.8 L314.0,470.0 L308.6,484.6 L308.2,499.7 L310.0,515.0 L320.5,523.7 L325.6,535.6 L330.0,548.0 L337.8,558.3 L350.2,562.4 L360.0,570.0 L365.9,582.1 L378.0,588.0 L370.7,597.6 L362.0,606.0 L351.2,614.9 L336.9,615.6 L325.0,622.0 L320.2,635.9 L322.4,651.0 L318.0,665.0 L324.4,678.3 L325.1,692.7 L322.3,707.8 L326.9,721.5 L332.0,735.0 L343.9,740.2 L352.9,748.9 L363.4,755.8 L373.3,763.3 L378.9,776.4 L392.1,779.9 L400.0,790.0 L411.9,793.0 L424.1,794.5 L436.6,794.8 L447.6,802.0 L460.7,799.2 L471.7,806.3 L484.7,804.1 L496.1,809.3 L508.5,810.0 L520.0,815.0 L531.8,811.9 L544.4,817.2 L556.2,814.7 L567.9,809.2 L580.3,813.5 L591.8,806.4 L603.9,807.1 L616.3,810.2 L628.1,807.3 L640.0,805.0 L652.7,804.0 L663.1,814.3 L676.5,810.0 L688.4,812.9 L699.5,819.9 L712.3,818.5 L724.4,820.7 L736.8,821.2 L748.8,823.9 L760.0,830.0 L772.1,829.7 L783.8,825.7 L796.1,827.9 L807.9,824.8 L820.0,824.6 L832.3,828.1 L844.0,822.9 L856.1,822.7 L868.3,824.3 L880.0,820.0 L892.4,821.6 L904.0,825.7 L913.0,836.3 L924.7,839.8 L937.9,839.3 L949.6,843.1 L960.0,850.0 L968.6,860.0 L977.5,869.7 L991.7,872.9 L997.4,886.4 L1007.8,894.3 L1020.0,900.0 L1025.9,910.5 L1033.9,919.6 L1043.0,928.0 L1050.1,937.7 L1049.9,952.3 L1060.0,960.0 L1068.8,972.3 L1071.7,987.5 L1080.0,1000.0 L1068.0,1002.2 L1056.0,997.1 L1044.0,999.1 L1032.0,1001.9 L1020.0,1002.9 L1008.0,998.0 L996.0,1003.9 L984.0,1002.4 L972.0,999.5 L960.0,996.8 L948.0,999.0 L936.0,1002.0 L924.0,996.2 L912.0,1002.7 L900.0,1004.4 L888.0,1002.1 L876.0,1000.5 L864.0,1004.0 L852.0,1002.9 L840.0,1001.2 L828.0,999.4 L816.0,1003.3 L804.0,1001.2 L792.0,996.5 L780.0,995.7 L768.0,998.6 L756.0,998.3 L744.0,999.2 L732.0,1003.2 L720.0,1004.2 L708.0,1004.3 L696.0,996.3 L684.0,998.2 L672.0,995.8 L660.0,1004.3 L648.0,998.8 L636.0,1000.2 L624.0,997.9 L612.0,1001.6 L600.0,995.5 L588.0,1003.8 L576.0,999.6 L564.0,997.9 L552.0,996.4 L540.0,997.9 L528.0,998.2 L516.0,997.4 L504.0,996.3 L492.0,1001.3 L480.0,998.3 L468.0,996.4 L456.0,996.7 L444.0,1000.7 L432.0,997.4 L420.0,996.7 L408.0,999.3 L396.0,998.9 L384.0,1001.1 L372.0,999.3 L360.0,999.0 L348.0,1003.8 L336.0,998.7 L324.0,995.6 L312.0,996.6 L300.0,997.9 L288.0,1001.0 L276.0,997.9 L264.0,999.3 L252.0,1000.5 L240.0,997.0 L228.0,1003.7 L216.0,997.7 L204.0,1004.2 L192.0,999.1 L180.0,1000.2 L168.0,1002.4 L156.0,998.2 L144.0,1000.0 L132.0,999.0 L120.0,996.2 L108.0,1002.2 L96.0,1004.4 L84.0,1001.8 L72.0,998.4 L60.0,1002.7 L48.0,1003.0 L36.0,996.3 L24.0,998.6 L12.0,1000.5 L0.0,1000.0 L3.5,988.0 L-1.6,975.9 L1.5,963.9 L-2.7,951.8 L-0.6,939.8 L2.8,927.7 L3.7,915.7 L3.4,903.6 L-1.0,891.6 L0.7,879.5 L-1.7,867.5 L-3.3,855.4 L-0.0,843.4 L3.0,831.3 L3.1,819.3 L1.9,807.2 L4.1,795.2 L-2.0,783.1 L-3.0,771.1 L-0.4,759.0 L-2.0,747.0 L-2.6,734.9 L-0.8,722.9 L1.1,710.8 L-0.1,698.8 L-1.7,686.7 L3.1,674.7 L4.3,662.7 L-0.4,650.6 L-3.8,638.6 L-4.2,626.5 L3.4,614.5 L-4.1,602.4 L1.9,590.4 L0.6,578.3 L-1.7,566.3 L2.6,554.2 L-4.3,542.2 L-3.3,530.1 L-0.4,518.1 L-4.3,506.0 L3.0,494.0 L-2.4,481.9 L-3.2,469.9 L-4.1,457.8 L1.2,445.8 L-0.5,433.7 L1.2,421.7 L1.4,409.6 L2.8,397.6 L4.1,385.5 L1.7,373.5 L-2.7,361.4 L-0.2,349.4 L-2.9,337.3 L-4.4,325.3 L-0.3,313.3 L1.9,301.2 L-2.9,289.2 L-2.0,277.1 L-1.4,265.1 L1.8,253.0 L0.2,241.0 L1.0,228.9 L2.3,216.9 L-1.0,204.8 L2.6,192.8 L3.7,180.7 L-3.7,168.7 L3.9,156.6 L2.0,144.6 L-3.3,132.5 L-0.4,120.5 L1.1,108.4 L3.7,96.4 L-1.1,84.3 L0.6,72.3 L3.4,60.2 L2.7,48.2 L4.0,36.1 L-0.3,24.1 L1.4,12.0 Z" fill="none" stroke="#e8f0e6" stroke-opacity="0.18" stroke-width="46" stroke-linejoin="round"/>
 <path d="M1195.0,450.0 L1198.5,461.8 L1195.6,474.2 L1198.5,486.0 L1193.4,495.5 L1192.1,506.0 L1190.6,516.4 L1180.1,526.0 L1172.3,537.9 L1162.3,546.1 L1150.1,550.3 L1139.0,549.9 L1129.5,555.6 L1110.5,555.6 L1101.1,549.2 L1089.9,550.3 L1080.7,540.8 L1067.7,537.9 L1058.8,527.0 L1049.4,516.4 L1049.0,505.7 L1042.8,496.5 L1041.5,486.0 L1045.9,474.3 L1046.7,462.3 L1045.0,450.0 L1047.0,437.7 L1048.2,425.1 L1054.6,414.0 L1057.4,403.7 L1061.5,393.8 L1064.4,383.6 L1071.2,373.7 L1074.1,362.1 L1087.8,349.7 L1098.0,347.0 L1108.2,344.4 L1120.0,340.6 L1131.8,344.4 L1141.4,349.4 L1152.2,349.7 L1165.9,362.1 L1173.9,371.4 L1175.6,383.6 L1176.6,394.4 L1184.6,403.0 L1185.4,414.0 L1189.9,425.6 L1189.6,438.6 Z" fill="none" stroke="#e8f0e6" stroke-opacity="0.18" stroke-width="46" stroke-linejoin="round"/>
 <path d="M0.0,0.0 L12.1,-0.4 L24.2,0.5 L36.3,3.8 L48.4,-0.3 L60.5,0.1 L72.6,0.8 L84.7,-2.8 L96.8,0.1 L108.9,1.2 L121.1,2.6 L133.2,-3.7 L145.3,-1.8 L157.4,-3.7 L169.5,2.8 L181.6,1.7 L193.7,-4.1 L205.8,4.3 L217.9,4.2 L230.0,0.0 L235.2,12.7 L241.9,24.5 L251.9,34.5 L259.5,45.9 L262.0,60.0 L259.7,73.3 L261.9,87.3 L258.8,100.4 L256.3,113.7 L256.2,127.3 L250.0,140.0 L255.3,151.3 L260.5,162.6 L262.2,175.5 L269.8,185.8 L273.8,197.6 L280.0,208.6 L285.0,220.0 L281.4,233.1 L281.0,246.7 L280.5,260.3 L271.9,272.6 L269.8,286.0 L272.0,300.0 L273.5,312.7 L278.9,324.0 L286.6,334.4 L291.6,345.8 L295.4,357.7 L298.0,370.0 L303.8,383.2 L299.6,397.8 L304.9,411.1 L306.0,425.0 L305.6,440.5 L312.3,454.8 L314.0,470.0 L308.6,484.6 L308.2,499.7 L310.0,515.0 L320.5,523.7 L325.6,535.6 L330.0,548.0 L337.8,558.3 L350.2,562.4 L360.0,570.0 L365.9,582.1 L378.0,588.0 L370.7,597.6 L362.0,606.0 L351.2,614.9 L336.9,615.6 L325.0,622.0 L320.2,635.9 L322.4,651.0 L318.0,665.0 L324.4,678.3 L325.1,692.7 L322.3,707.8 L326.9,721.5 L332.0,735.0 L343.9,740.2 L352.9,748.9 L363.4,755.8 L373.3,763.3 L378.9,776.4 L392.1,779.9 L400.0,790.0 L411.9,793.0 L424.1,794.5 L436.6,794.8 L447.6,802.0 L460.7,799.2 L471.7,806.3 L484.7,804.1 L496.1,809.3 L508.5,810.0 L520.0,815.0 L531.8,811.9 L544.4,817.2 L556.2,814.7 L567.9,809.2 L580.3,813.5 L591.8,806.4 L603.9,807.1 L616.3,810.2 L628.1,807.3 L640.0,805.0 L652.7,804.0 L663.1,814.3 L676.5,810.0 L688.4,812.9 L699.5,819.9 L712.3,818.5 L724.4,820.7 L736.8,821.2 L748.8,823.9 L760.0,830.0 L772.1,829.7 L783.8,825.7 L796.1,827.9 L807.9,824.8 L820.0,824.6 L832.3,828.1 L844.0,822.9 L856.1,822.7 L868.3,824.3 L880.0,820.0 L892.4,821.6 L904.0,825.7 L913.0,836.3 L924.7,839.8 L937.9,839.3 L949.6,843.1 L960.0,850.0 L968.6,860.0 L977.5,869.7 L991.7,872.9 L997.4,886.4 L1007.8,894.3 L1020.0,900.0 L1025.9,910.5 L1033.9,919.6 L1043.0,928.0 L1050.1,937.7 L1049.9,952.3 L1060.0,960.0 L1068.8,972.3 L1071.7,987.5 L1080.0,1000.0 L1068.0,1002.2 L1056.0,997.1 L1044.0,999.1 L1032.0,1001.9 L1020.0,1002.9 L1008.0,998.0 L996.0,1003.9 L984.0,1002.4 L972.0,999.5 L960.0,996.8 L948.0,999.0 L936.0,1002.0 L924.0,996.2 L912.0,1002.7 L900.0,1004.4 L888.0,1002.1 L876.0,1000.5 L864.0,1004.0 L852.0,1002.9 L840.0,1001.2 L828.0,999.4 L816.0,1003.3 L804.0,1001.2 L792.0,996.5 L780.0,995.7 L768.0,998.6 L756.0,998.3 L744.0,999.2 L732.0,1003.2 L720.0,1004.2 L708.0,1004.3 L696.0,996.3 L684.0,998.2 L672.0,995.8 L660.0,1004.3 L648.0,998.8 L636.0,1000.2 L624.0,997.9 L612.0,1001.6 L600.0,995.5 L588.0,1003.8 L576.0,999.6 L564.0,997.9 L552.0,996.4 L540.0,997.9 L528.0,998.2 L516.0,997.4 L504.0,996.3 L492.0,1001.3 L480.0,998.3 L468.0,996.4 L456.0,996.7 L444.0,1000.7 L432.0,997.4 L420.0,996.7 L408.0,999.3 L396.0,998.9 L384.0,1001.1 L372.0,999.3 L360.0,999.0 L348.0,1003.8 L336.0,998.7 L324.0,995.6 L312.0,996.6 L300.0,997.9 L288.0,1001.0 L276.0,997.9 L264.0,999.3 L252.0,1000.5 L240.0,997.0 L228.0,1003.7 L216.0,997.7 L204.0,1004.2 L192.0,999.1 L180.0,1000.2 L168.0,1002.4 L156.0,998.2 L144.0,1000.0 L132.0,999.0 L120.0,996.2 L108.0,1002.2 L96.0,1004.4 L84.0,1001.8 L72.0,998.4 L60.0,1002.7 L48.0,1003.0 L36.0,996.3 L24.0,998.6 L12.0,1000.5 L0.0,1000.0 L3.5,988.0 L-1.6,975.9 L1.5,963.9 L-2.7,951.8 L-0.6,939.8 L2.8,927.7 L3.7,915.7 L3.4,903.6 L-1.0,891.6 L0.7,879.5 L-1.7,867.5 L-3.3,855.4 L-0.0,843.4 L3.0,831.3 L3.1,819.3 L1.9,807.2 L4.1,795.2 L-2.0,783.1 L-3.0,771.1 L-0.4,759.0 L-2.0,747.0 L-2.6,734.9 L-0.8,722.9 L1.1,710.8 L-0.1,698.8 L-1.7,686.7 L3.1,674.7 L4.3,662.7 L-0.4,650.6 L-3.8,638.6 L-4.2,626.5 L3.4,614.5 L-4.1,602.4 L1.9,590.4 L0.6,578.3 L-1.7,566.3 L2.6,554.2 L-4.3,542.2 L-3.3,530.1 L-0.4,518.1 L-4.3,506.0 L3.0,494.0 L-2.4,481.9 L-3.2,469.9 L-4.1,457.8 L1.2,445.8 L-0.5,433.7 L1.2,421.7 L1.4,409.6 L2.8,397.6 L4.1,385.5 L1.7,373.5 L-2.7,361.4 L-0.2,349.4 L-2.9,337.3 L-4.4,325.3 L-0.3,313.3 L1.9,301.2 L-2.9,289.2 L-2.0,277.1 L-1.4,265.1 L1.8,253.0 L0.2,241.0 L1.0,228.9 L2.3,216.9 L-1.0,204.8 L2.6,192.8 L3.7,180.7 L-3.7,168.7 L3.9,156.6 L2.0,144.6 L-3.3,132.5 L-0.4,120.5 L1.1,108.4 L3.7,96.4 L-1.1,84.3 L0.6,72.3 L3.4,60.2 L2.7,48.2 L4.0,36.1 L-0.3,24.1 L1.4,12.0 Z" fill="none" stroke="#e8f0e6" stroke-opacity="0.25" stroke-width="30" stroke-linejoin="round"/>
@@ -168,9 +166,6 @@
 <use href="#tree" x="329.6" y="849.0"/>
 <use href="#hill" x="554.5" y="864.5"/>
 <use href="#tree" x="168.9" y="316.7"/>
-<path d="M290,488 Q300,540 335,570 Q350,582 362,590" fill="none" stroke="#7a5b33" stroke-width="2.2" stroke-dasharray="6 4"/>
-<path d="M285,486 Q200,500 120,470 Q60,455 15,470" fill="none" stroke="#7a5b33" stroke-width="2.2" stroke-dasharray="6 4"/>
-<path d="M290,488 Q240,600 260,720 Q280,830 230,985" fill="none" stroke="#7a5b33" stroke-width="2.2" stroke-dasharray="6 4"/>
 <circle cx="667.2" cy="433.9" r="11.8" fill="none" stroke="#f4f7f2" stroke-width="1.2" stroke-opacity="0.8"/>
 <use href="#rock" transform="translate(667.2,433.9) scale(1.31) rotate(346)"/>
 <circle cx="761.8" cy="456.4" r="12.2" fill="none" stroke="#f4f7f2" stroke-width="1.2" stroke-opacity="0.8"/>
@@ -267,12 +262,7 @@
 <use href="#rock" transform="translate(724.3,558.8) scale(1.24) rotate(120)"/>
 <circle cx="708.5" cy="405.8" r="11.7" fill="none" stroke="#f4f7f2" stroke-width="1.2" stroke-opacity="0.8"/>
 <use href="#rock" transform="translate(708.5,405.8) scale(1.30) rotate(193)"/>
-<path d="M352,480 C470,462 560,488 700,478 S900,462 1046,468" fill="none" stroke="#5a2d0c" stroke-width="2.6" stroke-dasharray="10 7"/>
-<text x="505.0" y="462.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#5a2d0c" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#9fc2bb" stroke-width="3" stroke-linejoin="round" paint-order="stroke">морской путь</text>
 <path d="M1100,566 Q1075,640 1045,700 Q1015,750 995,785" fill="none" stroke="#e9d6a6" stroke-width="9" stroke-opacity="0.8"/>
-<path d="M1100,566 Q1075,640 1045,700 Q1015,750 995,785" fill="none" stroke="#3b2412" stroke-width="2.4" stroke-dasharray="5 5"/>
-<text x="1082.0" y="690.0" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="start" font-weight="normal" font-style="italic" stroke="#9fc2bb" stroke-width="3" stroke-linejoin="round" paint-order="stroke">отмель-дамба</text>
-<text x="1082.0" y="707.0" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="start" font-weight="normal" font-style="italic" stroke="#9fc2bb" stroke-width="3" stroke-linejoin="round" paint-order="stroke">(открыта в отлив)</text>
 <rect x="268" y="468" width="9" height="7" fill="#b5653a" stroke="#3b2412" stroke-width="1"/>
 <rect x="281" y="474" width="8" height="7" fill="#b5653a" stroke="#3b2412" stroke-width="1"/>
 <rect x="294" y="466" width="7" height="8" fill="#b5653a" stroke="#3b2412" stroke-width="1"/>
@@ -288,8 +278,6 @@
 <path d="M296,431 Q300,418 309,420 L309,434 Z" fill="#1d140b" stroke="#1d140b" stroke-width="1"/>
 <g transform="translate(364,590)"><circle cx="0" cy="0" r="18" fill="#f7e6a3" fill-opacity="0.45" stroke="none"/><polygon points="-5,8 5,8 3,-12 -3,-12" fill="#f4efe2" stroke="#3b2412" stroke-width="1.5"/><rect x="-2" y="-4" width="4" height="3" fill="#b3201c" stroke="none"/><polygon points="-4,-12 4,-12 0,-18" fill="#b3201c" stroke="#3b2412" stroke-width="1.2"/></g>
 <g transform="translate(1122,425)"><rect x="-26" y="-12" width="40" height="26" fill="#cbb589" stroke="#3b2412" stroke-width="1.8"/><line x1="-26" y1="1" x2="14" y2="1" stroke="#3b2412" stroke-width="1"/><rect x="14" y="-22" width="14" height="36" fill="#b9a275" stroke="#3b2412" stroke-width="1.8"/><polygon points="14,-22 21,-34 28,-22" fill="#7a5b33" stroke="#3b2412" stroke-width="1.5"/><line x1="-6" y1="-20" x2="-6" y2="-12" stroke="#3b2412" stroke-width="1.5"/><line x1="-10" y1="-17" x2="-2" y2="-17" stroke="#3b2412" stroke-width="1.5"/></g>
-<text x="1120.0" y="478.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#c9b48a" stroke-width="3" stroke-linejoin="round" paint-order="stroke">Монастырь</text>
-<text x="1120.0" y="494.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic" stroke="#c9b48a" stroke-width="3" stroke-linejoin="round" paint-order="stroke">Отлива</text>
 <use href="#rock" x="1085" y="380"/>
 <use href="#rock" x="1160" y="520"/>
 <use href="#rock" x="1090" y="540"/>
@@ -345,85 +333,5 @@
 <ellipse cx="980" cy="380" rx="70" ry="24" fill="#f6f8f4" fill-opacity="0.55" stroke="none" filter="url(#fog)"/>
 <ellipse cx="1300" cy="360" rx="90" ry="28" fill="#f6f8f4" fill-opacity="0.55" stroke="none" filter="url(#fog)"/>
 <ellipse cx="700" cy="760" rx="90" ry="22" fill="#f6f8f4" fill-opacity="0.55" stroke="none" filter="url(#fog)"/>
-<text x="880.0" y="236.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#5d6f6c" text-anchor="middle" font-weight="normal" font-style="italic">туман</text>
-<text x="222.0" y="486.0" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="end" font-weight="bold" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Солтхейвен</text>
-<text x="244.0" y="426.0" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#3b2412" text-anchor="end" font-weight="normal" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Грот Бочек</text>
-<text x="282.0" y="612.0" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#3b2412" text-anchor="end" font-weight="normal" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Маяк Седой Бран</text>
-<text x="1118.0" y="306.0" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="start" font-weight="bold" font-style="normal" stroke="#9fc2bb" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Чаячий Хребет</text>
-<text x="730.0" y="386.0" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#3b2412" text-anchor="start" font-weight="normal" font-style="normal" stroke="#9fc2bb" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Зубы Вдовы</text>
-<text x="700.0" y="140.0" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#2f5a55" text-anchor="middle" font-weight="normal" font-style="italic">Б У Х Т А</text>
-<text x="1290.0" y="260.0" font-family="Georgia, 'Times New Roman', serif" font-size="18" fill="#2f5a55" text-anchor="middle" font-weight="normal" font-style="italic">Открытое море</text>
 <rect x="0" y="0" width="1400" height="1000" fill="url(#vign)" stroke="none"/><rect x="0" y="0" width="1400" height="1000" fill="#ffffff" fill-opacity="0.01" filter="url(#paper)" stroke="none"/><rect x="6" y="6" width="1388" height="988" fill="none" stroke="#3b2412" stroke-width="4"/><rect x="13" y="13" width="1374" height="974" fill="none" stroke="#3b2412" stroke-width="1.2"/>
-<rect x="480.0" y="26" width="440" height="78" rx="8" fill="#f1e2bf" stroke="#3b2412" stroke-width="3"/>
-<rect x="485.0" y="31" width="430" height="68" rx="5" fill="none" stroke="#3b2412" stroke-width="1"/>
-<text x="700.0" y="66.6" font-family="Georgia, 'Times New Roman', serif" font-size="32" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="normal">Бухта Солёной Мглы</text>
-<text x="700.0" y="90.0" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic">Колокола Солёной Мглы · карта региона</text>
-<g>
-<circle cx="1300" cy="125" r="58" fill="#f1e2bf" fill-opacity="0.85" stroke="#3b2412" stroke-width="2"/>
-<circle cx="1300" cy="125" r="46.400000000000006" fill="none" stroke="#3b2412" stroke-width="1"/>
-<line x1="1300.0" y1="89.0" x2="1300.0" y2="78.6" stroke="#3b2412" stroke-width="1"/>
-<line x1="1316.0" y1="86.4" x2="1317.8" y2="82.1" stroke="#3b2412" stroke-width="1"/>
-<line x1="1325.4" y1="99.6" x2="1332.8" y2="92.2" stroke="#3b2412" stroke-width="1"/>
-<line x1="1338.6" y1="109.0" x2="1342.9" y2="107.2" stroke="#3b2412" stroke-width="1"/>
-<line x1="1336.0" y1="125.0" x2="1346.4" y2="125.0" stroke="#3b2412" stroke-width="1"/>
-<line x1="1338.6" y1="141.0" x2="1342.9" y2="142.8" stroke="#3b2412" stroke-width="1"/>
-<line x1="1325.4" y1="150.4" x2="1332.8" y2="157.8" stroke="#3b2412" stroke-width="1"/>
-<line x1="1316.0" y1="163.6" x2="1317.8" y2="167.9" stroke="#3b2412" stroke-width="1"/>
-<line x1="1300.0" y1="161.0" x2="1300.0" y2="171.4" stroke="#3b2412" stroke-width="1"/>
-<line x1="1284.0" y1="163.6" x2="1282.2" y2="167.9" stroke="#3b2412" stroke-width="1"/>
-<line x1="1274.6" y1="150.4" x2="1267.2" y2="157.8" stroke="#3b2412" stroke-width="1"/>
-<line x1="1261.4" y1="141.0" x2="1257.1" y2="142.8" stroke="#3b2412" stroke-width="1"/>
-<line x1="1264.0" y1="125.0" x2="1253.6" y2="125.0" stroke="#3b2412" stroke-width="1"/>
-<line x1="1261.4" y1="109.0" x2="1257.1" y2="107.2" stroke="#3b2412" stroke-width="1"/>
-<line x1="1274.6" y1="99.6" x2="1267.2" y2="92.2" stroke="#3b2412" stroke-width="1"/>
-<line x1="1284.0" y1="86.4" x2="1282.2" y2="82.1" stroke="#3b2412" stroke-width="1"/>
-<polygon points="1300,125 1290.7,125.0 1300.0,69.9" fill="#3b2412" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1309.3,125.0 1300.0,69.9" fill="#e9d3a2" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1295.5,120.5 1322.6,102.4" fill="#3b2412" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1304.5,129.5 1322.6,102.4" fill="#e9d3a2" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1300.0,115.7 1355.1,125.0" fill="#3b2412" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1300.0,134.3 1355.1,125.0" fill="#e9d3a2" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1304.5,120.5 1322.6,147.6" fill="#3b2412" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1295.5,129.5 1322.6,147.6" fill="#e9d3a2" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1309.3,125.0 1300.0,180.1" fill="#3b2412" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1290.7,125.0 1300.0,180.1" fill="#e9d3a2" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1304.5,129.5 1277.4,147.6" fill="#3b2412" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1295.5,120.5 1277.4,147.6" fill="#e9d3a2" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1300.0,134.3 1244.9,125.0" fill="#3b2412" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1300.0,115.7 1244.9,125.0" fill="#e9d3a2" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1295.5,129.5 1277.4,102.4" fill="#3b2412" stroke="#3b2412" stroke-width="0.8"/>
-<polygon points="1300,125 1304.5,120.5 1277.4,102.4" fill="#e9d3a2" stroke="#3b2412" stroke-width="0.8"/>
-<circle cx="1300" cy="125" r="4.1" fill="#b3201c" stroke="#3b2412" stroke-width="1"/>
-<text x="1300.0" y="60.0" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">С</text>
-<text x="1371.0" y="131.0" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">В</text>
-<text x="1300.0" y="202.0" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Ю</text>
-<text x="1229.0" y="131.0" font-family="Georgia, 'Times New Roman', serif" font-size="17" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="normal" stroke="#f1e2bf" stroke-width="4" stroke-linejoin="round" paint-order="stroke">З</text>
-</g>
-<rect x="33" y="915" width="330" height="60" rx="6" fill="#f1e2bf" stroke="#3b2412" stroke-width="1.5"/>
-<rect x="45" y="949" width="56" height="8" fill="#3b2412" stroke="#3b2412" stroke-width="1.2"/>
-<rect x="101" y="949" width="56" height="8" fill="#f1e2bf" stroke="#3b2412" stroke-width="1.2"/>
-<rect x="157" y="949" width="56" height="8" fill="#3b2412" stroke="#3b2412" stroke-width="1.2"/>
-<rect x="213" y="949" width="56" height="8" fill="#f1e2bf" stroke="#3b2412" stroke-width="1.2"/>
-<rect x="269" y="949" width="56" height="8" fill="#3b2412" stroke="#3b2412" stroke-width="1.2"/>
-<text x="45.0" y="970.0" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="normal">0</text>
-<text x="101.0" y="970.0" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="normal">1</text>
-<text x="157.0" y="970.0" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="normal">2</text>
-<text x="213.0" y="970.0" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="normal">3</text>
-<text x="269.0" y="970.0" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="normal">4</text>
-<text x="325.0" y="970.0" font-family="Georgia, 'Times New Roman', serif" font-size="12" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="normal">5</text>
-<text x="185.0" y="939.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#3b2412" text-anchor="middle" font-weight="normal" font-style="italic">Масштаб: мили</text>
-<rect x="1135" y="800" width="245" height="136" rx="6" fill="#f1e2bf" stroke="#3b2412" stroke-width="1.5"/>
-<text x="1257.0" y="822.0" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#3b2412" text-anchor="middle" font-weight="bold" font-style="normal">Условные обозначения</text>
-<g transform="translate(0,-23)">
-<line x1="1143" y1="865" x2="1177" y2="865" stroke="#5a2d0c" stroke-width="2.6" stroke-dasharray="8 5"/>
-<text x="1187.0" y="870.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#3b2412" text-anchor="start" font-weight="normal" font-style="normal">морской путь</text>
-<line x1="1143" y1="888" x2="1177" y2="888" stroke="#3b2412" stroke-width="2.4" stroke-dasharray="5 5"/>
-<text x="1187.0" y="893.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#3b2412" text-anchor="start" font-weight="normal" font-style="normal">отмель-дамба</text>
-</g>
-<g transform="translate(0,-46)">
-<use href="#rock" x="1153" y="934"/><use href="#rock" x="1167" y="932"/>
-<text x="1187.0" y="939.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#3b2412" text-anchor="start" font-weight="normal" font-style="normal">рифы</text>
-<ellipse cx="1160" cy="957" rx="17" ry="7" fill="#9fc2bb" stroke="#7fa79f" stroke-width="1"/><ellipse cx="1160" cy="957" rx="13" ry="4" fill="#f6f8f4" fill-opacity="0.9" stroke="none"/>
-<text x="1187.0" y="962.0" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#3b2412" text-anchor="start" font-weight="normal" font-style="normal">туман над водой</text>
-</g>
 </svg>
