@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="760" viewBox="0 0 1440 760">
+<defs>
+<pattern id="parch" width="120" height="120" patternUnits="userSpaceOnUse">
+<rect width="120" height="120" fill="#efe0b9"/>
+<circle cx="20" cy="30" r="18" fill="#e6d3a6" opacity="0.5"/><circle cx="85" cy="90" r="24" fill="#e9d8ad" opacity="0.5"/>
+<circle cx="95" cy="20" r="9" fill="#dcc795" opacity="0.35"/>
+</pattern>
+<pattern id="stone" width="40" height="40" patternUnits="userSpaceOnUse">
+<rect width="40" height="40" fill="#d9c9a3"/>
+<path d="M0 20H40M20 0V20M10 20V40M30 20V40" fill="none" stroke="#a8956c" stroke-width="1"/>
+</pattern>
+<pattern id="planks" width="40" height="20" patternUnits="userSpaceOnUse">
+<rect width="40" height="20" fill="#c99a62"/>
+<path d="M0 0H40M0 10H40M12 0V10M32 10V20" fill="none" stroke="#7a5230" stroke-width="1"/>
+</pattern>
+<pattern id="planksH" width="20" height="40" patternUnits="userSpaceOnUse">
+<rect width="20" height="40" fill="#c99a62"/>
+<path d="M0 0V40M10 0V40M0 14H10M10 32H20" fill="none" stroke="#7a5230" stroke-width="1"/>
+</pattern>
+<pattern id="water" width="80" height="40" patternUnits="userSpaceOnUse">
+<rect width="80" height="40" fill="#5f8f8a"/>
+<path d="M0 12q10 -7 20 0t20 0t20 0t20 0M0 32q10 -7 20 0t20 0t20 0t20 0" fill="none" stroke="#8fb8b0" stroke-width="1.3"/>
+</pattern>
+<pattern id="deep" width="80" height="40" patternUnits="userSpaceOnUse">
+<rect width="80" height="40" fill="#456f70"/>
+<path d="M10 20q10 -7 20 0t20 0" fill="none" stroke="#6f9a96" stroke-width="1.3"/>
+</pattern>
+<pattern id="grass" width="40" height="40" patternUnits="userSpaceOnUse">
+<rect width="40" height="40" fill="#c9c58f"/>
+<path d="M6 12l2 -6l2 6M24 30l2 -6l2 6M30 10l2 -5l2 5M12 34l1 -5l2 5" fill="none" stroke="#7e7f45" stroke-width="1.2"/>
+</pattern>
+<pattern id="sand" width="40" height="40" patternUnits="userSpaceOnUse">
+<rect width="40" height="40" fill="#d8c69a"/>
+<circle cx="8" cy="9" r="1.3" fill="#a8956c"/><circle cx="27" cy="18" r="1.2" fill="#a8956c"/><circle cx="16" cy="31" r="1.4" fill="#a8956c"/>
+</pattern>
+<pattern id="flood" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="14" height="14" fill="#7fb6d6" fill-opacity="0.28"/>
+<line x1="0" y1="0" x2="0" y2="14" stroke="#2d6f8f" stroke-width="3" opacity="0.55"/>
+</pattern>
+<g id="barrel"><circle cx="15" cy="15" r="13" fill="#9b6b3c" stroke="#3b2412" stroke-width="2"/>
+<circle cx="15" cy="15" r="8" fill="none" stroke="#3b2412" stroke-width="1.2"/><circle cx="15" cy="15" r="2" fill="#3b2412" stroke="none"/></g>
+<g id="crate"><rect x="2" y="2" width="26" height="26" fill="#b88a55" stroke="#3b2412" stroke-width="2"/>
+<path d="M2 2L28 28M28 2L2 28" fill="none" stroke="#3b2412" stroke-width="1.2"/></g>
+</defs>
+<rect width="100%" height="100%" fill="url(#parch)" stroke="none"/>
+<rect x="0" y="0" width="1440" height="760" fill="url(#water)" stroke="none" stroke-width="0" />
+<path d="M0 0H1440V60Q1200 90 900 70T0 80Z" fill="url(#deep)" stroke="none" stroke-width="0" opacity="0.6"/>
+<path d="M0 760H1440V700Q1100 680 700 710T0 690Z" fill="url(#deep)" stroke="none" stroke-width="0" opacity="0.6"/>
+<path d="M420 300L880 300Q1000 304 1040 380Q1000 456 880 460L420 460Q400 460 400 440L400 320Q400 300 420 300Z" fill="none" stroke="#e8f4f0" stroke-width="14" opacity="0.45" stroke-linejoin="round"/>
+<path d="M420 300L880 300Q1000 304 1040 380Q1000 456 880 460L420 460Q400 460 400 440L400 320Q400 300 420 300Z" fill="url(#planks)" stroke="#3a2412" stroke-width="10" stroke-linejoin="round"/>
+<path d="M420 300L880 300Q1000 304 1040 380Q1000 456 880 460L420 460Q400 460 400 440L400 320Q400 300 420 300Z" fill="none" stroke="#8a5a30" stroke-width="3" stroke-linejoin="round"/>
+<rect x="1030" y="374" width="120" height="12" fill="#7a5230" stroke="#3b2412" stroke-width="2" />
+<line x1="1145" y1="380" x2="920" y2="306" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<line x1="1145" y1="380" x2="920" y2="454" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<circle cx="1152" cy="380" r="6" fill="#7a5230" stroke="#3b2412" stroke-width="2" />
+<path d="M520 308V452" fill="none" stroke="#5b3a1e" stroke-width="6" />
+<rect x="524" y="314" width="18" height="12" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="524" y="334" width="18" height="12" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="524" y="414" width="18" height="12" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="524" y="434" width="18" height="12" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<text x="460" y="328" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">ют</text>
+<rect x="466" y="374" width="20" height="12" fill="#6b4a28" stroke="#3b2412" stroke-width="1.5" />
+<circle cx="470" cy="380" r="18" fill="none" stroke="#4a2c12" stroke-width="4" />
+<line x1="476.0" y1="380.0" x2="496.0" y2="380.0" fill="none" stroke="#4a2c12" stroke-width="3" />
+<line x1="474.2" y1="384.2" x2="488.4" y2="398.4" fill="none" stroke="#4a2c12" stroke-width="3" />
+<line x1="470.0" y1="386.0" x2="470.0" y2="406.0" fill="none" stroke="#4a2c12" stroke-width="3" />
+<line x1="465.8" y1="384.2" x2="451.6" y2="398.4" fill="none" stroke="#4a2c12" stroke-width="3" />
+<line x1="464.0" y1="380.0" x2="444.0" y2="380.0" fill="none" stroke="#4a2c12" stroke-width="3" />
+<line x1="465.8" y1="375.8" x2="451.6" y2="361.6" fill="none" stroke="#4a2c12" stroke-width="3" />
+<line x1="470.0" y1="374.0" x2="470.0" y2="354.0" fill="none" stroke="#4a2c12" stroke-width="3" />
+<line x1="474.2" y1="375.8" x2="488.4" y2="361.6" fill="none" stroke="#4a2c12" stroke-width="3" />
+<circle cx="470" cy="380" r="5" fill="#4a2c12" stroke="none" stroke-width="0" />
+<rect x="594" y="334" width="92" height="92" fill="#6b4a28" stroke="#3b2412" stroke-width="2" />
+<rect x="600" y="340" width="80" height="80" fill="#1c140c" stroke="#000" stroke-width="1" />
+<line x1="606" y1="354" x2="674" y2="354" fill="none" stroke="#4a3a28" stroke-width="3" />
+<line x1="606" y1="372" x2="674" y2="372" fill="none" stroke="#4a3a28" stroke-width="3" />
+<line x1="606" y1="390" x2="674" y2="390" fill="none" stroke="#4a3a28" stroke-width="3" />
+<line x1="606" y1="408" x2="674" y2="408" fill="none" stroke="#4a3a28" stroke-width="3" />
+<rect x="594" y="432" width="92" height="18" fill="url(#planksH)" stroke="#3b2412" stroke-width="2" transform="rotate(8 640 470)"/>
+<text x="640" y="326" font-family="Georgia, 'Times New Roman', serif" font-size="15" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke">трюм, 10 футов вниз</text>
+<line x1="780" y1="380" x2="750" y2="304" fill="none" stroke="#3b2412" stroke-width="2" />
+<line x1="780" y1="380" x2="780" y2="304" fill="none" stroke="#3b2412" stroke-width="2" />
+<line x1="780" y1="380" x2="810" y2="304" fill="none" stroke="#3b2412" stroke-width="2" />
+<line x1="774.078947368421" y1="365" x2="785.921052631579" y2="365" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<line x1="768.1578947368421" y1="350" x2="791.8421052631579" y2="350" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<line x1="762.2368421052631" y1="335" x2="797.7631578947369" y2="335" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<line x1="756.3157894736842" y1="320" x2="803.6842105263158" y2="320" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<line x1="780" y1="380" x2="750" y2="456" fill="none" stroke="#3b2412" stroke-width="2" />
+<line x1="780" y1="380" x2="780" y2="456" fill="none" stroke="#3b2412" stroke-width="2" />
+<line x1="780" y1="380" x2="810" y2="456" fill="none" stroke="#3b2412" stroke-width="2" />
+<line x1="774.078947368421" y1="395" x2="785.921052631579" y2="395" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<line x1="768.1578947368421" y1="410" x2="791.8421052631579" y2="410" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<line x1="762.2368421052631" y1="425" x2="797.7631578947369" y2="425" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<line x1="756.3157894736842" y1="440" x2="803.6842105263158" y2="440" fill="none" stroke="#3b2412" stroke-width="1.5" />
+<rect x="680" y="373" width="200" height="14" fill="#8a6038" stroke="#3b2412" stroke-width="2" transform="rotate(-12 780 380)" opacity="0.9"/>
+<circle cx="780" cy="380" r="16" fill="#7a5230" stroke="#3b2412" stroke-width="3" />
+<circle cx="780" cy="380" r="7" fill="#5b3a1e" stroke="#3b2412" stroke-width="1.5" />
+<text x="700" y="287" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">верёвочные лестницы</text>
+<use href="#barrel" x="865" y="310" transform="scale(1)"/>
+<use href="#barrel" x="865" y="340" transform="scale(1)"/>
+<use href="#barrel" x="895" y="310" transform="scale(1)"/>
+<use href="#crate" x="710" y="417"/>
+<use href="#crate" x="742" y="417"/>
+<rect x="940" y="400" width="30" height="30" fill="#7a6a5a" stroke="#3b2412" stroke-width="2" />
+<circle cx="955" cy="415" r="9" fill="#5b3a1e" stroke="#3b2412" stroke-width="1.5" />
+<path d="M1000 350q-30 10 -20 30q10 20 -20 30" fill="none" stroke="#a0784a" stroke-width="4" />
+<line x1="660" y1="462" x2="660" y2="488" fill="none" stroke="#3b2412" stroke-width="3" />
+<line x1="780" y1="462" x2="780" y2="488" fill="none" stroke="#3b2412" stroke-width="3" />
+<path d="M640 508Q640 482 680 482H770Q808 482 816 508Q808 534 770 534H680Q640 534 640 508Z" fill="url(#planks)" stroke="#3a2412" stroke-width="5" />
+<line x1="690" y1="486" x2="690" y2="530" fill="none" stroke="#5b3a1e" stroke-width="3" />
+<line x1="730" y1="486" x2="730" y2="530" fill="none" stroke="#5b3a1e" stroke-width="3" />
+<line x1="770" y1="486" x2="770" y2="530" fill="none" stroke="#5b3a1e" stroke-width="3" />
+<text x="728" y="558" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">шлюпка</text>
+<circle cx="260" cy="210" r="44" fill="none" stroke="#e8f4f0" stroke-width="4" opacity="0.5"/>
+<path d="M291.0 210.0L287.5 233.1L264.5 235.5L245.6 235.0L225.3 222.6L228.6 198.6L246.5 186.6L265.1 180.8L287.6 186.9Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M246.4 203.2L263.4 213.4L271.9 199.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M300.8 230.4L299.3 237.7L292.3 240.3L284.5 241.0L280.4 234.1L280.9 226.9L284.3 219.4L292.7 218.4L300.2 222.4Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M285.8 228.0L291.8 231.6L294.8 226.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<circle cx="300" cy="590" r="40" fill="none" stroke="#e8f4f0" stroke-width="4" opacity="0.5"/>
+<path d="M326.5 590.0L319.1 606.0L304.2 613.9L284.0 617.8L273.2 599.8L272.0 579.8L285.8 565.5L304.6 563.9L323.1 570.6Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M288.0 584.0L303.0 593.0L310.5 581.0" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M336.7 608.0L334.6 614.4L328.9 618.7L322.5 615.8L318.5 611.1L317.2 604.4L322.2 599.6L328.6 598.9L334.2 602.0Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M322.8 605.9L328.1 609.0L330.7 604.9" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<circle cx="940" cy="140" r="46" fill="none" stroke="#e8f4f0" stroke-width="4" opacity="0.5"/>
+<path d="M975.1 140.0L960.9 157.6L945.3 170.0L925.1 165.8L905.9 152.4L906.6 127.8L920.9 106.9L944.9 112.3L964.8 119.2Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M925.6 132.8L943.6 143.6L952.6 129.2" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M985.9 161.6L980.2 168.2L974.8 175.1L967.1 170.7L961.6 165.5L959.8 157.0L966.9 152.1L974.4 150.1L980.2 155.1Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M967.4 159.1L973.7 162.9L976.8 157.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<circle cx="1210" cy="560" r="48" fill="none" stroke="#e8f4f0" stroke-width="4" opacity="0.5"/>
+<path d="M1239.0 560.0L1238.9 584.3L1215.3 590.0L1192.7 590.0L1174.8 572.8L1173.3 546.6L1192.7 530.1L1216.1 525.4L1232.0 541.5Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M1194.8 552.4L1213.8 563.8L1223.3 548.6" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M1256.2 582.8L1252.9 590.1L1246.7 596.8L1238.1 593.4L1234.4 586.4L1231.5 578.2L1239.0 573.9L1246.1 572.0L1252.1 576.2Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M1238.9 580.1L1245.5 584.1L1248.9 578.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<circle cx="1260" cy="230" r="40" fill="none" stroke="#e8f4f0" stroke-width="4" opacity="0.5"/>
+<path d="M1286.8 230.0L1281.6 248.1L1265.5 261.1L1247.8 251.1L1236.6 238.5L1238.6 222.2L1248.1 209.5L1263.9 207.8L1278.5 214.5Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M1248.0 224.0L1263.0 233.0L1270.5 221.0" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M1296.6 248.0L1294.8 254.6L1288.6 257.2L1281.4 257.7L1279.5 250.7L1276.2 244.1L1281.8 238.9L1288.9 237.3L1295.3 241.0Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M1282.8 245.9L1288.0 249.1L1290.7 244.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M299.9 236.6L401.7 304.5" fill="none" stroke="#1f4a48" stroke-width="3" stroke-dasharray="8 6"/>
+<path d="M401.7 304.5L388.7 303.8L396.1 292.7Z" fill="#1f4a48" stroke="#1f4a48" stroke-width="1" />
+<path d="M329.9 557.8L423.2 457.3" fill="none" stroke="#1f4a48" stroke-width="3" stroke-dasharray="8 6"/>
+<path d="M423.2 457.3L420.5 470.1L410.7 460.9Z" fill="#1f4a48" stroke="#1f4a48" stroke-width="1" />
+<path d="M927.9 188.5L902.4 290.3" fill="none" stroke="#1f4a48" stroke-width="3" stroke-dasharray="8 6"/>
+<path d="M902.4 290.3L898.6 277.9L911.6 281.1Z" fill="#1f4a48" stroke="#1f4a48" stroke-width="1" />
+<path d="M1166.7 531.2L1008.3 425.5" fill="none" stroke="#1f4a48" stroke-width="3" stroke-dasharray="8 6"/>
+<path d="M1008.3 425.5L1021.3 426.2L1013.9 437.3Z" fill="#1f4a48" stroke="#1f4a48" stroke-width="1" />
+<path d="M1223.1 254.0L1068.4 354.6" fill="none" stroke="#1f4a48" stroke-width="3" stroke-dasharray="8 6"/>
+<path d="M1068.4 354.6L1074.1 342.9L1081.4 354.1Z" fill="#1f4a48" stroke="#1f4a48" stroke-width="1" />
+<text x="1210" y="630" font-family="Georgia, 'Times New Roman', serif" font-size="17" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">«Зубы Вдовы»</text>
+<text x="1210" y="650" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">мерроу лезут на борт</text>
+<g><circle cx="1060" cy="410" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="1060" y="416" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">1</text></g>
+<g><circle cx="814" cy="414" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="814" y="420" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">2</text></g>
+<g><circle cx="708" cy="358" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="708" y="364" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">3</text></g>
+<g><circle cx="472" cy="430" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="472" y="436" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">4</text></g>
+<g><circle cx="840" cy="508" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="840" y="514" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">5</text></g>
+<g><circle cx="1262" cy="530" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="1262" y="536" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">6</text></g>
+<text x="1080" y="445" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">нос и бушприт</text>
+<path d="M0 0V760M40 0V760M80 0V760M120 0V760M160 0V760M200 0V760M240 0V760M280 0V760M320 0V760M360 0V760M400 0V760M440 0V760M480 0V760M520 0V760M560 0V760M600 0V760M640 0V760M680 0V760M720 0V760M760 0V760M800 0V760M840 0V760M880 0V760M920 0V760M960 0V760M1000 0V760M1040 0V760M1080 0V760M1120 0V760M1160 0V760M1200 0V760M1240 0V760M1280 0V760M1320 0V760M1360 0V760M1400 0V760M1440 0V760M0 0H1440M0 40H1440M0 80H1440M0 120H1440M0 160H1440M0 200H1440M0 240H1440M0 280H1440M0 320H1440M0 360H1440M0 400H1440M0 440H1440M0 480H1440M0 520H1440M0 560H1440M0 600H1440M0 640H1440M0 680H1440M0 720H1440M0 760H1440" fill="none" stroke="#2a1a0c" stroke-width="1" opacity="0.28"/>
+<rect x="20" y="14" width="380" height="76" fill="#efe0b9" stroke="#3b2412" stroke-width="2.5" rx="6" opacity="0.96"/>
+<text x="210" y="50" font-family="Georgia, 'Times New Roman', serif" font-size="30" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="none">Палуба «Цапли»</text>
+<text x="210" y="76" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="none" font-style="italic">одномачтовый парусник, 80 × 20 футов</text>
+<circle cx="1390" cy="60" r="30" fill="#efe0b9" stroke="#3b2412" stroke-width="2" opacity="0.95"/>
+<path d="M1390 34L1397 60L1390 86L1383 60Z" fill="#d9c48f" stroke="#3b2412" stroke-width="1.5" />
+<path d="M1390 34L1397 60L1383 60Z" fill="#b3201a" stroke="#3b2412" stroke-width="1.5" />
+<path d="M1364 60L1390 54L1416 60L1390 66Z" fill="#d9c48f" stroke="#3b2412" stroke-width="1.2" />
+<text x="1390" y="24" font-family="Georgia, 'Times New Roman', serif" font-size="15" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke">С</text>
+<rect x="20" y="642" width="630" height="104" fill="#efe0b9" stroke="#3b2412" stroke-width="2.5" rx="6" opacity="0.96"/>
+<text x="32" y="664" font-family="Georgia, 'Times New Roman', serif" font-size="16" text-anchor="start" font-weight="bold" fill="#3b2412" stroke="none">Условные обозначения</text>
+<g><circle cx="44" cy="685" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="44" y="691" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">1</text></g>
+<text x="68" y="690" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">точка интереса</text>
+<path d="M30 715H48" fill="none" stroke="#1f4a48" stroke-width="3" stroke-dasharray="6 4"/>
+<path d="M58 715L46 709L46 721Z" fill="#1f4a48" stroke="#1f4a48" stroke-width="1" />
+<text x="68" y="720" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">мерроу лезут на борт</text>
+<path d="M263.5 685.0L260.8 690.7L255.9 695.6L249.7 692.4L244.3 688.5L244.9 681.7L249.8 677.7L255.8 675.0L260.4 679.6Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M249.6 682.8L255.1 686.1L257.9 681.7" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<text x="278" y="690" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">скалы рифа</text>
+<rect x="240" y="704" width="28" height="22" fill="url(#water)" stroke="#2d5a5a" stroke-width="1.5" />
+<text x="278" y="720" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">море</text>
+<rect x="451" y="675" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="456" y="675" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="461" y="675" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="466" y="675" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="471" y="675" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<text x="488" y="690" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">трап / лестница</text>
+<text x="560" y="732" font-family="Georgia, 'Times New Roman', serif" font-size="15" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="none">1 клетка = 5 футов</text>
+</svg>

@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1000" viewBox="0 0 1440 1000">
+<defs>
+<pattern id="parch" width="120" height="120" patternUnits="userSpaceOnUse">
+<rect width="120" height="120" fill="#efe0b9"/>
+<circle cx="20" cy="30" r="18" fill="#e6d3a6" opacity="0.5"/><circle cx="85" cy="90" r="24" fill="#e9d8ad" opacity="0.5"/>
+<circle cx="95" cy="20" r="9" fill="#dcc795" opacity="0.35"/>
+</pattern>
+<pattern id="stone" width="40" height="40" patternUnits="userSpaceOnUse">
+<rect width="40" height="40" fill="#d9c9a3"/>
+<path d="M0 20H40M20 0V20M10 20V40M30 20V40" fill="none" stroke="#a8956c" stroke-width="1"/>
+</pattern>
+<pattern id="planks" width="40" height="20" patternUnits="userSpaceOnUse">
+<rect width="40" height="20" fill="#c99a62"/>
+<path d="M0 0H40M0 10H40M12 0V10M32 10V20" fill="none" stroke="#7a5230" stroke-width="1"/>
+</pattern>
+<pattern id="planksH" width="20" height="40" patternUnits="userSpaceOnUse">
+<rect width="20" height="40" fill="#c99a62"/>
+<path d="M0 0V40M10 0V40M0 14H10M10 32H20" fill="none" stroke="#7a5230" stroke-width="1"/>
+</pattern>
+<pattern id="water" width="80" height="40" patternUnits="userSpaceOnUse">
+<rect width="80" height="40" fill="#5f8f8a"/>
+<path d="M0 12q10 -7 20 0t20 0t20 0t20 0M0 32q10 -7 20 0t20 0t20 0t20 0" fill="none" stroke="#8fb8b0" stroke-width="1.3"/>
+</pattern>
+<pattern id="deep" width="80" height="40" patternUnits="userSpaceOnUse">
+<rect width="80" height="40" fill="#456f70"/>
+<path d="M10 20q10 -7 20 0t20 0" fill="none" stroke="#6f9a96" stroke-width="1.3"/>
+</pattern>
+<pattern id="grass" width="40" height="40" patternUnits="userSpaceOnUse">
+<rect width="40" height="40" fill="#c9c58f"/>
+<path d="M6 12l2 -6l2 6M24 30l2 -6l2 6M30 10l2 -5l2 5M12 34l1 -5l2 5" fill="none" stroke="#7e7f45" stroke-width="1.2"/>
+</pattern>
+<pattern id="sand" width="40" height="40" patternUnits="userSpaceOnUse">
+<rect width="40" height="40" fill="#d8c69a"/>
+<circle cx="8" cy="9" r="1.3" fill="#a8956c"/><circle cx="27" cy="18" r="1.2" fill="#a8956c"/><circle cx="16" cy="31" r="1.4" fill="#a8956c"/>
+</pattern>
+<pattern id="flood" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="14" height="14" fill="#7fb6d6" fill-opacity="0.28"/>
+<line x1="0" y1="0" x2="0" y2="14" stroke="#2d6f8f" stroke-width="3" opacity="0.55"/>
+</pattern>
+<g id="barrel"><circle cx="15" cy="15" r="13" fill="#9b6b3c" stroke="#3b2412" stroke-width="2"/>
+<circle cx="15" cy="15" r="8" fill="none" stroke="#3b2412" stroke-width="1.2"/><circle cx="15" cy="15" r="2" fill="#3b2412" stroke="none"/></g>
+<g id="crate"><rect x="2" y="2" width="26" height="26" fill="#b88a55" stroke="#3b2412" stroke-width="2"/>
+<path d="M2 2L28 28M28 2L2 28" fill="none" stroke="#3b2412" stroke-width="1.2"/></g>
+</defs>
+<rect width="100%" height="100%" fill="url(#parch)" stroke="none"/>
+<text x="470" y="52" font-family="Georgia, 'Times New Roman', serif" font-size="36" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke">Маяк Седой Бран</text>
+<text x="1170" y="50" font-family="Georgia, 'Times New Roman', serif" font-size="22" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">Верхние ярусы башни</text>
+<clipPath id="leftc"><rect x="40" y="80" width="860" height="800"/></clipPath>
+<rect x="40" y="80" width="860" height="800" fill="url(#water)" stroke="#3b2412" stroke-width="3" />
+<path d="M40 80L690 80L740 140L790 200L778 300L800 400L784 520L796 620L760 720L722 800L690 880L40 880Z" fill="url(#grass)" stroke="none" stroke-width="0" />
+<path d="M690 80L740 140L790 200L778 300L800 400L784 520L796 620L760 720L722 800L690 880" fill="none" stroke="#2c1c0e" stroke-width="6" stroke-linejoin="round"/>
+<line x1="700.0" y1="92.0" x2="709.2" y2="84.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="710.0" y1="104.0" x2="719.2" y2="96.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="720.0" y1="116.0" x2="729.2" y2="108.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="730.0" y1="128.0" x2="739.2" y2="120.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="750.0" y1="152.0" x2="759.2" y2="144.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="760.0" y1="164.0" x2="769.2" y2="156.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="770.0" y1="176.0" x2="779.2" y2="168.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="780.0" y1="188.0" x2="789.2" y2="180.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="788.3" y1="214.3" x2="800.2" y2="215.7" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="786.6" y1="228.6" x2="798.5" y2="230.0" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="784.9" y1="242.9" x2="796.8" y2="244.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="783.1" y1="257.1" x2="795.1" y2="258.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="781.4" y1="271.4" x2="793.3" y2="272.9" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="779.7" y1="285.7" x2="791.6" y2="287.1" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="781.1" y1="314.3" x2="792.9" y2="311.7" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="784.3" y1="328.6" x2="796.0" y2="326.0" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="787.4" y1="342.9" x2="799.1" y2="340.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="790.6" y1="357.1" x2="802.3" y2="354.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="793.7" y1="371.4" x2="805.4" y2="368.9" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="796.9" y1="385.7" x2="808.6" y2="383.1" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="798.0" y1="415.0" x2="809.9" y2="416.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="796.0" y1="430.0" x2="807.9" y2="431.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="794.0" y1="445.0" x2="805.9" y2="446.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="792.0" y1="460.0" x2="803.9" y2="461.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="790.0" y1="475.0" x2="801.9" y2="476.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="788.0" y1="490.0" x2="799.9" y2="491.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="786.0" y1="505.0" x2="797.9" y2="506.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="785.7" y1="534.3" x2="797.6" y2="532.9" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="787.4" y1="548.6" x2="799.3" y2="547.1" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="789.1" y1="562.9" x2="801.1" y2="561.4" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="790.9" y1="577.1" x2="802.8" y2="575.7" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="792.6" y1="591.4" x2="804.5" y2="590.0" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="794.3" y1="605.7" x2="806.2" y2="604.3" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="790.9" y1="634.3" x2="802.1" y2="638.4" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="785.7" y1="648.6" x2="797.0" y2="652.6" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="780.6" y1="662.9" x2="791.9" y2="666.9" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="775.4" y1="677.1" x2="786.7" y2="681.2" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="770.3" y1="691.4" x2="781.6" y2="695.5" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="765.1" y1="705.7" x2="776.4" y2="709.8" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="753.7" y1="733.3" x2="764.5" y2="738.5" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="747.3" y1="746.7" x2="758.2" y2="751.8" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="741.0" y1="760.0" x2="751.8" y2="765.1" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="734.7" y1="773.3" x2="745.5" y2="778.5" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="728.3" y1="786.7" x2="739.2" y2="791.8" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="716.7" y1="813.3" x2="727.8" y2="817.8" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="711.3" y1="826.7" x2="722.5" y2="831.1" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="706.0" y1="840.0" x2="717.1" y2="844.5" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="700.7" y1="853.3" x2="711.8" y2="857.8" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<line x1="695.3" y1="866.7" x2="706.5" y2="871.1" fill="none" stroke="#2c1c0e" stroke-width="2" />
+<path d="M832.7 250.0L830.1 258.5L822.6 264.8L813.6 261.1L807.8 254.4L807.4 245.4L814.3 240.1L822.3 237.2L830.4 241.3Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M814.4 247.2L821.4 251.4L824.9 245.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M852.8 560.0L850.5 568.8L842.4 573.6L834.4 569.7L830.1 563.6L828.4 555.8L834.1 549.7L842.5 545.7L850.6 551.1Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M834.4 557.2L841.4 561.4L844.9 555.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M826.8 700.0L825.6 708.9L817.4 713.6L807.7 712.7L804.3 703.9L804.1 696.0L809.4 690.3L817.0 688.6L825.8 690.9Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M809.4 697.2L816.4 701.4L819.9 695.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M771.0 860.0L770.7 869.0L762.4 873.5L752.4 873.1L748.9 864.0L749.0 856.0L753.0 847.8L762.4 846.5L769.2 852.3Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M754.4 857.2L761.4 861.4L764.9 855.8" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<text x="862" y="480" font-family="Georgia, 'Times New Roman', serif" font-size="19" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic" transform="rotate(90 862 480)">обрыв 60 футов, море</text>
+<circle cx="852" cy="135" r="34" fill="#efe0b9" stroke="#3b2412" stroke-width="2" opacity="0.95"/>
+<path d="M852 105L859 135L852 165L845 135Z" fill="#d9c48f" stroke="#3b2412" stroke-width="1.5" />
+<path d="M852 105L859 135L845 135Z" fill="#b3201a" stroke="#3b2412" stroke-width="1.5" />
+<path d="M822 135L852 129L882 135L852 141Z" fill="#d9c48f" stroke="#3b2412" stroke-width="1.2" />
+<text x="852" y="95" font-family="Georgia, 'Times New Roman', serif" font-size="15" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke">С</text>
+<path d="M40 480H330V500" fill="none" stroke="#b9a77f" stroke-width="34" stroke-linejoin="round" opacity="0.9"/>
+<path d="M370 500V560H560" fill="none" stroke="#b9a77f" stroke-width="30" stroke-linejoin="round" opacity="0.9"/>
+<path d="M738 160H120V440M120 520V800H712" fill="none" stroke="#4a3220" stroke-width="12" stroke-linejoin="miter"/>
+<path d="M738 160H120V440M120 520V800H712" fill="none" stroke="#6b5038" stroke-width="4" stroke-dasharray="10 8" stroke-linejoin="miter"/>
+<rect x="112" y="436" width="16" height="10" fill="#4a3220" stroke="#3b2412" stroke-width="1.5" />
+<rect x="112" y="514" width="16" height="10" fill="#4a3220" stroke="#3b2412" stroke-width="1.5" />
+<path d="M120 446L150 468" fill="none" stroke="#5b3a1e" stroke-width="6" />
+<path d="M120 514L150 492" fill="none" stroke="#5b3a1e" stroke-width="6" />
+<line x1="50" y1="455" x2="100" y2="455" fill="none" stroke="#8c1010" stroke-width="4" />
+<path d="M100.0 455.0L86.3 463.2L86.3 446.8Z" fill="#8c1010" stroke="#8c1010" stroke-width="1" />
+<text x="70" y="432" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">вход</text>
+<use href="#barrel" x="155" y="185" transform="scale(1)"/>
+<use href="#barrel" x="185" y="185" transform="scale(1)"/>
+<use href="#barrel" x="155" y="215" transform="scale(1)"/>
+<use href="#crate" x="625" y="705"/>
+<use href="#crate" x="657" y="705"/>
+<use href="#crate" x="641" y="737"/>
+<rect x="420" y="700" width="100" height="40" fill="#8a6a42" stroke="#3b2412" stroke-width="2" />
+<line x1="430" y1="702" x2="430" y2="738" fill="none" stroke="#3b2412" stroke-width="1" />
+<line x1="450" y1="702" x2="450" y2="738" fill="none" stroke="#3b2412" stroke-width="1" />
+<line x1="470" y1="702" x2="470" y2="738" fill="none" stroke="#3b2412" stroke-width="1" />
+<line x1="490" y1="702" x2="490" y2="738" fill="none" stroke="#3b2412" stroke-width="1" />
+<line x1="510" y1="702" x2="510" y2="738" fill="none" stroke="#3b2412" stroke-width="1" />
+<text x="470" y="765" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">поленница</text>
+<circle cx="240" cy="680" r="22" fill="#8f8a7c" stroke="#3a3328" stroke-width="4" />
+<circle cx="240" cy="680" r="13" fill="#2f4f55" stroke="none" stroke-width="0" />
+<text x="240" y="722" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">колодец</text>
+<circle cx="669.6" cy="232.3" r="13.2" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="657.7" cy="239.6" r="13.2" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="650.4" cy="232.5" r="13.2" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="656.7" cy="220.7" r="13.2" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="668.0" cy="224.2" r="13.2" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="257.9" cy="301.9" r="10.8" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="251.7" cy="307.9" r="10.8" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="242.1" cy="301.9" r="10.8" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="244.3" cy="294.3" r="10.8" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<circle cx="253.0" cy="292.5" r="10.8" fill="#6f8a4a" stroke="#34431f" stroke-width="1.5" />
+<path d="M309.4 100.0L306.5 105.5L301.3 107.5L295.1 108.5L292.3 102.8L292.1 97.1L295.6 92.3L301.7 90.4L308.4 93.0Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M296.0 98.0L301.0 101.0L303.5 97.0" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M527.5 120.0L526.0 125.1L521.5 128.7L515.1 128.6L512.5 122.7L512.6 117.3L515.8 112.8L521.8 110.0L526.1 114.8Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M516.0 118.0L521.0 121.0L523.5 117.0" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M97.8 840.0L96.3 845.3L91.5 848.4L84.7 849.2L81.3 843.2L80.6 836.6L86.1 833.2L91.6 830.9L98.0 833.3Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M86.0 838.0L91.0 841.0L93.5 837.0" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<path d="M429.5 850.0L427.4 856.2L421.8 860.2L415.8 857.3L410.8 853.3L410.0 846.4L414.7 840.8L421.4 842.0L427.5 843.7Z" fill="#8f8a7c" stroke="#3a3328" stroke-width="2.5" />
+<path d="M416.0 848.0L421.0 851.0L423.5 847.0" fill="none" stroke="#3a3328" stroke-width="1.5" />
+<rect x="282" y="382" width="166" height="116" fill="url(#planks)" stroke="none" stroke-width="0" />
+<path d="M448 382H282V498H448" fill="none" stroke="#4a3220" stroke-width="12" stroke-linejoin="miter"/>
+<rect x="340" y="492" width="32" height="12" fill="#9a6a3a" stroke="#3b2412" stroke-width="2" />
+<rect x="292" y="388" width="34" height="22" fill="#7a6a5a" stroke="#3b2412" stroke-width="2" />
+<path d="M298 404q11 -14 22 0" fill="#d8642a" stroke="#8c3a10" stroke-width="1.5" />
+<rect x="292" y="452" width="54" height="36" fill="#d9c9a3" stroke="#3b2412" stroke-width="2" />
+<rect x="294" y="454" width="16" height="32" fill="#f0e6cc" stroke="#3b2412" stroke-width="1" />
+<rect x="350" y="420" width="36" height="24" fill="#a87a48" stroke="#3b2412" stroke-width="2" />
+<circle cx="406" cy="452" r="12" fill="#7a5230" stroke="#3b2412" stroke-width="2" />
+<circle cx="406" cy="452" r="7" fill="#e8d2b0" stroke="#3b2412" stroke-width="1.5" />
+<path d="M394 446L418 458M394 458L418 446" fill="none" stroke="#c8a060" stroke-width="2.5" />
+<circle cx="560" cy="440" r="113" fill="url(#stone)" stroke="#4a3220" stroke-width="14" />
+<path d="M596.3 340.4A106 106 0 1 1 460.4 403.7L494.2 416.1A70 70 0 1 0 583.9 374.2Z" fill="#cdb88a" stroke="#3b2412" stroke-width="2" />
+<line x1="595.0" y1="379.4" x2="613.0" y2="348.2" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="605.0" y1="386.4" x2="628.1" y2="358.8" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="613.6" y1="395.0" x2="641.2" y2="371.9" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="620.6" y1="405.0" x2="651.8" y2="387.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="625.8" y1="416.1" x2="659.6" y2="403.7" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="628.9" y1="427.8" x2="664.4" y2="421.6" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="630.0" y1="440.0" x2="666.0" y2="440.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="628.9" y1="452.2" x2="664.4" y2="458.4" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="625.8" y1="463.9" x2="659.6" y2="476.3" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="620.6" y1="475.0" x2="651.8" y2="493.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="613.6" y1="485.0" x2="641.2" y2="508.1" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="605.0" y1="493.6" x2="628.1" y2="521.2" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="595.0" y1="500.6" x2="613.0" y2="531.8" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="583.9" y1="505.8" x2="596.3" y2="539.6" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="572.2" y1="508.9" x2="578.4" y2="544.4" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="560.0" y1="510.0" x2="560.0" y2="546.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="547.8" y1="508.9" x2="541.6" y2="544.4" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="536.1" y1="505.8" x2="523.7" y2="539.6" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="525.0" y1="500.6" x2="507.0" y2="531.8" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="515.0" y1="493.6" x2="491.9" y2="521.2" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="506.4" y1="485.0" x2="478.8" y2="508.1" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="499.4" y1="475.0" x2="468.2" y2="493.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="494.2" y1="463.9" x2="460.4" y2="476.3" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="491.1" y1="452.2" x2="455.6" y2="458.4" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="490.0" y1="440.0" x2="454.0" y2="440.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="491.1" y1="427.8" x2="455.6" y2="421.6" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<path d="M616.6 372.6A88 88 0 1 1 476.3 412.8" fill="none" stroke="#8c1010" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="482.3" y="398.7" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">вверх</text>
+<rect x="545" y="548" width="30" height="14" fill="#9a6a3a" stroke="#3b2412" stroke-width="2" />
+<rect x="436" y="425" width="14" height="30" fill="#9a6a3a" stroke="#3b2412" stroke-width="2" />
+<rect x="940" y="90" width="460" height="380" fill="#e9dab0" stroke="#3b2412" stroke-width="3" rx="4"/>
+<clipPath id="c90"><rect x="944" y="94" width="452" height="372"/></clipPath>
+<rect x="1040" y="88" width="260" height="32" fill="#efe0b9" stroke="#3b2412" stroke-width="2" rx="4"/>
+<text x="1170" y="111" font-family="Georgia, 'Times New Roman', serif" font-size="19" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="none">Средний ярус</text>
+<circle cx="1170" cy="290" r="106" fill="url(#stone)" stroke="#4a3220" stroke-width="12" />
+<path d="M1258.3 257.9A94 94 0 1 1 1088.6 243.0L1112.8 257.0A66 66 0 1 0 1232.0 267.4Z" fill="#cdb88a" stroke="#3b2412" stroke-width="2" />
+<line x1="1235.0" y1="278.5" x2="1262.6" y2="273.7" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1236.0" y1="290.0" x2="1264.0" y2="290.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1235.0" y1="301.5" x2="1262.6" y2="306.3" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1232.0" y1="312.6" x2="1258.3" y2="322.1" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1227.2" y1="323.0" x2="1251.4" y2="337.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1220.6" y1="332.4" x2="1242.0" y2="350.4" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1212.4" y1="340.6" x2="1230.4" y2="362.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1203.0" y1="347.2" x2="1217.0" y2="371.4" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1192.6" y1="352.0" x2="1202.1" y2="378.3" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1181.5" y1="355.0" x2="1186.3" y2="382.6" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1170.0" y1="356.0" x2="1170.0" y2="384.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1158.5" y1="355.0" x2="1153.7" y2="382.6" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1147.4" y1="352.0" x2="1137.9" y2="378.3" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1137.0" y1="347.2" x2="1123.0" y2="371.4" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1127.6" y1="340.6" x2="1109.6" y2="362.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1119.4" y1="332.4" x2="1098.0" y2="350.4" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1112.8" y1="323.0" x2="1088.6" y2="337.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1108.0" y1="312.6" x2="1081.7" y2="322.1" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1105.0" y1="301.5" x2="1077.4" y2="306.3" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1104.0" y1="290.0" x2="1076.0" y2="290.0" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1105.0" y1="278.5" x2="1077.4" y2="273.7" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<line x1="1108.0" y1="267.4" x2="1081.7" y2="257.9" fill="none" stroke="#3b2412" stroke-width="1.2" />
+<text x="1300" y="220" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">вниз</text>
+<text x="1056" y="230" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">вверх</text>
+<path d="M1172 318q18 -16 40 -6q22 8 12 26q-10 20 -34 14q-26 -4 -18 -34Z" fill="#3a3020" stroke="#1f170c" stroke-width="1.5" opacity="0.75"/>
+<use href="#barrel" x="1115" y="255" transform="scale(1)"/>
+<use href="#barrel" x="1141" y="247" transform="scale(1)"/>
+<use href="#barrel" x="1115" y="283" transform="scale(1)"/>
+<use href="#barrel" x="1143" y="275" transform="scale(1)"/>
+<use href="#barrel" x="1125" y="309" transform="scale(1)"/>
+<use href="#crate" x="1190" y="253"/>
+<g><path d="M1200 315L1215 341L1185 341Z" fill="#fff3c4" stroke="#8c1010" stroke-width="2.5"/><text x="1200" y="338" font-family="Georgia, 'Times New Roman', serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#8c1010" stroke="none">Л</text></g>
+<g><circle cx="1196" cy="236" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="1196" y="242" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">4</text></g>
+<text x="1170" y="432" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">склад масла: бочки, разлитое горючее масло</text>
+<text x="1170" y="454" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">ловушка «Л» — масло вспыхивает от огня</text>
+<rect x="940" y="500" width="460" height="400" fill="#e9dab0" stroke="#3b2412" stroke-width="3" rx="4"/>
+<clipPath id="c500"><rect x="944" y="504" width="452" height="392"/></clipPath>
+<rect x="1040" y="498" width="260" height="32" fill="#efe0b9" stroke="#3b2412" stroke-width="2" rx="4"/>
+<text x="1170" y="521" font-family="Georgia, 'Times New Roman', serif" font-size="19" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="none">Фонарная площадка</text>
+<circle cx="1170" cy="720" r="100" fill="none" stroke="#b4a687" stroke-width="40" />
+<circle cx="1170" cy="720" r="100" fill="none" stroke="#8a7a5c" stroke-width="1" stroke-dasharray="2 10"/>
+<path d="M1238.3 817.5A119 119 0 1 1 1281.8 760.7" fill="none" stroke="#3b2412" stroke-width="4" />
+<circle cx="1238.3" cy="817.5" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1210.7" cy="831.8" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1180.4" cy="838.5" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1149.3" cy="837.2" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1119.7" cy="827.9" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1093.5" cy="811.2" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1072.5" cy="788.3" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1058.2" cy="760.7" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1051.5" cy="730.4" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1052.8" cy="699.3" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1062.1" cy="669.7" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1078.8" cy="643.5" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1101.7" cy="622.5" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1129.3" cy="608.2" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1159.6" cy="601.5" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1190.7" cy="602.8" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1220.3" cy="612.1" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1246.5" cy="628.8" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1267.5" cy="651.7" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1281.8" cy="679.3" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1288.5" cy="709.6" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<circle cx="1287.2" cy="740.7" r="3" fill="#3b2412" stroke="none" stroke-width="0" />
+<path d="M1281.8 760.7A119 119 0 0 1 1238.3 817.5" fill="none" stroke="#b3201a" stroke-width="4" stroke-dasharray="5 4"/>
+<rect x="1263.9" y="794.3" width="6.2" height="4.4" fill="#a59d8a" stroke="#3a3328" stroke-width="1.5" transform="rotate(78 1267.0 797.5)"/>
+<rect x="1248.6" y="793.5" width="13.1" height="9.2" fill="#a59d8a" stroke="#3a3328" stroke-width="1.5" transform="rotate(7 1255.2 800.1)"/>
+<rect x="1266.7" y="799.6" width="5.4" height="3.8" fill="#a59d8a" stroke="#3a3328" stroke-width="1.5" transform="rotate(34 1269.4 802.3)"/>
+<rect x="1267.5" y="793.3" width="11.5" height="8.1" fill="#a59d8a" stroke="#3a3328" stroke-width="1.5" transform="rotate(14 1273.3 799.0)"/>
+<text x="1330" y="856" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="bold" fill="#8c1010" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke">перила сломаны</text>
+<line x1="1290" y1="845" x2="1262" y2="815" fill="none" stroke="#8c1010" stroke-width="1.5" />
+<circle cx="1170" cy="720" r="77" fill="url(#stone)" stroke="#4a3220" stroke-width="7" />
+<rect x="1240" y="705" width="14" height="30" fill="#9a6a3a" stroke="#3b2412" stroke-width="2" />
+<rect x="1086" y="750" width="14" height="30" fill="#9a6a3a" stroke="#3b2412" stroke-width="2" />
+<circle cx="1170" cy="720" r="44" fill="none" stroke="#8c1010" stroke-width="2.5" />
+<circle cx="1170" cy="720" r="36" fill="none" stroke="#8c1010" stroke-width="1.5" />
+<text x="1210.0" y="724.0" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᚱ</text>
+<text x="1204.6" y="744.0" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᛟ</text>
+<text x="1190.0" y="758.6" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᛞ</text>
+<text x="1170.0" y="764.0" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᚲ</text>
+<text x="1150.0" y="758.6" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᛉ</text>
+<text x="1135.4" y="744.0" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᛏ</text>
+<text x="1130.0" y="724.0" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᚱ</text>
+<text x="1135.4" y="704.0" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᛟ</text>
+<text x="1150.0" y="689.4" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᛞ</text>
+<text x="1170.0" y="684.0" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᚲ</text>
+<text x="1190.0" y="689.4" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᛉ</text>
+<text x="1204.6" y="704.0" font-family="Georgia, 'Times New Roman', serif" font-size="9" text-anchor="middle" font-weight="normal" fill="#8c1010" stroke="none">ᛏ</text>
+<rect x="1100" y="716" width="140" height="8" fill="#6b4a28" stroke="#3b2412" stroke-width="1.5" opacity="0.85"/>
+<circle cx="1170" cy="720" r="22" fill="#b8863a" stroke="#5a3a10" stroke-width="3" />
+<circle cx="1170" cy="720" r="13" fill="#d0a050" stroke="#5a3a10" stroke-width="1.5" />
+<circle cx="1170" cy="720" r="4" fill="#5a3a10" stroke="none" stroke-width="0" />
+<rect x="1116.6" y="666.6" width="22" height="22" fill="#3a2a18" stroke="#3b2412" stroke-width="2" />
+<text x="1125.6" y="659.6" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">люк вниз</text>
+<g><circle cx="1212" cy="760" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="1212" y="766" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">5</text></g>
+<g><circle cx="1093.4" cy="784.3" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="1093.4" y="790.3" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">6</text></g>
+<text x="1032" y="600" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">галерея</text>
+<text x="1032" y="616" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">5 футов</text>
+<text x="1170" y="876" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">бронзовый колокол вместо фонаря, ритуальный круг</text>
+<g><circle cx="190" cy="560" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="190" y="566" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">1</text></g>
+<g><circle cx="320" cy="430" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="320" y="436" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">2</text></g>
+<g><circle cx="560" cy="440" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="560" y="446" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">3</text></g>
+<text x="330" y="372" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">домик смотрителя</text>
+<text x="560" y="310" font-family="Georgia, 'Times New Roman', serif" font-size="13" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="#efe0b9" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-style="italic">основание башни</text>
+<path d="M40 80V880M80 80V880M120 80V880M160 80V880M200 80V880M240 80V880M280 80V880M320 80V880M360 80V880M400 80V880M440 80V880M480 80V880M520 80V880M560 80V880M600 80V880M640 80V880M680 80V880M720 80V880M760 80V880M800 80V880M840 80V880M880 80V880M40 80H900M40 120H900M40 160H900M40 200H900M40 240H900M40 280H900M40 320H900M40 360H900M40 400H900M40 440H900M40 480H900M40 520H900M40 560H900M40 600H900M40 640H900M40 680H900M40 720H900M40 760H900M40 800H900M40 840H900M40 880H900" fill="none" stroke="#2a1a0c" stroke-width="1" opacity="0.3" clip-path="url(#leftc)"/>
+<path d="M950 110V470M990 110V470M1030 110V470M1070 110V470M1110 110V470M1150 110V470M1190 110V470M1230 110V470M1270 110V470M1310 110V470M1350 110V470M1390 110V470M950 110H1400M950 150H1400M950 190H1400M950 230H1400M950 270H1400M950 310H1400M950 350H1400M950 390H1400M950 430H1400M950 470H1400" fill="none" stroke="#2a1a0c" stroke-width="1" opacity="0.3" clip-path="url(#c90)"/>
+<path d="M970 520V900M1010 520V900M1050 520V900M1090 520V900M1130 520V900M1170 520V900M1210 520V900M1250 520V900M1290 520V900M1330 520V900M1370 520V900M970 520H1400M970 560H1400M970 600H1400M970 640H1400M970 680H1400M970 720H1400M970 760H1400M970 800H1400M970 840H1400M970 880H1400" fill="none" stroke="#2a1a0c" stroke-width="1" opacity="0.3" clip-path="url(#c500)"/>
+<rect x="40" y="900" width="860" height="92" fill="#efe0b9" stroke="#3b2412" stroke-width="2.5" rx="6" opacity="0.96"/>
+<text x="52" y="922" font-family="Georgia, 'Times New Roman', serif" font-size="16" text-anchor="start" font-weight="bold" fill="#3b2412" stroke="none">Условные обозначения</text>
+<g><circle cx="64" cy="943" r="15" fill="#b3201a" stroke="#fff6e0" stroke-width="2.5"/><text x="64" y="949" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#ffffff" stroke="none">1</text></g>
+<text x="88" y="948" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">точка интереса</text>
+<rect x="52" y="968" width="24" height="9" fill="#9a6a3a" stroke="#3b2412" stroke-width="2" />
+<text x="88" y="978" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">дверь</text>
+<g><path d="M274 928L289 954L259 954Z" fill="#fff3c4" stroke="#8c1010" stroke-width="2.5"/><text x="274" y="951" font-family="Georgia, 'Times New Roman', serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#8c1010" stroke="none">Л</text></g>
+<text x="298" y="948" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">ловушка</text>
+<rect x="261" y="963" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="266" y="963" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="271" y="963" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="276" y="963" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<rect x="281" y="963" width="5" height="20" fill="#cdb88a" stroke="#3b2412" stroke-width="1" />
+<text x="298" y="978" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">лестница</text>
+<rect x="470" y="937" width="28" height="12" fill="#4a3220" stroke="#3b2412" stroke-width="1.5" />
+<text x="508" y="948" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">каменная стена</text>
+<line x1="470" y1="973" x2="498" y2="973" fill="none" stroke="#b3201a" stroke-width="3" stroke-dasharray="4 3"/>
+<text x="508" y="978" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">сломанные перила</text>
+<rect x="680" y="932" width="28" height="22" fill="url(#water)" stroke="#2d5a5a" stroke-width="1.5" />
+<text x="718" y="948" font-family="Georgia, 'Times New Roman', serif" font-size="14" text-anchor="start" font-weight="normal" fill="#3b2412" stroke="none">море</text>
+<rect x="940" y="920" width="460" height="60" fill="#efe0b9" stroke="#3b2412" stroke-width="2" rx="6"/>
+<rect x="960" y="936" width="40" height="12" fill="#3b2412" stroke="#3b2412" stroke-width="1.5" />
+<rect x="1000" y="936" width="40" height="12" fill="#efe0b9" stroke="#3b2412" stroke-width="1.5" />
+<rect x="1040" y="936" width="40" height="12" fill="#3b2412" stroke="#3b2412" stroke-width="1.5" />
+<rect x="1080" y="936" width="40" height="12" fill="#efe0b9" stroke="#3b2412" stroke-width="1.5" />
+<text x="960" y="970" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="none">0</text>
+<text x="1120" y="970" font-family="Georgia, 'Times New Roman', serif" font-size="12" text-anchor="middle" font-weight="normal" fill="#3b2412" stroke="none">20 футов</text>
+<text x="1290" y="950" font-family="Georgia, 'Times New Roman', serif" font-size="17" text-anchor="middle" font-weight="bold" fill="#3b2412" stroke="none">1 клетка = 5 футов</text>
+</svg>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Колокола Солёной Мглы — вход в игру</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: таверная доска объявлений — заголовок кампании и три карточки: игрок, мастер, регистрация героя. */
+:root{--bg:#0a0e0f;--panel:#111819;--panel2:#162022;--ink:#e3ebe8;--muted:#8e9e9b;--line:#243235;--sea:#8fd1c4;--brass:#d9b36c;--danger:#e58a80;
+  --f-display:"Alegreya SC",Georgia,serif;--f-body:"Alegreya Sans",system-ui,sans-serif;--f-mono:"IBM Plex Mono",Consolas,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;padding-block:48px 64px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--sea)}
+h1{font-family:var(--f-display);font-size:clamp(34px,6vw,58px);line-height:1.05;margin:8px 0 10px;text-wrap:balance}
+.lede{color:var(--muted);max-width:60ch;margin:0 0 30px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:10px;align-content:start}
+.card h2{font-family:var(--f-display);font-weight:500;font-size:24px;margin:0}
+.card p{margin:0;color:var(--muted);font-size:15px}
+label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+input{font:inherit;color:var(--ink);background:#0c1213;border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:0}
+input:focus{outline:none;border-color:var(--sea)}
+input.code{font-family:var(--f-mono);letter-spacing:.2em;text-transform:uppercase}
+.btn{font:inherit;cursor:pointer;border-radius:9px;padding:10px 14px;border:1px solid rgba(217,179,108,.6);background:#231d10;color:var(--brass);text-align:center;text-decoration:none;font-weight:500}
+.btn.alt{border-color:var(--line);background:var(--panel2);color:var(--ink)}
+.btn:hover,.btn:focus-visible{outline:none;border-color:var(--sea)}
+.rooms{display:flex;flex-wrap:wrap;gap:6px}
+.rooms a{font-family:var(--f-mono);font-size:13px;color:var(--sea);border:1px solid var(--line);border-radius:999px;padding:3px 10px;text-decoration:none}
+.err{color:var(--danger);font-size:14px;min-height:1.2em;margin:0}
+.notes{margin-top:36px;color:var(--muted);font-size:15px;max-width:72ch}
+.notes b{color:var(--ink);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">D&amp;D 5e · Книга игрока 2014 · 2 героя · уровни 2–8</div>
+  <h1>Колокола Солёной Мглы</h1>
+  <p class="lede">Онлайн-стол кампании: карта с динамическим светом, фишки, бой, лист героя, инвентарь и кубики. Работает на телефоне и компьютере, без регистрации на сайтах.</p>
+
+  <div class="cards">
+    <form class="card" id="fPlayer">
+      <h2>Я игрок</h2>
+      <p>Введите своё имя и код стола, который прислал Мастер.</p>
+      <label>Ваше имя<input id="pName" maxlength="30" autocomplete="nickname" required></label>
+      <label>Код стола<input id="pRoom" class="code" maxlength="12" autocomplete="off" required></label>
+      <p class="err" id="pErr" role="alert"></p>
+      <button class="btn" type="submit">Войти за стол</button>
+    </form>
+
+    <form class="card" id="fGM">
+      <h2>Я Мастер</h2>
+      <p>Создайте стол — игра хранится в вашем браузере. Держите вкладку открытой, пока идёт игра.</p>
+      <label>Ваше имя<input id="gName" maxlength="30" autocomplete="nickname" required></label>
+      <label>Код стола<input id="gRoom" class="code" maxlength="12" autocomplete="off" required></label>
+      <div class="rooms" id="rooms"></div>
+      <button class="btn" type="submit">Открыть стол Мастера</button>
+    </form>
+
+    <div class="card">
+      <h2>Регистрация героя</h2>
+      <p>Соберите героя 2 уровня по шагам: раса, класс, предыстория, характеристики, снаряжение. Герой сохранится в браузере, а за столом его можно взять на игру одной кнопкой.</p>
+      <a class="btn alt" href="register.html">Создать героя</a>
+    </div>
+  </div>
+
+  <div class="notes">
+    <p><b>Как это работает.</b> Браузер Мастера хранит всю игру и раздаёт её игрокам напрямую. Поэтому Мастер открывает стол первым и не закрывает вкладку. Если Мастер обновит страницу — игроки переподключатся сами, а игра сохранится.</p>
+    <p><b>Если не подключается.</b> Некоторые мобильные сети блокируют прямое соединение. Помогает переключиться на Wi‑Fi или раздать интернет с другого телефона.</p>
+  </div>
+</div>
+<script>
+(function(){
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const clean=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
+const qs=new URLSearchParams(location.search);
+const name=LS.get('smgla-name','');
+document.getElementById('pName').value=name;document.getElementById('gName').value=name;
+document.getElementById('pRoom').value=clean(qs.get('room'));
+const gen=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<6;i++)s+=a[Math.floor(Math.random()*a.length)];return s};
+let mine=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('smgla-room-'))mine.push(k.slice(11))}}catch(e){}
+document.getElementById('gRoom').value=mine[0]||gen();
+const rooms=document.getElementById('rooms');
+for(const r of mine){const a=document.createElement('a');a.href='#';a.textContent='Мой стол '+r;a.onclick=e=>{e.preventDefault();document.getElementById('gRoom').value=r};rooms.append(a)}
+document.getElementById('fPlayer').onsubmit=e=>{e.preventDefault();const n=document.getElementById('pName').value.trim(),r=clean(document.getElementById('pRoom').value);
+  if(!n||r.length<4){document.getElementById('pErr').textContent='Введите имя и код стола (не меньше 4 знаков).';return}
+  LS.set('smgla-name',n);location.href='table.html?room='+r};
+document.getElementById('fGM').onsubmit=e=>{e.preventDefault();const n=document.getElementById('gName').value.trim(),r=clean(document.getElementById('gRoom').value);
+  if(!n||r.length<4)return;LS.set('smgla-name',n);location.href='table.html?room='+r+'&role=gm'};
+})();
+</script>
+</body>
+</html>

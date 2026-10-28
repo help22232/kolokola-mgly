@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Регистрация героя · Солёная Мгла</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: мастер создания героя — узкая колонка, сверху «Мои герои», ниже шаги 1–7 чипами, карточка шага и кнопки «Назад / Далее». Тёмный образ, как у игрового стола. */
+:root{
+  --bg:#0a0e0f; --panel:#111819; --panel2:#162022; --ink:#e3ebe8; --muted:#8e9e9b; --line:#243235;
+  --sea:#8fd1c4; --brass:#d9b36c; --danger:#e58a80; --ok:#8fcf8a;
+  --f-display:"Alegreya SC", Georgia, serif;
+  --f-body:"Alegreya Sans", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", Consolas, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink);margin:0}
+body{font-family:var(--f-body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding-block:20px 80px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--sea)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,6vw,40px);line-height:1.1;margin:4px 0 0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:24px;margin:0 0 8px;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:500;font-size:19px;margin:16px 0 6px}
+a{color:var(--sea)}
+.go{font-family:var(--f-mono);font-size:14px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.card{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px;margin:14px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{min-width:0}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:8px 14px;cursor:pointer}
+.btn:hover,.btn:focus-visible{border-color:var(--sea);outline:none}
+.btn.pri{border-color:rgba(217,179,108,.6);color:var(--brass)}
+.btn.bad{border-color:rgba(229,138,128,.5);color:var(--danger)}
+.btn.sm{padding:4px 10px;font-size:14px}
+.btn:disabled{opacity:.4;cursor:default}
+input[type=text],input[type=number],select,textarea{background:#0c1213;border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sea)}
+input[type=color]{width:52px;height:38px;border:1px solid var(--line);border-radius:8px;background:#0c1213;padding:2px}
+textarea{resize:vertical}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+label.f>span{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px}
+.steps{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:thin}
+.steps button{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;cursor:pointer;color:var(--muted);font-size:14px}
+.steps button[aria-current="step"]{border-color:var(--brass);color:var(--brass)}
+.steps button.done{color:var(--ink)}
+.steps button:focus-visible{outline:2px solid var(--sea)}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px 11px;cursor:pointer}
+.opt b{display:block;font-weight:700}
+.opt span{font-size:13px;color:var(--muted)}
+.opt[aria-pressed="true"]{border-color:var(--brass);background:#231d10}
+.opt:focus-visible{outline:2px solid var(--sea)}
+.info{border-left:3px solid var(--sea);padding:6px 0 6px 12px;margin:12px 0;font-size:15px}
+.info ul{margin:4px 0;padding-left:18px}
+.info li{margin:2px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:4px 11px;background:var(--panel2);cursor:pointer;font-size:14px}
+.chip[aria-pressed="true"]{border-color:var(--sea);color:var(--sea);background:#10292a}
+.chip:disabled{opacity:.4;cursor:default}
+.chip.fixed{border-color:rgba(217,179,108,.5);color:var(--brass);cursor:default}
+.abil{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));gap:8px}
+.ab{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--panel2);text-align:center}
+.ab b{display:block;font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.ab .tot{font-family:var(--f-mono);font-size:22px}
+.ab .md{font-family:var(--f-mono);font-size:13px;color:var(--sea)}
+.ab select,.ab input{text-align:center;margin:4px 0}
+.warn{color:var(--danger);font-size:14px}
+.okc{color:var(--ok);font-size:14px}
+.nav{display:flex;justify-content:space-between;gap:8px;margin-top:16px;flex-wrap:wrap}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+td.n{font-family:var(--f-mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.sheet{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,110px),1fr));gap:8px}
+.big{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;background:var(--panel2)}
+.big b{display:block;font-size:12px;color:var(--muted);font-weight:500}
+.big span{font-family:var(--f-mono);font-size:22px}
+.hero{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0;background:var(--panel2);flex-wrap:wrap}
+.dot{width:22px;height:22px;border-radius:50%;flex:0 0 auto;border:2px solid var(--brass)}
+.hero .nm{flex:1;min-width:140px}
+.code{font-family:var(--f-mono);font-size:12px;word-break:break-all;width:100%}
+.toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#231d10;border:1px solid rgba(217,179,108,.6);color:var(--brass);border-radius:9px;padding:8px 14px;max-width:calc(100% - 32px);z-index:9}
+pre.notes{white-space:pre-wrap;font-family:var(--f-body);font-size:14px;color:var(--muted);margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Колокола Солёной Мглы · регистрация на игру</div>
+      <h1>Создание героя</h1>
+    </div>
+    <a class="go" href="index.html">Войти в игру →</a>
+  </header>
+  <p class="muted">Книга игрока 2014 года · герой 2 уровня · +25 зм от кампании. Всё сохраняется в этом браузере. Готового героя передайте Мастеру кодом или файлом, либо выберите его при входе в игру.</p>
+
+  <section class="card" id="mine" aria-label="Мои герои"></section>
+
+  <nav class="steps" id="steps" aria-label="Шаги"></nav>
+  <section class="card" id="step"></section>
+  <div class="toast" id="toast" role="status" hidden></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ================= справочники ================= */
+const AB=[['str','СИЛ','Сила'],['dex','ЛОВ','Ловкость'],['con','ТЕЛ','Телосложение'],['int','ИНТ','Интеллект'],['wis','МДР','Мудрость'],['cha','ХАР','Харизма']];
+const SKILLS=[['Атлетика','str'],['Акробатика','dex'],['Ловкость рук','dex'],['Скрытность','dex'],['Магия','int'],['История','int'],['Анализ','int'],['Природа','int'],['Религия','int'],['Уход за животными','wis'],['Проницательность','wis'],['Медицина','wis'],['Внимательность','wis'],['Выживание','wis'],['Обман','cha'],['Запугивание','cha'],['Выступление','cha'],['Убеждение','cha']];
+const ALL_SKILLS=SKILLS.map(s=>s[0]);
+const ALIGN=['Законно-добрый','Нейтрально-добрый','Хаотично-добрый','Законно-нейтральный','Нейтральный','Хаотично-нейтральный','Законно-злой','Нейтрально-злой','Хаотично-злой'];
+
+const RACES={
+ 'Человек':{ab:{str:1,dex:1,con:1,int:1,wis:1,cha:1},spd:30,dv:0,langs:'Общий и ещё один на выбор',traits:['+1 ко всем характеристикам']},
+ 'Дварф холмов':{ab:{con:2,wis:1},spd:25,dv:60,hp:1,langs:'Общий, Дварфский',traits:['Тёмное зрение 60 фт','Скорость не снижается тяжёлым доспехом','Дварфская стойкость: преимущество против яда, сопротивление урону ядом','Знание камня','Дварфская выдержка: +1 хит за уровень','Владение боевым и ручным топором, лёгким и боевым молотом']},
+ 'Дварф гор':{ab:{con:2,str:2},spd:25,dv:60,armor:['light','medium'],langs:'Общий, Дварфский',traits:['Тёмное зрение 60 фт','Скорость не снижается тяжёлым доспехом','Дварфская стойкость: преимущество против яда, сопротивление урону ядом','Знание камня','Владение лёгкими и средними доспехами','Владение боевым и ручным топором, лёгким и боевым молотом']},
+ 'Высший эльф':{ab:{dex:2,int:1},spd:30,dv:60,skills:['Внимательность'],langs:'Общий, Эльфийский и ещё один',traits:['Тёмное зрение 60 фт','Обострённые чувства (Внимательность)','Наследие фей: преимущество против очарования, магия не усыпляет','Транс: 4 часа вместо сна','Один заговор волшебника (основа — Интеллект)','Владение длинным и коротким мечом, длинным и коротким луком']},
+ 'Лесной эльф':{ab:{dex:2,wis:1},spd:35,dv:60,skills:['Внимательность'],langs:'Общий, Эльфийский',traits:['Тёмное зрение 60 фт','Обострённые чувства (Внимательность)','Наследие фей: преимущество против очарования, магия не усыпляет','Транс: 4 часа вместо сна','Маскировка в дикой местности','Скорость 35 фт','Владение длинным и коротким мечом, длинным и коротким луком']},
+ 'Полурослик легконогий':{ab:{dex:2,cha:1},spd:25,dv:0,langs:'Общий, Язык полуросликов',traits:['Везучий: перебросить 1 на d20','Храбрый: преимущество против испуга','Проворство: проходить через клетки существ крупнее вас','Естественная скрытность: прятаться за существом крупнее вас']},
+ 'Полурослик коренастый':{ab:{dex:2,con:1},spd:25,dv:0,langs:'Общий, Язык полуросликов',traits:['Везучий: перебросить 1 на d20','Храбрый: преимущество против испуга','Проворство: проходить через клетки существ крупнее вас','Стойкость коренастых: преимущество против яда, сопротивление урону ядом']},
+ 'Драконорождённый':{ab:{str:2,cha:1},spd:30,dv:0,langs:'Общий, Драконий',traits:['Драконье происхождение: выберите цвет предка','Оружие дыхания: 2d6, спасбросок СЛ 8 + ТЕЛ + мастерство, раз в короткий отдых','Сопротивление урону стихии предка']},
+ 'Лесной гном':{ab:{int:2,dex:1},spd:25,dv:60,langs:'Общий, Гномий',traits:['Тёмное зрение 60 фт','Гномья хитрость: преимущество на спасброски ИНТ, МДР и ХАР против магии','Природная иллюзия: заговор «Малая иллюзия»','Общение с маленькими зверями']},
+ 'Скальный гном':{ab:{int:2,con:1},spd:25,dv:60,langs:'Общий, Гномий',traits:['Тёмное зрение 60 фт','Гномья хитрость: преимущество на спасброски ИНТ, МДР и ХАР против магии','Ремесленные знания: двойной бонус на историю магических и технических вещей','Жестянщик: маленькие механические игрушки']},
+ 'Полуэльф':{ab:{cha:2},pick:2,anySkills:2,spd:30,dv:60,langs:'Общий, Эльфийский и ещё один',traits:['Тёмное зрение 60 фт','Наследие фей: преимущество против очарования, магия не усыпляет','+1 к двум характеристикам на выбор (кроме Харизмы)','Два навыка на выбор']},
+ 'Полуорк':{ab:{str:2,con:1},spd:30,dv:60,skills:['Запугивание'],langs:'Общий, Орочий',traits:['Тёмное зрение 60 фт','Угрожающий вид (Запугивание)','Непоколебимая стойкость: раз в длинный отдых остаться с 1 хитом вместо 0','Свирепые атаки: при крите добавить ещё одну кость урона оружия']},
+ 'Тифлинг':{ab:{cha:2,int:1},spd:30,dv:60,langs:'Общий, Инфернальный',traits:['Тёмное зрение 60 фт','Адское сопротивление: сопротивление урону огнём','Дьявольское наследие: заговор «Чудотворство»']}
+};
+
+// Оружие: [название, цена зм, урон, тип урона, вес, категория simple/martial, дальнобойное, свойства]
+const WEAPONS=[
+ ['Боевой посох',.2,'1d6','дробящий',4,'simple',0,'универсальное (1d8)'],['Булава',5,'1d6','дробящий',4,'simple',0,''],['Дубинка',.1,'1d4','дробящий',2,'simple',0,'лёгкое'],
+ ['Кинжал',2,'1d4','колющий',1,'simple',0,'фехтовальное, лёгкое, метательное'],['Копьё',1,'1d6','колющий',3,'simple',0,'метательное, универсальное (1d8)'],['Лёгкий молот',2,'1d4','дробящий',2,'simple',0,'лёгкое, метательное'],
+ ['Метательное копьё',.5,'1d6','колющий',2,'simple',0,'метательное'],['Палица',.2,'1d8','дробящий',10,'simple',0,'двуручное'],['Ручной топор',5,'1d6','рубящий',2,'simple',0,'лёгкое, метательное'],['Серп',1,'1d4','рубящий',2,'simple',0,'лёгкое'],
+ ['Лёгкий арбалет',25,'1d8','колющий',5,'simple',1,'боеприпасы, двуручное'],['Дротик',.05,'1d4','колющий',.25,'simple',1,'фехтовальное, метательное'],['Короткий лук',25,'1d6','колющий',2,'simple',1,'боеприпасы, двуручное'],['Праща',.1,'1d4','дробящий',0,'simple',1,'боеприпасы'],
+ ['Алебарда',20,'1d10','рубящий',6,'martial',0,'двуручное, досягаемость'],['Боевой молот',15,'1d8','дробящий',2,'martial',0,'универсальное (1d10)'],['Боевой топор',10,'1d8','рубящий',4,'martial',0,'универсальное (1d10)'],
+ ['Глефа',20,'1d10','рубящий',6,'martial',0,'двуручное, досягаемость'],['Двуручный меч',50,'2d6','рубящий',6,'martial',0,'двуручное, тяжёлое'],['Длинный меч',15,'1d8','рубящий',3,'martial',0,'универсальное (1d10)'],
+ ['Кирка',5,'1d8','колющий',2,'martial',0,''],['Кнут',2,'1d4','рубящий',3,'martial',0,'фехтовальное, досягаемость'],['Короткий меч',10,'1d6','колющий',2,'martial',0,'фехтовальное, лёгкое'],
+ ['Молот',10,'2d6','дробящий',10,'martial',0,'двуручное, тяжёлое'],['Моргенштерн',15,'1d8','колющий',4,'martial',0,''],['Пика',5,'1d10','колющий',18,'martial',0,'двуручное, досягаемость'],
+ ['Рапира',25,'1d8','колющий',2,'martial',0,'фехтовальное'],['Секира',30,'1d12','рубящий',7,'martial',0,'двуручное, тяжёлое'],['Скимитар',25,'1d6','рубящий',3,'martial',0,'фехтовальное, лёгкое'],
+ ['Трезубец',5,'1d6','колющий',4,'martial',0,'метательное, универсальное (1d8)'],['Цеп',10,'1d8','дробящий',2,'martial',0,''],
+ ['Длинный лук',50,'1d8','колющий',2,'martial',1,'боеприпасы, двуручное'],['Ручной арбалет',75,'1d6','колющий',3,'martial',1,'боеприпасы, лёгкое'],['Тяжёлый арбалет',50,'1d10','колющий',18,'martial',1,'боеприпасы, двуручное'],['Духовая трубка',10,'1','колющий',1,'martial',1,'боеприпасы']];
+const WMAP=Object.fromEntries(WEAPONS.map(w=>[w[0],w]));
+// Доспехи: [название, цена, база КД, тип light/medium/heavy/shield, вес]
+const ARMOR=[['Стёганый доспех',5,11,'light',8],['Кожаный доспех',10,11,'light',10],['Проклёпанная кожа',45,12,'light',13],['Шкурный доспех',10,12,'medium',12],['Кольчужная рубаха',50,13,'medium',20],['Чешуйчатый доспех',50,14,'medium',45],['Кираса',400,14,'medium',20],['Полулаты',750,15,'medium',40],['Колечный доспех',30,14,'heavy',40],['Кольчуга',75,16,'heavy',55],['Наборный доспех',200,17,'heavy',60],['Латы',1500,18,'heavy',65],['Щит',10,2,'shield',6],['Щит (деревянный)',10,2,'shield',6]];
+const AMAP=Object.fromEntries(ARMOR.map(a=>[a[0],a]));
+// Снаряжение: [название, цена, вес]
+const GEAR=[['Рюкзак',2,5],['Спальник',1,7],['Верёвка пеньковая, 50 фт',1,10],['Верёвка шёлковая, 50 фт',10,5],['Факел',.01,1],['Рационы (1 день)',.5,2],['Бурдюк',.2,5],['Набор целителя',5,3],['Зелье лечения',50,.5],['Противоядие',50,0],['Святая вода',25,1],['Фонарь закрытый',5,2],['Масло, фляга',.1,1],['Ломик',2,5],['Кошка',2,4],['Трутница',.5,1],['Зеркальце',5,.5],['Мел',.01,0],['Восковые затычки',.01,0],
+ ['Стрелы (20)',1,1],['Болты (20)',1,1.5],['Иглы (50)',1,1],['Снаряды для пращи (20)',.04,1.5],['Воровские инструменты',25,1],['Набор травника',5,3],['Компонентный мешочек',25,2],['Магическая фокусировка',10,1],['Фокусировка друида',1,0],['Священный символ',5,1],['Книга заклинаний',50,3],['Лютня',35,2],['Флейта',2,1],
+ ['Набор путешественника',10,59],['Набор исследователя подземелий',12,61],['Набор священника',19,24],['Набор учёного',40,10],['Набор артиста',40,58],['Набор дипломата',39,36],['Набор взломщика',16,44.5]];
+const GMAP=Object.fromEntries(GEAR.map(g=>[g[0],g]));
+const EXTRA_W={'Обычная одежда':3,'Одежда путешественника':4,'Отличная одежда':6,'Костюм':4,'Облачение':4,'Набор исследователя':61};
+function itemWeight(n){if(WMAP[n])return WMAP[n][4];if(AMAP[n])return AMAP[n][4];if(GMAP[n])return GMAP[n][2];if(EXTRA_W[n]!=null)return EXTRA_W[n];return 1}
+function itemCost(n){if(WMAP[n])return WMAP[n][1];if(AMAP[n])return AMAP[n][1];if(GMAP[n])return GMAP[n][1];return 0}
+
+const CANTRIP_DMG={'Огненный снаряд':['att','1d10','огонь'],'Луч холода':['att','1d8','холод'],'Электрошок':['att','1d8','электричество'],'Леденящее прикосновение':['att','1d8','некротический'],'Мистический заряд':['att','1d10','силовое поле'],'Сотворение пламени':['att','1d8','огонь'],'Терновый кнут':['att','1d6','колющий'],
+ 'Священное пламя':['save','1d8','ЛОВ'],'Ядовитые брызги':['save','1d12','ТЕЛ'],'Злая насмешка':['save','1d4','МДР'],'Кислотные брызги':['save','1d6','ЛОВ']};
+const CANTRIPS={
+ bard:['Злая насмешка','Свет','Малая иллюзия','Волшебная рука','Фокусы','Сообщение','Дружба','Починка','Танцующие огоньки','Истинный удар'],
+ cleric:['Священное пламя','Наставление','Свет','Чудотворство','Сопротивление','Починка','Уход за умирающими'],
+ druid:['Друидизм','Наставление','Починка','Ядовитые брызги','Сотворение пламени','Сопротивление','Дубинка','Терновый кнут'],
+ sorcerer:['Огненный снаряд','Луч холода','Электрошок','Ядовитые брызги','Кислотные брызги','Леденящее прикосновение','Свет','Волшебная рука','Малая иллюзия','Фокусы','Сообщение','Защита от оружия','Дружба','Танцующие огоньки','Истинный удар'],
+ warlock:['Мистический заряд','Леденящее прикосновение','Малая иллюзия','Волшебная рука','Фокусы','Ядовитые брызги','Дружба','Защита от оружия','Истинный удар'],
+ wizard:['Огненный снаряд','Луч холода','Электрошок','Ядовитые брызги','Кислотные брызги','Леденящее прикосновение','Свет','Волшебная рука','Малая иллюзия','Фокусы','Сообщение','Защита от оружия','Дружба','Танцующие огоньки','Починка','Истинный удар']};
+const SPELLS1={
+ bard:['Лечащее слово','Лечение ран','Очарование личности','Диссонирующий шёпот','Огонь фей','Громовая волна','Усыпление','Ужасный смех Таши','Понимание языков','Невидимый слуга','Героизм','Обнаружение магии','Маскировка','Безмолвный образ','Перо падения'],
+ cleric:['Лечение ран','Лечащее слово','Благословение','Щит веры','Приказ','Нанесение ран','Направленный снаряд','Обнаружение магии','Порча','Защита от добра и зла','Святилище','Создание или уничтожение воды','Обнаружение яда и болезней'],
+ druid:['Лечение ран','Лечащее слово','Опутывание','Огонь фей','Громовая волна','Туманное облако','Чудо-ягоды','Прыжок','Скороход','Обнаружение магии','Дружба с животными','Разговор с животными','Создание или уничтожение воды'],
+ paladin:['Благословение','Приказ','Лечение ран','Героизм','Щит веры','Божественное благоволение','Гневная кара','Палящая кара','Громовая кара','Обнаружение магии','Защита от добра и зла','Поиск скакуна? нет — Вызов на дуэль'],
+ ranger:['Метка охотника','Лечение ран','Туманное облако','Обнаружение магии','Тревога','Прыжок','Скороход','Град шипов','Опутывающий удар','Разговор с животными','Дружба с животными','Обнаружение яда и болезней'],
+ sorcerer:['Волшебная стрела','Щит','Огненные ладони','Усыпление','Очарование личности','Громовая волна','Туманное облако','Ведьмин снаряд','Луч болезни','Маскировка','Доспехи мага','Ложная жизнь','Цветной шарик','Поспешное отступление','Перо падения','Понимание языков','Безмолвный образ'],
+ warlock:['Адское возмездие','Сглаз','Доспехи Агатиса','Очарование личности','Понимание языков','Поспешное отступление','Иллюзорный текст','Невидимый слуга','Руки Хадара','Защита от добра и зла','Ведьмин снаряд'],
+ wizard:['Волшебная стрела','Щит','Доспехи мага','Огненные ладони','Усыпление','Обнаружение магии','Опознание','Поиск фамильяра','Громовая волна','Туманное облако','Ведьмин снаряд','Цветной шарик','Маскировка','Ложная жизнь','Перо падения','Тревога','Понимание языков','Поспешное отступление','Безмолвный образ','Луч болезни','Ужасный смех Таши','Невидимый слуга']};
+SPELLS1.paladin[SPELLS1.paladin.length-1]='Вызов на дуэль';
+
+const STYLES={'Оборона':'+1 к КД, пока носите доспех','Дуэлянт':'+2 к урону одноручным оружием в одной руке','Стрельба':'+2 к броскам атаки дальнобойным оружием','Сражение большим оружием':'перебрасывать 1 и 2 на костях урона двуручного оружия','Защита':'реакцией дать помеху атаке по союзнику рядом (нужен щит)','Сражение двумя оружиями':'добавлять модификатор к урону второй атаки'};
+
+// Классы. skillsN — сколько навыков, skills — из какого списка (null = любые)
+const CLASSES={
+ 'Варвар':{key:'barbarian',hd:12,saves:['str','con'],armor:['light','medium','shield'],weapons:'simple,martial',skillsN:2,skills:['Уход за животными','Атлетика','Запугивание','Природа','Внимательность','Выживание'],gold:[2,10],
+   feats:['Ярость: 2 раза за длинный отдых, +2 к урону силовыми атаками, сопротивление дробящему, колющему и рубящему урону','Защита без доспехов: КД 10 + ЛОВ + ТЕЛ','Безрассудная атака','Чувство опасности: преимущество на спасброски ЛОВ от видимых эффектов'],
+   kit:[[['Секира',1],['Метательное копьё',4],['Набор путешественника',1]],[['Боевой топор',1],['Ручной топор',2],['Метательное копьё',4],['Набор путешественника',1]]]},
+ 'Бард':{key:'bard',hd:8,saves:['dex','cha'],armor:['light'],weapons:'simple,Ручной арбалет,Длинный меч,Рапира,Короткий меч',skillsN:3,skills:null,gold:[5,10],cast:'cha',cantrips:2,known:5,slots:3,
+   feats:['Вдохновение барда (к6): бонусным действием, ХАР раз за длинный отдых','Мастер на все руки: +1 к проверкам без владения','Песнь отдыха (к6) во время короткого отдыха','Владение тремя музыкальными инструментами'],
+   kit:[[['Рапира',1],['Кожаный доспех',1],['Кинжал',1],['Лютня',1],['Набор артиста',1]],[['Длинный меч',1],['Кожаный доспех',1],['Кинжал',1],['Лютня',1],['Набор дипломата',1]]]},
+ 'Жрец':{key:'cleric',hd:8,saves:['wis','cha'],armor:['light','medium','shield'],weapons:'simple',skillsN:2,skills:['История','Проницательность','Медицина','Убеждение','Религия'],gold:[5,10],cast:'wis',cantrips:3,prep:true,slots:3,
+   subs:['Домен Жизни','Домен Света','Домен Знаний','Домен Природы','Домен Бури','Домен Обмана','Домен Войны'],
+   feats:['Божественный домен: умения и заклинания домена','Божественный канал (1 раз за отдых): Изгнание нежити'],
+   kit:[[['Булава',1],['Чешуйчатый доспех',1],['Лёгкий арбалет',1],['Болты (20)',1],['Щит',1],['Священный символ',1],['Набор священника',1]],[['Булава',1],['Кожаный доспех',1],['Копьё',1],['Щит',1],['Священный символ',1],['Набор исследователя подземелий',1]]]},
+ 'Друид':{key:'druid',hd:8,saves:['int','wis'],armor:['light','medium','shield'],weapons:'Дубинка,Кинжал,Дротик,Метательное копьё,Булава,Боевой посох,Скимитар,Серп,Праща,Копьё',skillsN:2,skills:['Магия','Уход за животными','Проницательность','Медицина','Природа','Внимательность','Религия','Выживание'],gold:[2,10],cast:'wis',cantrips:2,prep:true,slots:3,
+   subs:['Круг Земли','Круг Луны'],feats:['Друидический язык','Дикий облик: 2 раза за короткий отдых, звери с ПО до 1/4 без скорости полёта и плавания','Круг друидов','Не носит металлические доспехи и щиты'],
+   kit:[[['Щит (деревянный)',1],['Скимитар',1],['Кожаный доспех',1],['Набор путешественника',1],['Фокусировка друида',1]],[['Щит (деревянный)',1],['Боевой посох',1],['Кожаный доспех',1],['Набор путешественника',1],['Фокусировка друида',1]]]},
+ 'Воин':{key:'fighter',hd:10,saves:['str','con'],armor:['light','medium','heavy','shield'],weapons:'simple,martial',skillsN:2,skills:['Акробатика','Уход за животными','Атлетика','История','Проницательность','Запугивание','Внимательность','Выживание'],gold:[5,10],style:Object.keys(STYLES),
+   feats:['Боевой стиль','Второе дыхание: бонусным действием восстановить 1к10 + 2 хитов, раз за отдых','Всплеск действий: одно дополнительное действие, раз за отдых'],
+   kit:[[['Кольчуга',1],['Длинный меч',1],['Щит',1],['Лёгкий арбалет',1],['Болты (20)',1],['Набор исследователя подземелий',1]],[['Кожаный доспех',1],['Длинный лук',1],['Стрелы (20)',1],['Двуручный меч',1],['Ручной топор',2],['Набор путешественника',1]]]},
+ 'Монах':{key:'monk',hd:8,saves:['str','dex'],armor:[],weapons:'simple,Короткий меч',skillsN:2,skills:['Акробатика','Атлетика','История','Проницательность','Религия','Скрытность'],gold:[5,1],
+   feats:['Защита без доспехов: КД 10 + ЛОВ + МДР','Боевые искусства: безоружный удар 1к4, удар бонусным действием','Ци: 2 очка (Шквал ударов, Терпеливая оборона, Поступь ветра)','Движение без доспехов: +10 фт скорости'],
+   kit:[[['Короткий меч',1],['Дротик',10],['Набор исследователя подземелий',1]],[['Копьё',1],['Дротик',10],['Набор путешественника',1]]]},
+ 'Паладин':{key:'paladin',hd:10,saves:['wis','cha'],armor:['light','medium','heavy','shield'],weapons:'simple,martial',skillsN:2,skills:['Атлетика','Проницательность','Запугивание','Медицина','Убеждение','Религия'],gold:[5,10],cast:'cha',cantrips:0,prep:'half',slots:2,style:['Оборона','Дуэлянт','Сражение большим оружием','Защита'],
+   feats:['Божественное чувство','Наложение рук: запас 10 хитов исцеления','Боевой стиль','Божественная кара: +2к8 излучением за ячейку 1 круга'],
+   kit:[[['Длинный меч',1],['Щит',1],['Метательное копьё',5],['Кольчуга',1],['Священный символ',1],['Набор священника',1]],[['Двуручный меч',1],['Метательное копьё',5],['Кольчуга',1],['Священный символ',1],['Набор путешественника',1]]]},
+ 'Следопыт':{key:'ranger',hd:10,saves:['str','dex'],armor:['light','medium','shield'],weapons:'simple,martial',skillsN:3,skills:['Уход за животными','Атлетика','Проницательность','Анализ','Природа','Внимательность','Скрытность','Выживание'],gold:[5,10],cast:'wis',cantrips:0,known:2,slots:2,style:['Оборона','Дуэлянт','Стрельба','Сражение двумя оружиями'],
+   feats:['Избранный враг: преимущество на выслеживание и знания о нём','Исследователь природы: избранная местность','Боевой стиль'],
+   kit:[[['Чешуйчатый доспех',1],['Короткий меч',2],['Длинный лук',1],['Стрелы (20)',1],['Набор исследователя подземелий',1]],[['Кожаный доспех',1],['Короткий меч',2],['Длинный лук',1],['Стрелы (20)',1],['Набор путешественника',1]]]},
+ 'Плут':{key:'rogue',hd:8,saves:['dex','int'],armor:['light'],weapons:'simple,Ручной арбалет,Длинный меч,Рапира,Короткий меч',skillsN:4,skills:['Акробатика','Атлетика','Обман','Проницательность','Запугивание','Анализ','Внимательность','Выступление','Убеждение','Ловкость рук','Скрытность'],gold:[4,10],expertise:2,
+   feats:['Компетентность: двойной бонус мастерства к двум навыкам','Скрытая атака: +1к6 раз в ход','Воровской жаргон','Хитрое действие: Рывок, Отход или Засада бонусным действием','Владение воровскими инструментами'],
+   kit:[[['Рапира',1],['Короткий лук',1],['Стрелы (20)',1],['Кожаный доспех',1],['Кинжал',2],['Воровские инструменты',1],['Набор взломщика',1]],[['Короткий меч',1],['Короткий лук',1],['Стрелы (20)',1],['Кожаный доспех',1],['Кинжал',2],['Воровские инструменты',1],['Набор исследователя подземелий',1]]]},
+ 'Чародей':{key:'sorcerer',hd:6,saves:['con','cha'],armor:[],weapons:'Кинжал,Дротик,Праща,Боевой посох,Лёгкий арбалет',skillsN:2,skills:['Магия','Обман','Проницательность','Запугивание','Убеждение','Религия'],gold:[3,10],cast:'cha',cantrips:4,known:3,slots:3,
+   subs:['Драконья кровь','Дикая магия'],feats:['Происхождение чародея','Источник магии: 2 очка чародейства','Гибкое колдовство: превращать ячейки в очки и обратно'],
+   kit:[[['Лёгкий арбалет',1],['Болты (20)',1],['Компонентный мешочек',1],['Кинжал',2],['Набор исследователя подземелий',1]],[['Боевой посох',1],['Магическая фокусировка',1],['Кинжал',2],['Набор путешественника',1]]]},
+ 'Колдун':{key:'warlock',hd:8,saves:['wis','cha'],armor:['light'],weapons:'simple',skillsN:2,skills:['Магия','Обман','История','Запугивание','Анализ','Природа','Религия'],gold:[4,10],cast:'cha',cantrips:2,known:3,slots:2,
+   subs:['Архифея','Исчадие','Великий Древний'],feats:['Потусторонний покровитель','Магия договора: 2 ячейки 1 круга, восстанавливаются на коротком отдыхе','Таинственные воззвания: 2 на выбор (например, «Мучительный взрыв»)'],
+   kit:[[['Лёгкий арбалет',1],['Болты (20)',1],['Компонентный мешочек',1],['Кожаный доспех',1],['Кинжал',2],['Набор учёного',1]],[['Копьё',1],['Магическая фокусировка',1],['Кожаный доспех',1],['Кинжал',2],['Набор исследователя подземелий',1]]]},
+ 'Волшебник':{key:'wizard',hd:6,saves:['int','wis'],armor:[],weapons:'Кинжал,Дротик,Праща,Боевой посох,Лёгкий арбалет',skillsN:2,skills:['Магия','История','Проницательность','Анализ','Медицина','Религия'],gold:[4,10],cast:'int',cantrips:3,book:8,prep:true,slots:3,
+   subs:['Школа Воплощения','Школа Ограждения','Школа Прорицания','Школа Иллюзии','Школа Некромантии','Школа Очарования','Школа Вызова','Школа Преобразования'],
+   feats:['Книга заклинаний: 8 заклинаний 1 круга','Магическое восстановление: вернуть ячейки на коротком отдыхе','Магическая традиция (школа)'],
+   kit:[[['Боевой посох',1],['Компонентный мешочек',1],['Книга заклинаний',1],['Набор учёного',1]],[['Кинжал',1],['Магическая фокусировка',1],['Книга заклинаний',1],['Набор исследователя подземелий',1]]]}
+};
+
+const BGS={
+ 'Прислужник':{skills:['Проницательность','Религия'],tools:'—',langs:'2 языка',gold:15,items:['Священный символ','Молитвенник','Благовония (5)','Облачение','Обычная одежда'],feat:'Приют для верующих'},
+ 'Преступник':{skills:['Обман','Скрытность'],tools:'Игровой набор, воровские инструменты',gold:15,items:['Ломик','Тёмная одежда с капюшоном'],feat:'Криминальная связь'},
+ 'Народный герой':{skills:['Уход за животными','Выживание'],tools:'Инструменты ремесленника, наземный транспорт',gold:10,items:['Инструменты ремесленника','Лопата','Железный котелок','Обычная одежда'],feat:'Деревенское гостеприимство'},
+ 'Моряк':{skills:['Атлетика','Внимательность'],tools:'Инструменты навигатора, водный транспорт',gold:10,items:['Кофель-нагель (дубинка)','Верёвка шёлковая, 50 фт','Талисман','Обычная одежда'],feat:'Корабельная служба'},
+ 'Солдат':{skills:['Атлетика','Запугивание'],tools:'Игровой набор, наземный транспорт',gold:10,items:['Знак отличия','Трофей с убитого врага','Игральные кости','Обычная одежда'],feat:'Воинское звание'},
+ 'Мудрец':{skills:['Магия','История'],tools:'—',langs:'2 языка',gold:10,items:['Бутылка чернил','Перо','Нож для бумаги','Письмо от коллеги','Обычная одежда'],feat:'Исследователь'},
+ 'Чужеземец':{skills:['Атлетика','Выживание'],tools:'Музыкальный инструмент',langs:'1 язык',gold:10,items:['Боевой посох','Охотничья ловушка','Трофей с убитого зверя','Одежда путешественника'],feat:'Странник'},
+ 'Артист':{skills:['Акробатика','Выступление'],tools:'Набор для грима, музыкальный инструмент',gold:15,items:['Флейта','Подарок поклонника','Костюм'],feat:'По многочисленным просьбам'},
+ 'Гильдейский ремесленник':{skills:['Проницательность','Убеждение'],tools:'Инструменты ремесленника',langs:'1 язык',gold:15,items:['Инструменты ремесленника','Рекомендательное письмо гильдии','Одежда путешественника'],feat:'Членство в гильдии'},
+ 'Отшельник':{skills:['Медицина','Религия'],tools:'Набор травника',langs:'1 язык',gold:5,items:['Футляр для свитков с записями','Зимнее одеяло','Обычная одежда','Набор травника'],feat:'Открытие'},
+ 'Благородный':{skills:['История','Убеждение'],tools:'Игровой набор',langs:'1 язык',gold:25,items:['Отличная одежда','Перстень-печатка','Свиток родословной'],feat:'Привилегированность'},
+ 'Беспризорник':{skills:['Ловкость рук','Скрытность'],tools:'Набор для грима, воровские инструменты',gold:10,items:['Маленький нож','Карта родного города','Ручная мышь','Памятная вещица','Обычная одежда'],feat:'Городские тайны'}
+};
+const COST={8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
+const STD=[15,14,13,12,10,8];
+const COLORS=['#c0603f','#3f7fc0','#6aa84f','#a64dc0','#c0a43f','#3fb3a6','#c03f6b','#7d8a96'];
+
+/* ================= хранение ================= */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const newId=()=>'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function blank(){return{id:newId(),name:'',player:'',color:COLORS[Math.floor(Math.random()*COLORS.length)],look:'',align:'Нейтрально-добрый',race:'',halfPick:[],raceSkills:[],cls:'',sub:'',style:'',clsSkills:[],expertise:[],cantrips:[],spells:[],bg:'',method:'std',std:{str:15,dex:14,con:13,int:12,wis:10,cha:8},buy:{str:8,dex:8,con:8,int:8,wis:8,cha:8},equipMode:'kit',kit:0,cart:[],armor:'',shield:false}}
+let H=Object.assign(blank(),LS.get('smgla-draft',{}));
+let step=1;
+const save=()=>LS.set('smgla-draft',H);
+
+/* ================= расчёт ================= */
+const mod=v=>Math.floor((v-10)/2);
+const sgn=n=>(n>=0?'+':'')+n;
+function raceBonus(){const r=RACES[H.race];if(!r)return{};const b={...r.ab};if(r.pick)for(const k of H.halfPick)b[k]=(b[k]||0)+1;return b}
+function baseScores(){return H.method==='std'?{...H.std}:{...H.buy}}
+function scores(){const b=baseScores(),r=raceBonus(),o={};for(const [k] of AB)o[k]=(b[k]||8)+(r[k]||0);return o}
+function stdValid(){const v=AB.map(([k])=>Number(H.std[k]));return[...v].sort((a,b)=>b-a).join()===STD.join()}
+function buySpent(){return AB.reduce((s,[k])=>s+(COST[H.buy[k]]??99),0)}
+function skillSet(){const r=RACES[H.race]||{},bg=BGS[H.bg]||{};return[...new Set([...(r.skills||[]),...H.raceSkills,...(bg.skills||[]),...H.clsSkills])]}
+function weaponProf(c,w){if(!c)return false;const list=c.weapons.split(',');if(list.includes(w[5]))return true;if(list.includes(w[0]))return true;
+  const r=H.race;if(/эльф/i.test(r)&&!/Полуэльф/.test(r)&&['Длинный меч','Короткий меч','Длинный лук','Короткий лук'].includes(w[0]))return true;if(/Дварф/.test(r)&&['Боевой топор','Ручной топор','Лёгкий молот','Боевой молот'].includes(w[0]))return true;return false}
+function armorProf(c,a){if(!a)return true;const r=RACES[H.race]||{};return(c&&c.armor.includes(a[3]))||(r.armor||[]).includes(a[3])}
+function inventory(){const c=CLASSES[H.cls],bg=BGS[H.bg];const inv=[];const add=(n,q)=>{const ex=inv.find(i=>i[0]===n);if(ex)ex[1]+=q;else inv.push([n,q,itemWeight(n)])};
+  if(H.equipMode==='kit'){if(c)for(const [n,q] of c.kit[H.kit]||c.kit[0])add(n,q);if(bg)for(const n of bg.items)add(n,1)}
+  else for(const [n,q] of H.cart)add(n,q);
+  return inv}
+function goldStart(){const c=CLASSES[H.cls];if(H.equipMode==='kit')return(BGS[H.bg]?BGS[H.bg].gold:0)+25;if(!c)return 25;return Math.floor(c.gold[0]*2.5)*c.gold[1]+25}
+function goldLeft(){if(H.equipMode==='kit')return goldStart();return Math.round((goldStart()-H.cart.reduce((s,[n,q])=>s+itemCost(n)*q,0))*100)/100}
+function wornArmor(){const inv=inventory();const has=n=>inv.some(i=>i[0]===n);let a=H.armor&&has(H.armor)?AMAP[H.armor]:null;
+  if(H.armor===''&&H._autoArmor!==false){const cand=inv.map(i=>AMAP[i[0]]).filter(x=>x&&x[3]!=='shield');if(cand.length)a=cand.sort((x,y)=>y[2]-x[2])[0]}
+  const sh=inv.some(i=>AMAP[i[0]]&&AMAP[i[0]][3]==='shield')&&(H.shield||H._autoShield!==false);return{a,sh}}
+function calcAC(){const s=scores(),c=CLASSES[H.cls]||{};const {a,sh}=wornArmor();let ac;
+  if(a){ac=a[3]==='light'?a[2]+mod(s.dex):a[3]==='medium'?a[2]+Math.min(2,mod(s.dex)):a[2]}
+  else if(c.key==='barbarian')ac=10+mod(s.dex)+mod(s.con);
+  else if(c.key==='monk'&&!sh)ac=10+mod(s.dex)+mod(s.wis);
+  else if(c.key==='sorcerer'&&H.sub==='Драконья кровь')ac=13+mod(s.dex);
+  else ac=10+mod(s.dex);
+  if(sh&&!(c.key==='monk'))ac+=2;if(a&&H.style==='Оборона')ac+=1;return ac}
+function calcHP(){const c=CLASSES[H.cls];if(!c)return 0;const s=scores();let hp=c.hd+(c.hd/2+1)+2*mod(s.con);if(H.race==='Дварф холмов')hp+=2;if(c.key==='sorcerer'&&H.sub==='Драконья кровь')hp+=2;return Math.max(2,hp)}
+function spellInfo(){const c=CLASSES[H.cls];if(!c||!c.cast)return null;const s=scores(),m=mod(s[c.cast]);
+  let prep=null;if(c.prep===true)prep=Math.max(1,m+2);if(c.prep==='half')prep=Math.max(1,m+1);
+  return{ab:c.cast,mod:m,dc:8+2+m,att:2+m,cantrips:c.cantrips||0,known:c.known||c.book||0,prep,slots:c.slots,pickSpells:c.known||c.book||(c.prep?prep:0)}}
+function attacks(){const c=CLASSES[H.cls],s=scores();const out=[];const seen=new Set();
+  for(const [n] of inventory()){const w=WMAP[n];if(!w||seen.has(n))continue;seen.add(n);
+    const fin=/фехтовальное/.test(w[7]),monkW=c&&c.key==='monk'&&(w[0]==='Короткий меч'||(w[5]==='simple'&&!w[6]&&!/двуручное|тяжёлое/.test(w[7])));
+    const m=w[6]?mod(s.dex):(fin||monkW)?Math.max(mod(s.str),mod(s.dex)):mod(s.str);
+    let bonus=m+(weaponProf(c,w)?2:0);if(w[6]&&H.style==='Стрельба')bonus+=2;
+    let dm=m;if(!w[6]&&H.style==='Дуэлянт'&&!/двуручное/.test(w[7]))dm+=2;
+    let dice=w[2];if(monkW&&dice==='1d4')dice='1d4';
+    out.push([n,bonus,dice+(dm?sgn(dm):'')])}
+  if(c&&c.key==='monk'){const m=Math.max(mod(s.str),mod(s.dex));out.push(['Безоружный удар',m+2,'1d4'+(m?sgn(m):'')])}
+  const si=spellInfo();if(si)for(const ct of H.cantrips){const d=CANTRIP_DMG[ct];if(!d)continue;if(d[0]==='att')out.push([ct,si.att,d[1]]);else out.push([`${ct} (спасбросок ${d[2]} СЛ ${si.dc})`,0,d[1]])}
+  return out}
+function skillBonus(name){const s=scores();const ab=SKILLS.find(x=>x[0]===name)[1];let b=mod(s[ab]);if(skillSet().includes(name))b+=H.expertise.includes(name)?4:2;return b}
+function problems(){const p=[];if(!H.name.trim())p.push('Не указано имя героя (шаг 1)');if(!H.race)p.push('Не выбрана раса (шаг 2)');
+  const r=RACES[H.race];if(r&&r.pick&&H.halfPick.length!==r.pick)p.push('Полуэльф: выберите две характеристики для +1 (шаг 2)');if(r&&r.anySkills&&H.raceSkills.length!==r.anySkills)p.push('Полуэльф: выберите два навыка (шаг 2)');
+  const c=CLASSES[H.cls];if(!c)p.push('Не выбран класс (шаг 3)');else{
+    if(H.clsSkills.length!==c.skillsN)p.push(`Выберите ${c.skillsN} навыка класса (шаг 3)`);
+    if(c.subs&&!H.sub)p.push('Выберите '+(c.key==='cleric'?'домен':c.key==='warlock'?'покровителя':c.key==='sorcerer'?'происхождение':c.key==='druid'?'круг':'школу')+' (шаг 3)');
+    if(c.style&&!H.style)p.push('Выберите боевой стиль (шаг 3)');if(c.expertise&&H.expertise.length!==c.expertise)p.push('Плут: выберите 2 навыка для компетентности (шаг 3)');
+    const si=spellInfo();if(si){if(H.cantrips.length!==si.cantrips)p.push(`Выберите заговоры: ${si.cantrips} (шаг 3)`);if(H.spells.length!==si.pickSpells)p.push(`Выберите заклинания 1 круга: ${si.pickSpells} (шаг 3)`)}}
+  if(!H.bg)p.push('Не выбрана предыстория (шаг 4)');
+  if(H.method==='std'&&!stdValid())p.push('Стандартный набор: каждое значение 15, 14, 13, 12, 10, 8 используется один раз (шаг 5)');
+  if(H.method==='buy'&&buySpent()>27)p.push('Покупка очков: потрачено больше 27 (шаг 5)');
+  if(H.equipMode==='gold'&&goldLeft()<0)p.push('Не хватает золота на покупки (шаг 6)');
+  return p}
+function notesText(){const r=RACES[H.race]||{},c=CLASSES[H.cls]||{},bg=BGS[H.bg]||{},si=spellInfo();const L=[];
+  L.push(`${H.race} · ${H.cls}${H.sub?' ('+H.sub+')':''} 2 ур. · ${H.bg} · ${H.align}`);
+  if(H.look.trim())L.push('Внешность и характер: '+H.look.trim());
+  L.push('Черты расы: '+(r.traits||[]).join('; ')+'. Языки: '+(r.langs||'')+'.');
+  L.push('Умения класса: '+(c.feats||[]).join('; ')+'.');
+  if(H.style)L.push(`Боевой стиль: ${H.style} (${STYLES[H.style]}).`);
+  if(H.expertise.length)L.push('Компетентность: '+H.expertise.join(', ')+'.');
+  if(si){L.push(`Заклинания: базовая ${AB.find(a=>a[0]===si.ab)[1]}, СЛ ${si.dc}, атака ${sgn(si.att)}, ячейки 1 круга: ${si.slots}${si.prep?`, готовить в день: ${si.prep}`:''}.`);
+    if(H.cantrips.length)L.push('Заговоры: '+H.cantrips.join(', ')+'.');if(H.spells.length)L.push((c.book?'В книге: ':'Заклинания 1 круга: ')+H.spells.join(', ')+'.')}
+  L.push(`Предыстория «${H.bg}»: навыки ${(bg.skills||[]).join(', ')}; инструменты: ${bg.tools||'—'}${bg.langs?'; языки: '+bg.langs:''}; особенность: ${bg.feat||''}.`);
+  L.push('Владения: доспехи — '+(c.armor&&c.armor.length?c.armor.map(a=>({light:'лёгкие',medium:'средние',heavy:'тяжёлые',shield:'щиты'})[a]).join(', '):'нет')+'; оружие — '+(c.weapons||'').replace('simple','простое').replace('martial','воинское')+'.');
+  return L.join('\n')}
+function build(){const s=scores(),c=CLASSES[H.cls]||{},r=RACES[H.race]||{};
+  return{v:1,id:H.id,name:H.name.trim().slice(0,40),player:H.player.trim().slice(0,40),color:H.color,race:H.race,cls:H.cls,sub:H.sub||'',bg:H.bg,align:H.align,lvl:2,
+    str:s.str,dex:s.dex,con:s.con,int:s.int,wis:s.wis,cha:s.cha,prof:2,speed:(r.spd||30)+(c.key==='monk'?10:0),hpMax:calcHP(),ac:calcAC(),dv:r.dv||0,
+    saves:[...(c.saves||[])],skills:skillSet(),attacks:attacks(),inv:inventory(),gp:Math.floor(goldLeft()),sp:Math.round((goldLeft()%1)*10),cp:0,notes:notesText()}}
+
+/* ================= интерфейс ================= */
+function h(tag,attrs,...kids){const e=document.createElement(tag);for(const k in attrs||{}){const v=attrs[k];if(v==null||v===false)continue;if(k==='class')e.className=v;else if(k.startsWith('on'))e[k]=v;else if(k==='value')e.value=v;else e.setAttribute(k,v===true?'':v)}for(const c of kids.flat())if(c!=null&&c!==false)e.append(c instanceof Node?c:String(c));return e}
+const $=id=>document.getElementById(id);
+function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true},3200)}
+const STEPS=['Герой','Раса','Класс','Предыстория','Характеристики','Снаряжение','Итог'];
+function stepDone(i){switch(i){case 1:return!!H.name.trim();case 2:return!!H.race;case 3:return!!H.cls&&H.clsSkills.length===(CLASSES[H.cls]||{}).skillsN;case 4:return!!H.bg;case 5:return H.method==='std'?stdValid():buySpent()<=27;case 6:return H.equipMode==='kit'||goldLeft()>=0;default:return problems().length===0}}
+function render(){save();renderSteps();const el=$('step');el.replaceChildren(...[[s1,s2,s3,s4,s5,s6,s7][step-1]()].flat(),navRow());renderMine()}
+function renderSteps(){$('steps').replaceChildren(...STEPS.map((n,i)=>h('button',{type:'button','aria-current':step===i+1?'step':null,class:stepDone(i+1)?'done':null,onclick:()=>{step=i+1;render()}},`${i+1}. ${n}${stepDone(i+1)&&i<6?' ✓':''}`)))}
+function navRow(){return h('div',{class:'nav'},h('button',{class:'btn',type:'button',disabled:step===1,onclick:()=>{step--;render();scrollTop()}},'← Назад'),step<7?h('button',{class:'btn pri',type:'button',onclick:()=>{step++;render();scrollTop()}},'Далее →'):h('span'))}
+function scrollTop(){try{$('steps').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}}
+function opt(label,sub,pressed,onclick){return h('button',{type:'button',class:'opt','aria-pressed':String(!!pressed),onclick},h('b',{},label),sub?h('span',{},sub):null)}
+function chip(label,pressed,onclick,disabled){return h('button',{type:'button',class:'chip','aria-pressed':String(!!pressed),disabled:!!disabled,onclick},label)}
+function field(label,input){return h('label',{class:'f'},h('span',{},label),input)}
+function abName(k){return AB.find(a=>a[0]===k)[2]}
+
+/* шаг 1 */
+function s1(){return[h('h2',{},'1. Кто ваш герой'),
+  h('div',{class:'grid2'},
+    field('Имя героя',h('input',{type:'text',value:H.name,maxlength:40,placeholder:'Например, Ари Вельт',oninput:e=>{H.name=e.target.value;save();renderSteps()}})),
+    field('Имя игрока',h('input',{type:'text',value:H.player,maxlength:40,placeholder:'Как вас зовут',oninput:e=>{H.player=e.target.value;save()}})),
+    field('Мировоззрение',h('select',{onchange:e=>{H.align=e.target.value;save()}},...ALIGN.map(a=>h('option',{value:a,selected:a===H.align},a)))),
+    field('Цвет фишки на карте',h('div',{class:'row'},h('input',{type:'color',value:H.color,onchange:e=>{H.color=e.target.value;save()}}),...COLORS.map(c=>h('button',{type:'button','aria-label':'Цвет '+c,class:'dot',style:`background:${c};cursor:pointer;border-color:${c===H.color?'#fff':'var(--line)'}`,onclick:()=>{H.color=c;render()}}))))),
+  h('div',{style:'margin-top:10px'},field('Внешность и характер (коротко)',h('textarea',{rows:3,maxlength:600,placeholder:'Рыжая, с обветренным лицом. Смеётся громко, боится глубокой воды…',oninput:e=>{H.look=e.target.value;save()}},H.look)))]}
+
+/* шаг 2 */
+function s2(){const r=RACES[H.race];const out=[h('h2',{},'2. Раса')];
+  out.push(h('div',{class:'opts'},...Object.entries(RACES).map(([n,x])=>opt(n,Object.entries(x.ab).map(([k,v])=>`${AB.find(a=>a[0]===k)[1]} +${v}`).join(', ')+(x.pick?', +1 к двум':''),H.race===n,()=>{H.race=n;H.halfPick=[];H.raceSkills=[];render()}))));
+  if(r){out.push(h('div',{class:'info'},h('b',{},H.race),h('div',{class:'small muted'},`Скорость ${r.spd} фт · ${r.dv?'тёмное зрение '+r.dv+' фт':'без тёмного зрения'} · языки: ${r.langs}`),h('ul',{},...r.traits.map(t=>h('li',{},t)))));
+    if(r.pick){out.push(h('h3',{},'+1 к двум характеристикам'),h('div',{class:'chips'},...AB.filter(([k])=>k!=='cha').map(([k,s,n])=>chip(n,H.halfPick.includes(k),()=>{H.halfPick=H.halfPick.includes(k)?H.halfPick.filter(x=>x!==k):[...H.halfPick,k].slice(-2);render()}))))}
+    if(r.anySkills){out.push(h('h3',{},'Два навыка на выбор'),h('div',{class:'chips'},...ALL_SKILLS.map(n=>chip(n,H.raceSkills.includes(n),()=>{H.raceSkills=H.raceSkills.includes(n)?H.raceSkills.filter(x=>x!==n):[...H.raceSkills,n].slice(-2);H.clsSkills=H.clsSkills.filter(x=>!H.raceSkills.includes(x));render()}))))}}
+  return out}
+
+/* шаг 3 */
+function s3(){const c=CLASSES[H.cls];const out=[h('h2',{},'3. Класс')];
+  out.push(h('div',{class:'opts'},...Object.entries(CLASSES).map(([n,x])=>opt(n,`к${x.hd} · спасброски ${x.saves.map(k=>AB.find(a=>a[0]===k)[1]).join(', ')}`,H.cls===n,()=>{if(H.cls!==n){H.cls=n;H.sub='';H.style='';H.clsSkills=[];H.expertise=[];H.cantrips=[];H.spells=[];H.kit=0;H.armor='';H.cart=[]}render()}))));
+  if(!c)return out;
+  out.push(h('div',{class:'info'},h('b',{},H.cls+' · 2 уровень'),h('div',{class:'small muted'},`Кость хитов к${c.hd} · доспехи: ${c.armor.length?c.armor.map(a=>({light:'лёгкие',medium:'средние',heavy:'тяжёлые',shield:'щиты'})[a]).join(', '):'нет'} · оружие: ${c.weapons.replace('simple','простое').replace('martial','воинское')}`),h('ul',{},...c.feats.map(t=>h('li',{},t)))));
+  if(c.subs){out.push(h('h3',{},c.key==='cleric'?'Божественный домен':c.key==='warlock'?'Покровитель':c.key==='sorcerer'?'Происхождение':c.key==='druid'?'Круг друидов':'Магическая традиция'),h('div',{class:'chips'},...c.subs.map(s=>chip(s,H.sub===s,()=>{H.sub=s;render()}))))}
+  if(c.style){out.push(h('h3',{},'Боевой стиль'),h('div',{class:'opts'},...c.style.map(s=>opt(s,STYLES[s],H.style===s,()=>{H.style=s;render()}))))}
+  const fixed=[...((RACES[H.race]||{}).skills||[]),...H.raceSkills,...((BGS[H.bg]||{}).skills||[])];
+  const list=c.skills||ALL_SKILLS;
+  out.push(h('h3',{},`Навыки класса: выберите ${c.skillsN} (${H.clsSkills.length}/${c.skillsN})`));
+  if(fixed.length)out.push(h('p',{class:'small muted'},'Уже есть от расы и предыстории: '+fixed.join(', ')+'. Их выбирать не нужно.'));
+  out.push(h('div',{class:'chips'},...list.map(n=>{const has=fixed.includes(n);const on=H.clsSkills.includes(n);return chip(n,on||has,()=>{if(on)H.clsSkills=H.clsSkills.filter(x=>x!==n);else if(H.clsSkills.length<c.skillsN)H.clsSkills=[...H.clsSkills,n];else toast(`Можно выбрать только ${c.skillsN}`);H.expertise=H.expertise.filter(x=>skillSet().includes(x));render()},has)})));
+  if(c.expertise){out.push(h('h3',{},`Компетентность: 2 навыка (${H.expertise.length}/2)`),h('div',{class:'chips'},...skillSet().map(n=>chip(n,H.expertise.includes(n),()=>{H.expertise=H.expertise.includes(n)?H.expertise.filter(x=>x!==n):[...H.expertise,n].slice(-2);render()}))))}
+  const si=spellInfo();
+  if(si){out.push(h('h3',{},'Магия'),h('p',{class:'small muted'},`Базовая характеристика: ${abName(si.ab)} · СЛ спасброска ${si.dc} · бонус атаки ${sgn(si.att)} · ячейки 1 круга: ${si.slots}${c.key==='warlock'?' (восстанавливаются на коротком отдыхе)':''}${si.prep?` · готовите в день: ${si.prep}`:''}. Значения пересчитаются после шага 5.`));
+    if(si.cantrips){out.push(h('div',{class:'small'},`Заговоры (${H.cantrips.length}/${si.cantrips})`),h('div',{class:'chips'},...CANTRIPS[c.key].map(n=>chip(n+(CANTRIP_DMG[n]?' ⚔':''),H.cantrips.includes(n),()=>{if(H.cantrips.includes(n))H.cantrips=H.cantrips.filter(x=>x!==n);else if(H.cantrips.length<si.cantrips)H.cantrips=[...H.cantrips,n];else toast(`Заговоров можно ${si.cantrips}`);render()}))))}
+    const N=si.pickSpells;const lbl=c.book?`Книга заклинаний (${H.spells.length}/${N})`:si.prep?`Подготовленные на сегодня (${H.spells.length}/${N}) — можно менять после отдыха`:`Известные заклинания (${H.spells.length}/${N})`;
+    out.push(h('div',{class:'small',style:'margin-top:8px'},lbl),h('div',{class:'chips'},...SPELLS1[c.key].map(n=>chip(n,H.spells.includes(n),()=>{if(H.spells.includes(n))H.spells=H.spells.filter(x=>x!==n);else if(H.spells.length<N)H.spells=[...H.spells,n];else toast(`Можно выбрать ${N}`);render()}))))}
+  return out}
+
+/* шаг 4 */
+function s4(){const b=BGS[H.bg];const out=[h('h2',{},'4. Предыстория')];
+  out.push(h('div',{class:'opts'},...Object.entries(BGS).map(([n,x])=>opt(n,x.skills.join(', '),H.bg===n,()=>{H.bg=n;H.clsSkills=H.clsSkills.filter(s=>!x.skills.includes(s));render()}))));
+  if(b)out.push(h('div',{class:'info'},h('b',{},H.bg),h('ul',{},h('li',{},'Навыки: '+b.skills.join(', ')),h('li',{},'Инструменты: '+b.tools),b.langs?h('li',{},'Языки: '+b.langs):null,h('li',{},'Снаряжение: '+b.items.join(', ')+`, ${b.gold} зм`),h('li',{},'Особенность: '+b.feat))));
+  return out}
+
+/* шаг 5 */
+function s5(){const s=scores(),rb=raceBonus();const out=[h('h2',{},'5. Характеристики')];
+  out.push(h('div',{class:'chips'},chip('Стандартный набор 15, 14, 13, 12, 10, 8',H.method==='std',()=>{H.method='std';render()}),chip('Покупка 27 очков',H.method==='buy',()=>{H.method='buy';render()})));
+  if(H.method==='buy'){const sp=buySpent();out.push(h('p',{class:sp>27?'warn':'okc'},`Потрачено ${sp} из 27 очков. Значения от 8 до 15: 9 стоит 1, 13 — 5, 14 — 7, 15 — 9.`))}
+  else out.push(h('p',{class:stdValid()?'okc':'warn'},stdValid()?'Все значения распределены.':'Каждое число из набора используется ровно один раз.'));
+  out.push(h('div',{class:'abil'},...AB.map(([k,sh,full])=>{const ctl=H.method==='std'?h('select',{'aria-label':full,onchange:e=>{const v=Number(e.target.value);const other=AB.find(([o])=>o!==k&&Number(H.std[o])===v);if(other)H.std[other[0]]=H.std[k];H.std[k]=v;render()}},...STD.map(v=>h('option',{value:v,selected:Number(H.std[k])===v},v)))
+      :h('select',{'aria-label':full,onchange:e=>{H.buy[k]=Number(e.target.value);render()}},...[8,9,10,11,12,13,14,15].map(v=>h('option',{value:v,selected:H.buy[k]===v},`${v} (${COST[v]})`)));
+    return h('div',{class:'ab'},h('b',{},full),ctl,h('div',{class:'small muted'},rb[k]?`раса +${rb[k]}`:' '),h('div',{class:'tot'},s[k]),h('div',{class:'md'},sgn(mod(s[k]))))})));
+  const c=CLASSES[H.cls];if(c)out.push(h('p',{class:'small muted'},`Совет для класса «${H.cls}»: важнее всего ${({barbarian:'Сила и Телосложение',bard:'Харизма и Ловкость',cleric:'Мудрость',druid:'Мудрость',fighter:'Сила или Ловкость, затем Телосложение',monk:'Ловкость и Мудрость',paladin:'Сила и Харизма',ranger:'Ловкость и Мудрость',rogue:'Ловкость',sorcerer:'Харизма и Телосложение',warlock:'Харизма',wizard:'Интеллект и Телосложение'})[c.key]}.`));
+  return out}
+
+/* шаг 6 */
+function s6(){const c=CLASSES[H.cls];const out=[h('h2',{},'6. Снаряжение')];
+  if(!c){out.push(h('p',{class:'warn'},'Сначала выберите класс (шаг 3).'));return out}
+  out.push(h('div',{class:'chips'},chip('Стартовый набор класса и предыстории',H.equipMode==='kit',()=>{H.equipMode='kit';render()}),chip(`Золото и магазин (${Math.floor(c.gold[0]*2.5)*c.gold[1]} зм + 25)`,H.equipMode==='gold',()=>{H.equipMode='gold';render()})));
+  if(H.equipMode==='kit'){out.push(h('h3',{},'Вариант набора'),h('div',{class:'opts'},...c.kit.map((k,i)=>opt('Вариант '+(i+1),k.map(([n,q])=>q>1?`${n} ×${q}`:n).join(', '),H.kit===i,()=>{H.kit=i;H.armor='';render()}))));
+    out.push(h('p',{class:'small muted'},`Плюс снаряжение предыстории${H.bg?' «'+H.bg+'»':''} и ${goldStart()} зм (предыстория + 25 зм от кампании).`))}
+  else{const left=goldLeft();out.push(h('p',{class:left<0?'warn':'okc'},`Осталось: ${left} зм из ${goldStart()} зм`));
+    if(H.cart.length)out.push(h('div',{class:'tbl'},h('table',{},h('tr',{},h('th',{},'Покупка'),h('th',{},'Кол.'),h('th',{},'Цена'),h('th',{})),...H.cart.map(([n,q],i)=>h('tr',{},h('td',{},n),h('td',{class:'n'},q),h('td',{class:'n'},Math.round(itemCost(n)*q*100)/100+' зм'),h('td',{},h('button',{class:'btn sm',type:'button','aria-label':'Убрать '+n,onclick:()=>{H.cart[i][1]--;H.cart=H.cart.filter(x=>x[1]>0);render()}},'−')))))));
+    const buy=n=>{const ex=H.cart.find(x=>x[0]===n);if(ex)ex[1]++;else H.cart.push([n,1]);render()};
+    const shop=(title,rows)=>h('details',{},h('summary',{style:'cursor:pointer;margin:10px 0 6px;font-weight:500'},title),h('div',{class:'tbl'},h('table',{},...rows.map(([n,info,cost])=>h('tr',{},h('td',{},n,h('div',{class:'small muted'},info)),h('td',{class:'n'},cost+' зм'),h('td',{},h('button',{class:'btn sm',type:'button',onclick:()=>buy(n)},'Купить')))))));
+    out.push(shop('Оружие',WEAPONS.map(w=>[w[0],`${w[2]} ${w[3]}${w[7]?' · '+w[7]:''}${weaponProf(c,w)?'':' · нет владения'}`,w[1]])));
+    out.push(shop('Доспехи и щиты',ARMOR.filter(a=>a[0]!=='Щит (деревянный)').map(a=>[a[0],`${a[3]==='shield'?'+2 КД':'КД '+a[2]+(a[3]==='light'?' + ЛОВ':a[3]==='medium'?' + ЛОВ (макс. 2)':'')}${armorProf(c,a)?'':' · нет владения'}`,a[1]])));
+    out.push(shop('Снаряжение и наборы',GEAR.map(g=>[g[0],g[2]?g[2]+' фнт':'',g[1]])))}
+  const inv=inventory();const arm=inv.map(i=>AMAP[i[0]]).filter(a=>a&&a[3]!=='shield');const hasShield=inv.some(i=>AMAP[i[0]]&&AMAP[i[0]][3]==='shield');
+  if(arm.length||hasShield){out.push(h('h3',{},'Что надето'));
+    if(arm.length)out.push(field('Доспех',h('select',{onchange:e=>{H.armor=e.target.value;H._autoArmor=e.target.value!=='-';if(e.target.value==='-')H.armor='-';render()}},h('option',{value:'',selected:H.armor===''},'Лучший из имеющихся'),h('option',{value:'-',selected:H.armor==='-'},'Без доспеха'),...arm.map(a=>h('option',{value:a[0],selected:H.armor===a[0]},a[0]+(armorProf(c,a)?'':' (нет владения: помеха)'))))));
+    if(hasShield)out.push(h('label',{class:'row small',style:'margin-top:6px'},h('input',{type:'checkbox',checked:H._autoShield!==false,onchange:e=>{H._autoShield=e.target.checked;H.shield=e.target.checked;render()}}),'Держит щит'))}
+  out.push(h('p',{class:'small muted'},`КД сейчас: ${calcAC()}`));
+  return out}
+
+/* шаг 7 */
+function s7(){const p=problems(),hero=build(),s=scores();const out=[h('h2',{},'7. Итог: лист героя')];
+  if(p.length)out.push(h('div',{class:'info',style:'border-left-color:var(--danger)'},h('b',{class:'warn'},'Ещё не готово:'),h('ul',{},...p.map(x=>h('li',{},x)))));
+  else out.push(h('p',{class:'okc'},'Герой готов. Сохраните его и передайте Мастеру.'));
+  out.push(h('div',{class:'row'},h('span',{class:'dot',style:`background:${hero.color}`}),h('b',{style:'font-size:20px'},hero.name||'Без имени'),h('span',{class:'muted'},`${hero.race||'—'} · ${hero.cls||'—'}${hero.sub?' ('+hero.sub+')':''} 2 ур. · ${hero.bg||'—'}`)));
+  out.push(h('div',{class:'sheet',style:'margin-top:10px'},...[['Хиты',hero.hpMax],['КД',hero.ac],['Скорость',hero.speed+' фт'],['Мастерство','+2'],['Инициатива',sgn(mod(s.dex))],['Пасс. внимат.',10+skillBonus('Внимательность')],['Тёмн. зрение',hero.dv?hero.dv+' фт':'—']].map(([a,b])=>h('div',{class:'big'},h('b',{},a),h('span',{},b)))));
+  out.push(h('div',{class:'sheet',style:'margin-top:8px'},...AB.map(([k,sh])=>h('div',{class:'big'},h('b',{},sh+(hero.saves.includes(k)?' ●':'')),h('span',{},s[k]),h('div',{class:'small muted'},`мод ${sgn(mod(s[k]))} · спас ${sgn(mod(s[k])+(hero.saves.includes(k)?2:0))}`)))));
+  out.push(h('h3',{},'Атаки'));
+  out.push(hero.attacks.length?h('div',{class:'tbl'},h('table',{},h('tr',{},h('th',{},'Атака'),h('th',{},'Бонус'),h('th',{},'Урон')),...hero.attacks.map(a=>h('tr',{},h('td',{},a[0]),h('td',{class:'n'},a[1]?sgn(a[1]):'—'),h('td',{class:'n'},a[2]))))):h('p',{class:'muted'},'Нет оружия.'));
+  out.push(h('h3',{},'Навыки'),h('div',{class:'tbl'},h('table',{},...SKILLS.map(([n,ab])=>h('tr',{},h('td',{},n+(hero.skills.includes(n)?(H.expertise.includes(n)?' ●●':' ●'):'')),h('td',{class:'small muted'},AB.find(a=>a[0]===ab)[1]),h('td',{class:'n'},sgn(skillBonus(n))))))));
+  const w=hero.inv.reduce((t,i)=>t+i[1]*i[2],0);
+  out.push(h('h3',{},'Снаряжение'),h('p',{class:'small'},hero.inv.map(i=>i[1]>1?`${i[0]} ×${i[1]}`:i[0]).join(', ')||'—'),h('p',{class:'small muted'},`Деньги: ${hero.gp} зм${hero.sp?' '+hero.sp+' см':''} · вес ${Math.round(w*10)/10} из ${s.str*15} фнт`));
+  out.push(h('h3',{},'Заметки'),h('pre',{class:'notes'},hero.notes));
+  out.push(h('div',{class:'row',style:'margin-top:14px'},h('button',{class:'btn pri',type:'button',onclick:()=>saveHero(false)},'Сохранить героя'),h('button',{class:'btn',type:'button',onclick:()=>{if(saveHero(true))copyCode(build())}},'Скопировать код героя'),h('button',{class:'btn',type:'button',onclick:()=>{if(saveHero(true))download(build())}},'Скачать JSON')));
+  return out}
+
+/* ================= мои герои, код, импорт ================= */
+const heroes=()=>LS.get('smgla-heroes',[]);
+function saveHero(quiet){const p=problems();if(p.length&&!quiet){toast('Сначала исправьте: '+p[0]);return false}if(p.length&&quiet){toast('Герой ещё не готов: '+p[0]);return false}
+  const hero=build();const list=heroes().filter(x=>x.id!==hero.id);list.push(hero);if(!LS.set('smgla-heroes',list)){toast('Браузер не дал сохранить — скачайте JSON или скопируйте код.');return true}
+  const drafts=LS.get('smgla-drafts',{});drafts[hero.id]=H;LS.set('smgla-drafts',drafts);if(!quiet)toast('Герой «'+hero.name+'» сохранён');renderMine();return true}
+const encode=hero=>btoa(unescape(encodeURIComponent(JSON.stringify(hero))));
+const decode=code=>JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+function copyCode(hero){const code=encode(hero);const done=()=>toast('Код героя скопирован. Отправьте его Мастеру или вставьте при входе в игру.');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,()=>showCode(code));else showCode(code)}
+function showCode(code){const ta=h('textarea',{class:'code',rows:4,readonly:true},code);const box=$('mine');box.append(h('div',{style:'margin-top:10px'},h('p',{class:'small'},'Скопируйте код вручную:'),ta));ta.focus();ta.select()}
+function download(hero){const blob=new Blob([JSON.stringify(hero,null,2)],{type:'application/json'});const a=h('a',{href:URL.createObjectURL(blob),download:(hero.name||'hero').replace(/[^\p{L}\p{N}_-]+/gu,'_')+'.json'});document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+function renderMine(){const list=heroes();const box=$('mine');const kids=[h('div',{class:'row',style:'justify-content:space-between'},h('h2',{style:'margin:0'},'Мои герои'),h('div',{class:'row'},h('button',{class:'btn sm',type:'button',onclick:()=>{H=blank();step=1;render();toast('Начат новый герой')}},'+ Новый'),h('button',{class:'btn sm',type:'button',onclick:importBox},'Вставить код')))];
+  if(!list.length)kids.push(h('p',{class:'small muted',style:'margin:8px 0 0'},'Пока нет сохранённых героев. Пройдите шаги ниже и нажмите «Сохранить героя» на последнем шаге.'));
+  for(const x of list)kids.push(h('div',{class:'hero'},h('span',{class:'dot',style:`background:${x.color||'#777'}`}),h('div',{class:'nm'},h('b',{},x.name),h('div',{class:'small muted'},`${x.race} · ${x.cls} 2 ур. · ХП ${x.hpMax} · КД ${x.ac}`)),
+    h('button',{class:'btn sm',type:'button',onclick:()=>{const d=LS.get('smgla-drafts',{})[x.id];if(!d){toast('Этот герой импортирован кодом — его можно только скопировать или удалить.');return}H=Object.assign(blank(),d);step=7;render();scrollTop()}},'Изменить'),
+    h('button',{class:'btn sm',type:'button',onclick:()=>copyCode(x)},'Код'),
+    h('button',{class:'btn sm',type:'button',onclick:()=>download(x)},'JSON'),
+    h('button',{class:'btn sm bad',type:'button',onclick:e=>{const b=e.currentTarget;if(b.dataset.arm){LS.set('smgla-heroes',heroes().filter(y=>y.id!==x.id));const d=LS.get('smgla-drafts',{});delete d[x.id];LS.set('smgla-drafts',d);renderMine();toast('Герой удалён')}else{b.dataset.arm='1';b.textContent='Точно удалить?';setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent='Удалить'}},4000)}}},'Удалить')));
+  box.replaceChildren(...kids)}
+function importBox(){const ta=h('textarea',{class:'code',rows:4,placeholder:'Вставьте код героя','aria-label':'Код героя'});
+  const box=h('div',{style:'margin-top:10px'},ta,h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn pri sm',type:'button',onclick:()=>{try{const x=decode(ta.value);if(x.v!==1||!x.name||!x.id)throw 0;const list=heroes().filter(y=>y.id!==x.id);list.push(x);LS.set('smgla-heroes',list);renderMine();toast('Герой «'+x.name+'» добавлен')}catch(e){toast('Не получилось прочитать код. Скопируйте его целиком.')}}},'Добавить'),h('button',{class:'btn sm',type:'button',onclick:()=>box.remove()},'Отмена')));
+  $('mine').append(box);ta.focus()}
+
+render();
+})();
+</script>
+</body>
+</html>
