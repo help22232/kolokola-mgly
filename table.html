@@ -577,7 +577,9 @@ let tab='combat';
 function tabsFor(){const t=[['combat','Бой'],['hero','Герой'],['inv','Вещи'],['dice','Кубики']];if(isOwner)t.push(['gm','Мастер'],['lore','Лор'],['ai','Правила · ИИ']);return t}
 
 /* ---- прокачка: Мастер выдаёт уровень, игрок проходит мастер повышения ---- */
-async function grantLevel(ids){for(const id of ids)await store.update('tokens/'+id,{lvlUp:true});
+async function grantLevel(ids,party){for(const id of ids)await store.update('tokens/'+id,{lvlUp:true});
+  // компаньон Тамси растёт вместе с отрядом: ХП = 7 × уровень героев
+  if(party)for(const t of tokList().filter(t=>t.kind==='npc'&&/тамси/i.test(t.name||''))){const lv=Math.max(...ids.map(id=>((S.chars[id]||{}).lvl||2)))+1,mx=7*lv;await store.update('tokens/'+t.id,{hpMax:mx,hp:Math.min(mx,(t.hp||0)+(mx-(t.hpMax||0)))});await post({kind:'sys',text:`${t.name} растёт вместе с отрядом: ${mx} хитов`})}
   await post({kind:'sys',text:'⚓ Новый уровень: '+ids.map(id=>S.tokens[id]&&S.tokens[id].name).filter(Boolean).join(', ')+'. Откройте лист героя и нажмите «Повысить уровень».'})}
 function closeLU(){$('luov').hidden=true;$('luBox').replaceChildren()}
 function openLevelUp(t){const c=S.chars[t.id]||{};const box=$('luBox');$('luov').hidden=false;
@@ -808,7 +810,7 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
     h('option',{value:'',selected:!preview},'Выкл — я вижу всё'),h('option',{value:'all',selected:preview&&!previewTok},'Все герои вместе'),...heroes.map(t=>h('option',{value:t.id,selected:preview&&previewTok===t.id},t.name+(t.owner&&names[t.owner]?' · '+names[t.owner]:'')))),
     h('p',{class:'small muted'},'Показывает карту без секретов, свет, туман и только тех существ, кого видит выбранный герой. Кнопка 👁 на карте включает и выключает этот режим.'));
   const pcs=tokList().filter(t=>t.kind==='pc');
-  out.push(h('h3',{},'Игра'),h('div',{class:'row',style:'margin-bottom:6px'},h('button',{class:'btn sm pri',type:'button',disabled:!pcs.length,onclick:()=>grantLevel(pcs.map(t=>t.id))},'⚓ Новый уровень всему отряду'),h('span',{class:'small muted'},pcs.filter(t=>t.lvlUp).length?`ждут повышения: ${pcs.filter(t=>t.lvlUp).map(t=>t.name).join(', ')}`:'')),
+  out.push(h('h3',{},'Игра'),h('div',{class:'row',style:'margin-bottom:6px'},h('button',{class:'btn sm pri',type:'button',disabled:!pcs.length,onclick:()=>grantLevel(pcs.map(t=>t.id),true)},'⚓ Новый уровень всему отряду'),h('span',{class:'small muted'},pcs.filter(t=>t.lvlUp).length?`ждут повышения: ${pcs.filter(t=>t.lvlUp).map(t=>t.name).join(', ')}`:'')),
     s.started?h('div',{class:'row'},h('span',{class:'small muted'},'Игра идёт.'),h('button',{class:'btn sm',type:'button',onclick:toLobby},'Вернуть всех в лобби (новая сессия)'))
     :h('div',{class:'row'},h('span',{class:'small muted'},'Игра не начата — игроки в лобби.'),h('button',{class:'btn sm pri',type:'button',onclick:startGame},'▶ Начать игру')));
   out.push(h('h3',{},'Катсцены'),h('p',{class:'small muted'},'Откроются на весь экран у всех за столом, со звуком и голосом.'),
