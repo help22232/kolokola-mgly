@@ -118,6 +118,15 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 .lobby{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;background:rgba(5,8,9,.88);padding:16px}
 .lobby.gm{inset:10px 10px auto auto;width:min(340px,calc(100% - 70px));background:none;padding:0;display:block}
 .lcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;max-width:440px;width:100%;max-height:100%;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.lobby.pl{position:fixed;inset:0;z-index:30;display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:var(--bg);
+  padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 96px) max(16px,env(safe-area-inset-left,0px))}
+.lobby.pl .lcard{margin:0 auto 14px;max-height:none;overflow:visible;box-shadow:none}
+.lobby.pl .readybar{position:fixed;left:0;right:0;bottom:0;z-index:31;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px,env(safe-area-inset-left,0px));background:var(--panel);border-top:1px solid var(--line)}
+.lobby.pl .readybar .btn{width:100%;max-width:440px;display:block;margin:0 auto;padding:14px;font-size:17px}
+.lobby.mini{position:fixed;inset:auto 0 0 0;z-index:30;display:block;background:none;padding:0}
+.net{font-size:13px;padding:6px 10px;border-radius:8px;margin:8px 0}
+.net.ok{background:rgba(143,207,138,.12);color:var(--ok)}
+.net.bad{background:rgba(229,138,128,.14);color:var(--danger)}
 .lrow{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
 @media (max-width:820px){
   .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,56fr) minmax(0,44fr)}
@@ -169,7 +178,10 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 </div>
 <div class="csov" id="csov" hidden><iframe id="csFrame" title="Катсцена" allow="autoplay; fullscreen"></iframe><button class="btn" id="csClose" type="button">✕ Закрыть</button></div>
 <div class="csov" id="handov" hidden></div>
+<div class="csov" id="luov" hidden style="background:var(--bg);overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 14px) max(14px,env(safe-area-inset-right,0px)) 40px max(14px,env(safe-area-inset-left,0px))"><div id="luBox" style="max-width:640px;margin:0 auto"></div></div>
 
+<script src="herocode.js"></script>
+<script src="levelup.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (async function(){
@@ -250,7 +262,13 @@ const SAVE_KEY='smgla-room-'+ROOM;
 let peer=null,hostConn=null,myPeer=isOwner?'host':null;const conns=new Map();
 let saveT=0;function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{if(!LSx.set(SAVE_KEY,Object.fromEntries(docs)))netStatus('Браузер не даёт сохранить игру (память переполнена). Удалите свои карты-картинки или очистите журнал.')},500)}
 function bcast(msg){for(const c of conns.values())if(c.conn.open)try{c.conn.send(msg)}catch(e){}}
-let netMsg='';function netStatus(t){netMsg=t;try{showBanner(t)}catch(e){}}
+let netMsg='';function netStatus(t){netMsg=t;try{showBanner(t)}catch(e){}try{renderLobby()}catch(e){}}
+window.__net={ok:()=>isOwner||!!(hostConn&&hostConn.open),msg:()=>netMsg};
+// STUN + публичный TURN (Open Relay): без ретранслятора мобильные сети часто не соединяются напрямую
+const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'},
+  {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}]}};
 function write(op,p,d){
   if(isOwner){if(!applyOp(op,p,d))return;persist();if(!isPrivate(p))bcast({t:'doc',p,d:docs.has(p)?docs.get(p):null});return}
   if(!hostConn||!hostConn.open){netStatus('Нет связи с Мастером — изменение не отправлено. Подождите переподключения.');return}
@@ -286,7 +304,7 @@ const user={id:async()=>myId,isOwner:async()=>isOwner,can:async()=>true,
 if(typeof Peer!=='function'){netStatus('Не загрузилась сетевая библиотека. Проверьте интернет и обновите страницу.')}
 else if(isOwner){
   const saved=LSx.get(SAVE_KEY,null);if(saved&&typeof saved==='object')for(const k in saved)docs.set(k,saved[k]);
-  const open=()=>{peer=new Peer('smgla-'+ROOM);
+  const open=()=>{peer=new Peer('smgla-'+ROOM,PEER_OPTS);
     peer.on('open',()=>{netStatus('');bcastPeers()});
     peer.on('error',e=>{if(e.type==='unavailable-id')netStatus(`Комната ${ROOM} уже открыта — в другой вкладке или у другого Мастера. Закройте лишнюю вкладку и обновите страницу.`);else if(e.type!=='peer-unavailable')netStatus('Сеть: '+e.type+'. Если игроки не подключаются — обновите страницу.')});
     peer.on('disconnected',()=>{setTimeout(()=>{try{if(!peer.destroyed)peer.reconnect()}catch(e){}},2000)});
@@ -301,14 +319,15 @@ else if(isOwner){
 }else{
   let dialT=0;
   const dial=()=>{clearTimeout(dialT);if(hostConn&&hostConn.open)return;const c=peer.connect('smgla-'+ROOM,{reliable:true});hostConn=c;
-    c.on('open',()=>{netStatus('');c.send({t:'hello',id:myId,name:myName})});
+    setTimeout(()=>{if(hostConn===c&&!c.open){netStatus('Не получается соединиться с Мастером, пробую снова… Если это длится больше минуты — переключитесь на Wi‑Fi или обновите страницу.');hostConn=null;try{c.close()}catch(e){}dialT=setTimeout(dial,1000)}},15000);
+    c.on('open',()=>{c.send({t:'hello',id:myId,name:myName});netStatus('')});
     c.on('data',m=>{if(!m||typeof m!=='object')return;
       if(m.t==='snap'&&m.docs){docs.clear();for(const k in m.docs)docs.set(k,m.docs[k]);fireAll()}
       else if(m.t==='doc'&&typeof m.p==='string'){if(m.d==null)docs.delete(m.p);else docs.set(m.p,m.d);fire(m.p)}
       else if(m.t==='ev')deliverEv(m.topic,m.data,m.from);
       else if(m.t==='peers')setPeers(m.list)});
-    c.on('close',()=>{hostConn=null;netStatus('Связь с Мастером потеряна. Переподключаюсь…');dialT=setTimeout(dial,3000)})};
-  peer=new Peer();myPeer=null;
+    c.on('close',()=>{if(hostConn!==c)return;hostConn=null;netStatus('Связь с Мастером потеряна. Переподключаюсь…');dialT=setTimeout(dial,3000)})};
+  peer=new Peer(PEER_OPTS);myPeer=null;
   peer.on('open',id=>{myPeer=id;netStatus('Подключаюсь к столу '+ROOM+'…');dial()});
   peer.on('error',e=>{if(e.type==='peer-unavailable'){netStatus(`Мастер ещё не открыл стол ${ROOM}. Жду…`);dialT=setTimeout(dial,4000)}else netStatus('Сеть: '+e.type+'. Обновите страницу, если не подключится.')});
   peer.on('disconnected',()=>{setTimeout(()=>{try{if(!peer.destroyed)peer.reconnect()}catch(e){}},2000)});
@@ -555,14 +574,40 @@ const sgn=n=>(n>=0?'+':'')+n;
 
 /* ================= панели ================= */
 let tab='combat';
-function tabsFor(){const t=[['combat','Бой'],['hero','Герой'],['inv','Вещи'],['dice','Кубики']];if(isOwner)t.push(['gm','Мастер'],['ai','Правила · ИИ']);return t}
+function tabsFor(){const t=[['combat','Бой'],['hero','Герой'],['inv','Вещи'],['dice','Кубики']];if(isOwner)t.push(['gm','Мастер'],['lore','Лор'],['ai','Правила · ИИ']);return t}
+
+/* ---- прокачка: Мастер выдаёт уровень, игрок проходит мастер повышения ---- */
+async function grantLevel(ids){for(const id of ids)await store.update('tokens/'+id,{lvlUp:true});
+  await post({kind:'sys',text:'⚓ Новый уровень: '+ids.map(id=>S.tokens[id]&&S.tokens[id].name).filter(Boolean).join(', ')+'. Откройте лист героя и нажмите «Повысить уровень».'})}
+function closeLU(){$('luov').hidden=true;$('luBox').replaceChildren()}
+function openLevelUp(t){const c=S.chars[t.id]||{};const box=$('luBox');$('luov').hidden=false;
+  const done=async res=>{await store.set('chars/'+t.id,res.chars);await store.update('tokens/'+t.id,{hpMax:res.hpMax,hp:Math.min(res.hpMax,(t.hp||0)+(res.hpGain||0)),lvlUp:false});await post({kind:'sys',text:'⚓ '+(res.summary||t.name+' получает новый уровень')});closeLU()};
+  if(window.LevelUp&&LevelUp.classKey(c)){try{LevelUp.open(box,{chars:clone(c),token:clone(t)},done,closeLU);return}catch(e){console.error(e)}}
+  // класс не распознан — простое повышение: уровень, хиты, бонус мастерства
+  const lvl=(c.lvl||1)+1,hd=h('input',{type:'number',value:Math.max(1,6+mod(c.con)),'aria-label':'Прибавка хитов'});
+  box.replaceChildren(h('div',{class:'card'},h('h3',{},`${t.name}: уровень ${lvl}`),h('p',{class:'small muted'},'Класс героя не распознан, поэтому повышение упрощённое. По правилам: прибавка хитов = бросок кости хитов класса (или среднее значение) + модификатор Телосложения, но не меньше 1. Новые умения посмотрите в Книге игрока.'),
+    h('label',{class:'f'},'Прибавка хитов',hd),h('div',{class:'row',style:'margin-top:10px'},h('button',{class:'btn pri',type:'button',onclick:()=>{const g=Math.max(1,Number(hd.value)||1);done({chars:{...c,lvl,prof:Math.ceil(lvl/4)+1},hpMax:(t.hpMax||0)+g,hpGain:g,summary:`${t.name} достигает ${lvl} уровня: +${g} хитов`})}},'Готово'),h('button',{class:'btn',type:'button',onclick:closeLU},'Отмена'))))}
+
+/* ---- лор кампании (только Мастер; файл грузится по требованию) ---- */
+let loreState='idle',loreQ='';
+function loadLore(){if(loreState!=='idle')return;loreState='loading';const s=document.createElement('script');s.src='lore.js';s.onload=()=>{loreState='ok';renderPane(true)};s.onerror=()=>{loreState='err';renderPane(true)};document.head.append(s)}
+let loreNodes=null; // одни и те же узлы при перерисовке: раскрытые разделы не схлопываются
+function paneLore(){if(loreNodes)return loreNodes;const out=[h('h3',{},'Лор кампании')];if(!window.LORE){loadLore();out.push(h('p',{class:'muted'},loreState==='err'?'Не удалось загрузить лор. Обновите страницу.':'Загружаю…'));return out}
+  const q=h('input',{type:'text',placeholder:'Поиск: Вейра, колокол, Мейв…',value:loreQ,'aria-label':'Поиск по лору',style:'width:100%'});
+  q.oninput=()=>{loreQ=q.value;const v=loreQ.trim().toLowerCase();for(const d of out.filter(x=>x.dataset&&x.dataset.t!=null)){d.hidden=!!v&&!d.dataset.t.includes(v);if(v&&!d.hidden)d.open=true}};
+  out.push(q);
+  for(const s of window.LORE){const txt=(s.title+' '+JSON.stringify(s.body)).toLowerCase();
+    const body=(s.body||[]).map(b=>b.p?h('p',{},b.p):b.h?h('h4',{style:'margin:12px 0 4px;color:var(--brass)'},b.h):b.q?h('div',{class:'card',style:'font-style:italic'},'«'+b.q+'»'):b.list?h('ul',{style:'padding-left:20px;margin:6px 0'},...b.list.map(x=>h('li',{},x))):null);
+    const d=h('details',{'data-t':txt},h('summary',{style:'font-family:var(--f-display);font-size:18px;color:var(--ink);margin:10px 0'},s.title+((s.tags||[]).length?'  ·  '+s.tags.join(', '):'')),...body);
+    if(loreQ.trim()&&!txt.includes(loreQ.trim().toLowerCase()))d.hidden=true;out.push(d)}
+  return loreNodes=out}
 function renderTabs(){const nav=$('tabs');nav.replaceChildren(...tabsFor().map(([id,n])=>{const b=h('button',{type:'button',role:'tab','aria-selected':String(tab===id)},n);b.onclick=()=>{tab=id;renderTabs();renderPane(true)};return b}))}
 function h(tag,attrs,...kids){const e=document.createElement(tag);for(const k in attrs||{}){const v=attrs[k];if(v==null||v===false)continue;if(k==='class')e.className=v;else if(k.startsWith('on'))e[k]=v;else if(k==='value')e.value=v;else e.setAttribute(k,v===true?'':v)}for(const c of kids.flat())if(c!=null&&c!==false)e.append(c instanceof Node?c:String(c));return e}
 const pane=$('pane');let paneDirty=false;
 pane.addEventListener('focusout',()=>setTimeout(()=>{if(paneDirty&&!pane.contains(document.activeElement))renderPane()},0));
 function changed(what){if(what!=='panel'){requestDraw()}renderHeader();renderPane()}
 function renderPane(force){const a=document.activeElement;if(!force&&a&&pane.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){paneDirty=true;return}paneDirty=false;
-  const sc=pane.scrollTop;const f={combat:paneCombat,hero:paneHero,inv:paneInv,dice:paneDice,gm:paneGM,ai:paneAI}[tab]||paneCombat;pane.replaceChildren(...[f()].flat());if(!force)pane.scrollTop=sc;
+  const sc=pane.scrollTop;const f={combat:paneCombat,hero:paneHero,inv:paneInv,dice:paneDice,gm:paneGM,lore:paneLore,ai:paneAI}[tab]||paneCombat;pane.replaceChildren(...[f()].flat());if(!force)pane.scrollTop=sc;
   resolveNames([...tokList().map(t=>t.owner),...S.log.map(l=>l.by)])}
 /* ---- катсцены за столом: Мастер запускает, видят все ---- */
 const CUTS=[['intro','Пролог'],['c1','1. Голос из моря'],['c2','2. Отплытие «Цапли»'],['c3','3. Отлив'],['c4','4. Купол на дне'],['c5','5. Спуск в Ис-Мерин'],['c6','6. Певчая на троне'],['c7','7. Рассвет'],['c8','8. Город поднимается']];
@@ -584,10 +629,19 @@ function renderLobby(){const el=$('lobby');const s=st();if(!el)return;if(s.start
     el.replaceChildren(h('div',{class:'lcard'},h('h3',{},'Лобби · игра не начата'),h('p',{class:'small muted'},ids.length?`Готовы ${n} из ${ids.length}. Игроки видят экран ожидания, вы можете готовить карту.`:'Игроки ещё не подключились — пошлите им приглашение.'),...rows,
       h('label',{class:'row small',style:'margin-top:8px'},pro,'Начать с пролога (видят все)'),
       h('button',{class:'btn pri',type:'button',style:'margin-top:8px;width:100%',disabled:readOnly,onclick:()=>{if(!all&&!lobbyForce){lobbyForce=true;toast('Не все готовы. Нажмите «Начать игру» ещё раз, чтобы начать без них.');return}startGame()}},'▶ Начать игру')))}
-  else{const me=isReady(myId),hero=myToken();
-    el.replaceChildren(h('div',{class:'lcard'},h('h3',{},'Скоро начнём'),h('p',{class:'muted'},'Подготовьте героя. Когда будете готовы — нажмите «Готово». Игру начнёт Мастер.'),
-      h('p',{class:'small'},hero?`Ваш герой: ${hero.name}`:'Сначала выберите или создайте героя во вкладке «Герой» (на телефоне — внизу экрана).'),...rows,
-      h('button',{class:'btn pri',type:'button',style:'margin-top:12px;width:100%;padding:12px',disabled:readOnly||!myId,onclick:()=>store.set('ready/'+myId,{ready:!me,hero:hero?hero.name:'',ts:Date.now()})},me?'Я ещё не готов':'✓ Готово')))}}
+  else{const a=document.activeElement;if(a&&el.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){lobbyDirty=true;return}lobbyDirty=false;
+    const me=isReady(myId),hero=myToken(),ok=netOk();
+    const net=window.__net?h('div',{class:'net '+(ok?'ok':'bad')},ok?'✓ Связь с Мастером есть':(window.__net.msg()||'Подключаюсь к Мастеру…')):null;
+    const readyBtn=h('button',{class:'btn pri',type:'button',disabled:readOnly||!myId||!ok,onclick:()=>{if(!hero&&!me){toast('Сначала выберите или создайте героя');return}store.set('ready/'+myId,{ready:!me,hero:hero?hero.name:'',ts:Date.now()})}},me?'Я ещё не готов':'✓ Готово');
+    if(lobbyMini){el.className='lobby mini';el.replaceChildren(h('div',{class:'readybar'},h('div',{class:'row',style:'max-width:440px;margin:0 auto 8px;justify-content:space-between'},h('span',{class:'small muted'},'Игра ещё не началась'),h('button',{class:'btn sm',type:'button',onclick:()=>{lobbyMini=false;renderLobby()}},'↩ В лобби')),readyBtn));return}
+    el.className='lobby pl';
+    const heroCard=hero?h('div',{class:'lcard'},h('h3',{},'Ваш герой'),h('div',{class:'row'},h('span',{class:'ava',style:`width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #d9b36c;background:radial-gradient(circle at 50% 35%,${hero.color||'#555'},#111)`},icOf(hero)?h('img',{src:'tokens/'+icOf(hero)+'.svg',alt:'',style:'width:40px;height:40px'}):h('b',{},hero.name[0])),
+        h('div',{},h('b',{},hero.name),h('div',{class:'small muted'},(S.chars[hero.id]||{}).cls||''),h('div',{class:'small muted'},`ХП ${hero.hp}/${hero.hpMax} · КД ${hero.ac}`))),
+        h('div',{class:'row',style:'margin-top:10px'},h('button',{class:'btn',type:'button',onclick:()=>{lobbyMini=true;tab='hero';renderTabs();renderPane(true);renderLobby()}},'Открыть лист героя'),!me?h('button',{class:'btn sm',type:'button',onclick:()=>store.update('tokens/'+hero.id,{owner:null})},'Выбрать другого'):null))
+      :h('div',{class:'lcard'},...paneClaim());
+    el.replaceChildren(h('div',{class:'lcard'},h('h3',{},'Скоро начнём'),h('p',{class:'muted',style:'margin:0'},'Подготовьте героя и нажмите «Готово». Игру начнёт Мастер.'),net,...rows),heroCard,h('div',{class:'readybar'},readyBtn))}}
+let lobbyMini=false,lobbyDirty=false;const netOk=()=>!window.__net||window.__net.ok();
+$('lobby').addEventListener('focusout',()=>setTimeout(()=>{if(lobbyDirty&&!$('lobby').contains(document.activeElement))renderLobby()},0));
 async function startGame(){lobbyForce=false;await store.set('game/state',{...st(),started:true});await post({kind:'sys',text:'▶ Игра началась!'});if(lobbyIntro)showCutAll('intro')}
 async function toLobby(){await store.set('game/state',{...st(),started:false});for(const id of Object.keys(S.ready))await store.del('ready/'+id)}
 
@@ -649,6 +703,9 @@ function paneHero(){const t=heroFor();
   const c=S.chars[t.id]||{};const up=(p)=>!readOnly&&store.set('chars/'+t.id,{...c,...p});const upT=p=>!readOnly&&store.update('tokens/'+t.id,p);
   const out=[];
   out.push(h('div',{class:'row'},h('input',{type:'text',value:t.name,'aria-label':'Имя',style:'font-weight:700;flex:1',onchange:e=>upT({name:e.target.value.slice(0,40)})}),h('input',{type:'color',value:t.color||'#777','aria-label':'Цвет фишки',onchange:e=>upT({color:e.target.value})})));
+  if(t.lvlUp)out.push(h('div',{class:'card',style:'border-color:rgba(217,179,108,.6)'},h('b',{},`⚓ Новый уровень: ${(c.lvl||1)+1}!`),h('p',{class:'small muted',style:'margin:4px 0 8px'},'Мастер разрешил повышение. Пройдите шаги: хиты, новые умения, характеристики и заклинания — всё по Книге игрока 2014.'),
+    h('button',{class:'btn pri',type:'button',disabled:readOnly||!(isOwner||t.owner===myId),onclick:()=>openLevelUp(t)},'Повысить уровень')));
+  else if(window.LevelUp&&c.lvl)out.push(h('p',{class:'small muted'},`Уровень ${c.lvl}. Следующий — когда Мастер отметит веху${LevelUp.xpFor?` (по опыту: ${LevelUp.xpFor((c.lvl||1)+1)} оп.)`:''}.`));
   out.push(h('details',{open:!t.img},h('summary',{},'Внешность фишки'),picker(icOf(t),t.color,k=>upT({img:k}))));
   out.push(h('div',{class:'grid3',style:'margin-top:8px'},
     h('label',{class:'f'},'Класс',h('input',{type:'text',value:c.cls||'',onchange:e=>up({cls:e.target.value})})),
@@ -681,26 +738,30 @@ async function attack(t,a,tid){const tg=tid&&S.tokens[tid];const r=roll('1d20'+s
 
 const REG_URL=NET?'register.html':'https://help22232.github.io/kolokola-mgly/register.html';
 async function importHero(r){const n=v=>Number(v)||0;const id=store.newId('tokens');const m=mapInfo();const [cx,cy]=freeSpot();
-  await store.set('tokens/'+id,{name:String(r.name).slice(0,40),kind:'pc',color:/^#[0-9a-f]{6}$/i.test(r.color||'')?r.color:COLORS[0],x:cx,y:cy,size:1,map:st().map,hp:n(r.hpMax)||10,hpMax:n(r.hpMax)||10,hpTemp:0,ac:n(r.ac)||10,dv:n(r.dv),light:0,owner:myId,hidden:false,cond:[],inCombat:false,init:null});
+  await store.set('tokens/'+id,{name:String(r.name).slice(0,40),kind:'pc',img:HERO_IC.some(x=>x[0]===r.img)?r.img:null,color:/^#[0-9a-f]{6}$/i.test(r.color||'')?r.color:COLORS[0],x:cx,y:cy,size:1,map:st().map,hp:n(r.hpMax)||10,hpMax:n(r.hpMax)||10,hpTemp:0,ac:n(r.ac)||10,dv:n(r.dv),light:0,owner:myId,hidden:false,cond:[],inCombat:false,init:null});
   const arr=a=>Array.isArray(a)?a.slice(0,60):[];
-  await store.set('chars/'+id,{cls:[r.race,r.cls,r.sub].filter(Boolean).join(' · ').slice(0,80),lvl:n(r.lvl)||2,str:n(r.str)||10,dex:n(r.dex)||10,con:n(r.con)||10,int:n(r.int)||10,wis:n(r.wis)||10,cha:n(r.cha)||10,prof:n(r.prof)||2,speed:n(r.speed)||30,
+  const key=v=>typeof v==='string'?v.replace(/[^a-z0-9\-]/gi,'').slice(0,30):null;
+  await store.set('chars/'+id,{clsKey:key(r.clsKey),subKey:key(r.subKey),raceKey:key(r.raceKey),hitDie:n(r.hitDie)||null,spells:r.spells&&typeof r.spells==='object'?clone(r.spells):null,
+    cls:[r.race,r.cls,r.sub].filter(Boolean).join(' · ').slice(0,80),lvl:n(r.lvl)||2,str:n(r.str)||10,dex:n(r.dex)||10,con:n(r.con)||10,int:n(r.int)||10,wis:n(r.wis)||10,cha:n(r.cha)||10,prof:n(r.prof)||2,speed:n(r.speed)||30,
     saves:arr(r.saves).map(String),attacks:arr(r.attacks).map(a=>[String(a[0]).slice(0,40),n(a[1]),String(a[2]||'1d4')]),inv:arr(r.inv).map(i=>[String(i[0]).slice(0,60),n(i[1])||1,n(i[2])]),gp:n(r.gp),sp:n(r.sp),cp:n(r.cp),
     notes:[r.bg?'Предыстория: '+r.bg:'',r.skills&&r.skills.length?'Навыки: '+arr(r.skills).join(', '):'',String(r.notes||'')].filter(Boolean).join('\n').slice(0,4000)});
   sel=id;await post({kind:'sys',text:`${r.name} присоединяется к отряду`});renderPane(true);if(m)centerOn(cx,cy)}
-let newPick='h-barbarian';
+let newPick='h-barbarian';const claimDraft={n:'',cl:'',hp:'18',ac:'14',dv:'0'};
 function paneClaim(){const free=tokList().filter(t=>t.kind==='pc'&&!t.owner);const out=[h('h3',{},'Ваш герой'),h('p',{class:'muted'},'Выберите своего героя или создайте нового.')];
   for(const t of free)out.push(h('div',{class:'row',style:'margin:5px 0'},h('button',{class:'btn pri',type:'button',onclick:()=>store.update('tokens/'+t.id,{owner:myId})},'Это мой герой: '+t.name)));
-  const n=h('input',{type:'text',placeholder:'Имя героя','aria-label':'Имя героя'}),cl=h('input',{type:'text',placeholder:'Воин 2','aria-label':'Класс'}),hp=h('input',{type:'number',value:18,'aria-label':'Хиты'}),ac=h('input',{type:'number',value:14,'aria-label':'КД'}),dv=h('input',{type:'number',value:0,step:30,'aria-label':'Тёмное зрение'});
+  // черновик формы живёт вне перерисовок, чтобы введённое не терялось
+  const bind=(k,el)=>{el.value=claimDraft[k];el.oninput=()=>{claimDraft[k]=el.value};return el};
+  const n=bind('n',h('input',{type:'text',placeholder:'Имя героя','aria-label':'Имя героя'})),cl=bind('cl',h('input',{type:'text',placeholder:'Воин 2','aria-label':'Класс'})),hp=bind('hp',h('input',{type:'number','aria-label':'Хиты'})),ac=bind('ac',h('input',{type:'number','aria-label':'КД'})),dv=bind('dv',h('input',{type:'number',step:30,'aria-label':'Тёмное зрение'}));
   out.push(h('div',{class:'card'},h('b',{},'Новый герой'),h('div',{class:'grid2',style:'margin-top:6px'},h('label',{class:'f'},'Имя',n),h('label',{class:'f'},'Класс и уровень',cl),h('label',{class:'f'},'Хиты',hp),h('label',{class:'f'},'КД',ac),h('label',{class:'f'},'Тёмное зрение, фт',dv)),
     h('div',{class:'small muted',style:'margin-top:8px'},'Внешность фишки'),picker(newPick,'#3f7fc0',k=>{newPick=k}),
     h('button',{class:'btn pri',type:'button',style:'margin-top:8px',disabled:readOnly||!myId,onclick:async()=>{if(!n.value.trim())return toast('Введите имя героя');const id=store.newId('tokens');const m=mapInfo();const [cx,cy]=toWorld(VW/2,VH/2);const [x,y]=snap(m,clamp(cx,0,m.w),clamp(cy,0,m.h));
       await store.set('tokens/'+id,{name:n.value.trim().slice(0,40),kind:'pc',img:newPick,color:COLORS[Math.floor(Math.random()*COLORS.length)],x,y,size:1,map:st().map,hp:Number(hp.value)||10,hpMax:Number(hp.value)||10,hpTemp:0,ac:Number(ac.value)||10,dv:Number(dv.value)||0,light:0,owner:myId,hidden:false,cond:[],inCombat:false,init:null});
-      await store.set('chars/'+id,{cls:cl.value,lvl:2,str:10,dex:10,con:10,int:10,wis:10,cha:10,prof:2,speed:30,attacks:[],inv:[],gp:25,sp:0,cp:0,notes:''});sel=id;renderPane(true)}},'Создать героя')));
+      await store.set('chars/'+id,{cls:cl.value,lvl:2,str:10,dex:10,con:10,int:10,wis:10,cha:10,prof:2,speed:30,attacks:[],inv:[],gp:25,sp:0,cp:0,notes:''});Object.assign(claimDraft,{n:'',cl:''});sel=id;renderPane(true)}},'Создать героя')));
   let regs=[];try{regs=JSON.parse(localStorage.getItem('smgla-heroes')||'[]')}catch(e){}
-  const code=h('input',{type:'text',placeholder:'Код героя из регистрации','aria-label':'Код героя',style:'flex:1'});
+  const code=h('input',{type:'text',placeholder:'Код героя из регистрации','aria-label':'Код героя',style:'flex:1'});code.value=claimDraft.code||'';code.oninput=()=>{claimDraft.code=code.value};
   out.push(h('div',{class:'card'},h('b',{},'Герой из регистрации'),
     ...(Array.isArray(regs)?regs:[]).map(r=>h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn pri',type:'button',disabled:readOnly||!myId,onclick:()=>importHero(r)},`Взять на игру: ${r.name} (${r.race||''} ${r.cls||''})`))),
-    h('div',{class:'row',style:'margin-top:6px'},code,h('button',{class:'btn',type:'button',disabled:readOnly||!myId,onclick:()=>{try{const r=JSON.parse(decodeURIComponent(escape(atob(code.value.trim()))));if(!r||!r.name)throw 0;importHero(r)}catch(e){toast('Код не подошёл. Скопируйте его целиком на странице регистрации.')}}},'Вставить')),
+    h('div',{class:'row',style:'margin-top:6px'},code,h('button',{class:'btn',type:'button',disabled:readOnly||!myId,onclick:async()=>{try{const s=code.value.replace(/\s+/g,'');const r=window.HeroCode?await HeroCode.decode(s):JSON.parse(decodeURIComponent(escape(atob(s))));if(!r||!r.name)throw 0;importHero(r)}catch(e){toast('Код не подошёл. Скопируйте его целиком на странице регистрации.')}}},'Вставить')),
     h('a',{class:'small',href:REG_URL,target:'_blank',rel:'noopener',style:'color:var(--sea)'},'Создать героя в регистрации →')));
   if(!myId)out.push(h('p',{class:'small muted'},'Чтобы играть, откройте стол, войдя в свой аккаунт claude.ai.'));
   return out}
@@ -746,7 +807,9 @@ function paneGM(){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   out.push(h('h3',{},'Глазами игрока'),h('select',{'aria-label':'Смотреть глазами',style:'width:100%',onchange:e=>{const v=e.target.value;setPreview(v!=='',v==='all'?null:v)}},
     h('option',{value:'',selected:!preview},'Выкл — я вижу всё'),h('option',{value:'all',selected:preview&&!previewTok},'Все герои вместе'),...heroes.map(t=>h('option',{value:t.id,selected:preview&&previewTok===t.id},t.name+(t.owner&&names[t.owner]?' · '+names[t.owner]:'')))),
     h('p',{class:'small muted'},'Показывает карту без секретов, свет, туман и только тех существ, кого видит выбранный герой. Кнопка 👁 на карте включает и выключает этот режим.'));
-  out.push(h('h3',{},'Игра'),s.started?h('div',{class:'row'},h('span',{class:'small muted'},'Игра идёт.'),h('button',{class:'btn sm',type:'button',onclick:toLobby},'Вернуть всех в лобби (новая сессия)'))
+  const pcs=tokList().filter(t=>t.kind==='pc');
+  out.push(h('h3',{},'Игра'),h('div',{class:'row',style:'margin-bottom:6px'},h('button',{class:'btn sm pri',type:'button',disabled:!pcs.length,onclick:()=>grantLevel(pcs.map(t=>t.id))},'⚓ Новый уровень всему отряду'),h('span',{class:'small muted'},pcs.filter(t=>t.lvlUp).length?`ждут повышения: ${pcs.filter(t=>t.lvlUp).map(t=>t.name).join(', ')}`:'')),
+    s.started?h('div',{class:'row'},h('span',{class:'small muted'},'Игра идёт.'),h('button',{class:'btn sm',type:'button',onclick:toLobby},'Вернуть всех в лобби (новая сессия)'))
     :h('div',{class:'row'},h('span',{class:'small muted'},'Игра не начата — игроки в лобби.'),h('button',{class:'btn sm pri',type:'button',onclick:startGame},'▶ Начать игру')));
   out.push(h('h3',{},'Катсцены'),h('p',{class:'small muted'},'Откроются на весь экран у всех за столом, со звуком и голосом.'),
     h('div',{class:'row'},...CUTS.map(([id,n])=>h('button',{class:'btn sm',type:'button',onclick:()=>showCutAll(id)},'🎬 '+n))));
@@ -802,6 +865,7 @@ function gmTokenCard(t){const g2=S.gm[t.id];const upT=p=>store.update('tokens/'+
     h('button',{class:'btn sm',type:'button',onclick:()=>upT({hidden:!t.hidden})},t.hidden?'Показать игрокам':'Спрятать'),
     h('button',{class:'btn sm',type:'button',onclick:()=>upT({inCombat:!t.inCombat,init:t.inCombat?null:t.init})},t.inCombat?'Убрать из боя':'В бой'),
     h('button',{class:'btn sm',type:'button',onclick:()=>rollInit(t)},'Инициатива'),
+    t.kind==='pc'?h('button',{class:'btn sm',type:'button',onclick:()=>grantLevel([t.id])},'⚓ Дать уровень'):null,
     t.kind!=='monster'?h('button',{class:'btn sm',type:'button',onclick:()=>setPreview(!(preview&&previewTok===t.id),t.id)},preview&&previewTok===t.id?'Выйти из его глаз':'👁 Глазами героя'):null,
     h('button',{class:'btn sm bad',type:'button',onclick:async()=>{if(!confirmDel(t))return;await store.del('tokens/'+t.id);await store.del('gm/mon_'+t.id);await store.del('chars/'+t.id);sel=null}},'Удалить')));
   return h('div',{class:'card'},kids,selectedCard(t))}

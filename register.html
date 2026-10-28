@@ -92,6 +92,13 @@ td.n{font-family:var(--f-mono);white-space:nowrap;font-variant-numeric:tabular-n
 .code{font-family:var(--f-mono);font-size:12px;word-break:break-all;width:100%}
 .toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#231d10;border:1px solid rgba(217,179,108,.6);color:var(--brass);border-radius:9px;padding:8px 14px;max-width:calc(100% - 32px);z-index:9}
 pre.notes{white-space:pre-wrap;font-family:var(--f-body);font-size:14px;color:var(--muted);margin:0}
+.pp{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-top:6px}
+.pp button{display:grid;justify-items:center;gap:3px;padding:6px 2px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);cursor:pointer;font-size:11px;color:var(--muted);line-height:1.15}
+.pp button[aria-pressed="true"]{border-color:var(--brass);color:var(--ink);background:#231d10}
+.pp .ava{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #d9b36c}
+.pp .ava img{width:32px;height:32px}
+.ava-sm{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:2px solid #d9b36c;flex:0 0 auto}
+.ava-sm img{width:20px;height:20px}
 </style>
 </head>
 <body>
@@ -112,6 +119,7 @@ pre.notes{white-space:pre-wrap;font-family:var(--f-body);font-size:14px;color:va
   <div class="toast" id="toast" role="status" hidden></div>
 </div>
 
+<script src="herocode.js"></script>
 <script>
 (function(){
 "use strict";
@@ -244,11 +252,16 @@ const BGS={
 const COST={8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
 const STD=[15,14,13,12,10,8];
 const COLORS=['#c0603f','#3f7fc0','#6aa84f','#a64dc0','#c0a43f','#3fb3a6','#c03f6b','#7d8a96'];
+// Портреты фишек — те же, что на игровом столе (tokens/<ключ>.svg, game-icons.net, CC BY 3.0)
+const HERO_IC=[['h-barbarian','Варвар'],['h-knight','Рыцарь'],['h-swordwoman','Воительница'],['h-viking','Северянин'],['h-dwarf','Дварф'],['h-dwarf-king','Дварф в короне'],['h-elf-woman','Эльфийка'],['h-elf-helm','Эльф-страж'],['h-archer','Лучник'],['h-bowman','Стрелок'],['h-hood','Следопыт'],['h-rogue','Плут'],['h-assassin','Убийца в капюшоне'],['h-ninja','Тень'],['h-wizard','Волшебник'],['h-witch','Ведьма'],['h-priest','Жрец солнца'],['h-nun','Жрица'],['h-monk','Монах'],['h-orc','Полуорк'],['h-gnome','Гном'],['h-devil','Тифлинг'],['captain','Капитан'],['tamsi','Юнга']];
+const RACE_KEY={'Человек':'human','Дварф холмов':'hill-dwarf','Дварф гор':'mountain-dwarf','Высший эльф':'high-elf','Лесной эльф':'wood-elf','Полурослик легконогий':'lightfoot-halfling','Полурослик коренастый':'stout-halfling','Драконорождённый':'dragonborn','Лесной гном':'forest-gnome','Скальный гном':'rock-gnome','Полуэльф':'half-elf','Полуорк':'half-orc','Тифлинг':'tiefling'};
+const SUB_KEY={'Домен Жизни':'life','Домен Света':'light','Домен Знаний':'knowledge','Домен Природы':'nature','Домен Бури':'tempest','Домен Обмана':'trickery','Домен Войны':'war','Круг Земли':'land','Круг Луны':'moon','Драконья кровь':'draconic','Дикая магия':'wild','Архифея':'archfey','Исчадие':'fiend','Великий Древний':'old-one','Школа Воплощения':'evocation','Школа Ограждения':'abjuration','Школа Прорицания':'divination','Школа Иллюзии':'illusion','Школа Некромантии':'necromancy','Школа Очарования':'enchantment','Школа Вызова':'conjuration','Школа Преобразования':'transmutation'};
+const ava=(k,color,cls='ava')=>h('span',{class:cls,style:`background:radial-gradient(circle at 50% 35%,${color||'#555'},#111)`},h('img',{src:'tokens/'+k+'.svg',alt:''}));
 
 /* ================= хранение ================= */
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const newId=()=>'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-function blank(){return{id:newId(),name:'',player:'',color:COLORS[Math.floor(Math.random()*COLORS.length)],look:'',align:'Нейтрально-добрый',race:'',halfPick:[],raceSkills:[],cls:'',sub:'',style:'',clsSkills:[],expertise:[],cantrips:[],spells:[],bg:'',method:'std',std:{str:15,dex:14,con:13,int:12,wis:10,cha:8},buy:{str:8,dex:8,con:8,int:8,wis:8,cha:8},equipMode:'kit',kit:0,cart:[],armor:'',shield:false}}
+function blank(){return{id:newId(),name:'',player:'',color:COLORS[Math.floor(Math.random()*COLORS.length)],img:HERO_IC[0][0],look:'',align:'Нейтрально-добрый',race:'',halfPick:[],raceSkills:[],cls:'',sub:'',style:'',clsSkills:[],expertise:[],cantrips:[],spells:[],bg:'',method:'std',std:{str:15,dex:14,con:13,int:12,wis:10,cha:8},buy:{str:8,dex:8,con:8,int:8,wis:8,cha:8},equipMode:'kit',kit:0,cart:[],armor:'',shield:false}}
 let H=Object.assign(blank(),LS.get('smgla-draft',{}));
 let step=1;
 const save=()=>LS.set('smgla-draft',H);
@@ -324,7 +337,9 @@ function notesText(){const r=RACES[H.race]||{},c=CLASSES[H.cls]||{},bg=BGS[H.bg]
 function build(){const s=scores(),c=CLASSES[H.cls]||{},r=RACES[H.race]||{};
   return{v:1,id:H.id,name:H.name.trim().slice(0,40),player:H.player.trim().slice(0,40),color:H.color,race:H.race,cls:H.cls,sub:H.sub||'',bg:H.bg,align:H.align,lvl:2,
     str:s.str,dex:s.dex,con:s.con,int:s.int,wis:s.wis,cha:s.cha,prof:2,speed:(r.spd||30)+(c.key==='monk'?10:0),hpMax:calcHP(),ac:calcAC(),dv:r.dv||0,
-    saves:[...(c.saves||[])],skills:skillSet(),attacks:attacks(),inv:inventory(),gp:Math.floor(goldLeft()),sp:Math.round((goldLeft()%1)*10),cp:0,notes:notesText()}}
+    saves:[...(c.saves||[])],skills:skillSet(),attacks:attacks(),inv:inventory(),gp:Math.floor(goldLeft()),sp:Math.round((goldLeft()%1)*10),cp:0,notes:notesText(),
+    img:H.img||HERO_IC[0][0],clsKey:c.key||'',raceKey:RACE_KEY[H.race]||'',subKey:SUB_KEY[H.sub]||'',hitDie:c.hd||0,
+    ...(c.cast?{spells:{ab:c.cast,cantrips:[...H.cantrips],known:[...H.spells],slots:{1:c.slots},...(c.key==='warlock'?{pact:true}:{})}}:{})}}
 
 /* ================= интерфейс ================= */
 function h(tag,attrs,...kids){const e=document.createElement(tag);for(const k in attrs||{}){const v=attrs[k];if(v==null||v===false)continue;if(k==='class')e.className=v;else if(k.startsWith('on'))e[k]=v;else if(k==='value')e.value=v;else e.setAttribute(k,v===true?'':v)}for(const c of kids.flat())if(c!=null&&c!==false)e.append(c instanceof Node?c:String(c));return e}
@@ -348,6 +363,8 @@ function s1(){return[h('h2',{},'1. Кто ваш герой'),
     field('Имя игрока',h('input',{type:'text',value:H.player,maxlength:40,placeholder:'Как вас зовут',oninput:e=>{H.player=e.target.value;save()}})),
     field('Мировоззрение',h('select',{onchange:e=>{H.align=e.target.value;save()}},...ALIGN.map(a=>h('option',{value:a,selected:a===H.align},a)))),
     field('Цвет фишки на карте',h('div',{class:'row'},h('input',{type:'color',value:H.color,onchange:e=>{H.color=e.target.value;save()}}),...COLORS.map(c=>h('button',{type:'button','aria-label':'Цвет '+c,class:'dot',style:`background:${c};cursor:pointer;border-color:${c===H.color?'#fff':'var(--line)'}`,onclick:()=>{H.color=c;render()}}))))),
+  h('h3',{},'Фишка на карте'),h('p',{class:'small muted',style:'margin:0'},'Так вашего героя увидят все за игровым столом.'),
+  h('div',{class:'pp',role:'group','aria-label':'Фишка героя'},...HERO_IC.map(([k,n])=>h('button',{type:'button','aria-pressed':String(H.img===k),title:n,onclick:()=>{H.img=k;render()}},ava(k,H.color),n))),
   h('div',{style:'margin-top:10px'},field('Внешность и характер (коротко)',h('textarea',{rows:3,maxlength:600,placeholder:'Рыжая, с обветренным лицом. Смеётся громко, боится глубокой воды…',oninput:e=>{H.look=e.target.value;save()}},H.look)))]}
 
 /* шаг 2 */
@@ -419,7 +436,7 @@ function s6(){const c=CLASSES[H.cls];const out=[h('h2',{},'6. Снаряжени
 function s7(){const p=problems(),hero=build(),s=scores();const out=[h('h2',{},'7. Итог: лист героя')];
   if(p.length)out.push(h('div',{class:'info',style:'border-left-color:var(--danger)'},h('b',{class:'warn'},'Ещё не готово:'),h('ul',{},...p.map(x=>h('li',{},x)))));
   else out.push(h('p',{class:'okc'},'Герой готов. Сохраните его и передайте Мастеру.'));
-  out.push(h('div',{class:'row'},h('span',{class:'dot',style:`background:${hero.color}`}),h('b',{style:'font-size:20px'},hero.name||'Без имени'),h('span',{class:'muted'},`${hero.race||'—'} · ${hero.cls||'—'}${hero.sub?' ('+hero.sub+')':''} 2 ур. · ${hero.bg||'—'}`)));
+  out.push(h('div',{class:'row'},ava(hero.img,hero.color,'ava-sm'),h('b',{style:'font-size:20px'},hero.name||'Без имени'),h('span',{class:'muted'},`${hero.race||'—'} · ${hero.cls||'—'}${hero.sub?' ('+hero.sub+')':''} 2 ур. · ${hero.bg||'—'}`)));
   out.push(h('div',{class:'sheet',style:'margin-top:10px'},...[['Хиты',hero.hpMax],['КД',hero.ac],['Скорость',hero.speed+' фт'],['Мастерство','+2'],['Инициатива',sgn(mod(s.dex))],['Пасс. внимат.',10+skillBonus('Внимательность')],['Тёмн. зрение',hero.dv?hero.dv+' фт':'—']].map(([a,b])=>h('div',{class:'big'},h('b',{},a),h('span',{},b)))));
   out.push(h('div',{class:'sheet',style:'margin-top:8px'},...AB.map(([k,sh])=>h('div',{class:'big'},h('b',{},sh+(hero.saves.includes(k)?' ●':'')),h('span',{},s[k]),h('div',{class:'small muted'},`мод ${sgn(mod(s[k]))} · спас ${sgn(mod(s[k])+(hero.saves.includes(k)?2:0))}`)))));
   out.push(h('h3',{},'Атаки'));
@@ -436,22 +453,20 @@ const heroes=()=>LS.get('smgla-heroes',[]);
 function saveHero(quiet){const p=problems();if(p.length&&!quiet){toast('Сначала исправьте: '+p[0]);return false}if(p.length&&quiet){toast('Герой ещё не готов: '+p[0]);return false}
   const hero=build();const list=heroes().filter(x=>x.id!==hero.id);list.push(hero);if(!LS.set('smgla-heroes',list)){toast('Браузер не дал сохранить — скачайте JSON или скопируйте код.');return true}
   const drafts=LS.get('smgla-drafts',{});drafts[hero.id]=H;LS.set('smgla-drafts',drafts);if(!quiet)toast('Герой «'+hero.name+'» сохранён');renderMine();return true}
-const encode=hero=>btoa(unescape(encodeURIComponent(JSON.stringify(hero))));
-const decode=code=>JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
-function copyCode(hero){const code=encode(hero);const done=()=>toast('Код героя скопирован. Отправьте его Мастеру или вставьте при входе в игру.');
+async function copyCode(hero){let code;try{code=await window.HeroCode.encode(hero)}catch(e){toast(e.message||'Не получилось сделать код.');return}const done=()=>toast('Код героя скопирован. Отправьте его Мастеру или вставьте при входе в игру.');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,()=>showCode(code));else showCode(code)}
 function showCode(code){const ta=h('textarea',{class:'code',rows:4,readonly:true},code);const box=$('mine');box.append(h('div',{style:'margin-top:10px'},h('p',{class:'small'},'Скопируйте код вручную:'),ta));ta.focus();ta.select()}
 function download(hero){const blob=new Blob([JSON.stringify(hero,null,2)],{type:'application/json'});const a=h('a',{href:URL.createObjectURL(blob),download:(hero.name||'hero').replace(/[^\p{L}\p{N}_-]+/gu,'_')+'.json'});document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
 function renderMine(){const list=heroes();const box=$('mine');const kids=[h('div',{class:'row',style:'justify-content:space-between'},h('h2',{style:'margin:0'},'Мои герои'),h('div',{class:'row'},h('button',{class:'btn sm',type:'button',onclick:()=>{H=blank();step=1;render();toast('Начат новый герой')}},'+ Новый'),h('button',{class:'btn sm',type:'button',onclick:importBox},'Вставить код')))];
   if(!list.length)kids.push(h('p',{class:'small muted',style:'margin:8px 0 0'},'Пока нет сохранённых героев. Пройдите шаги ниже и нажмите «Сохранить героя» на последнем шаге.'));
-  for(const x of list)kids.push(h('div',{class:'hero'},h('span',{class:'dot',style:`background:${x.color||'#777'}`}),h('div',{class:'nm'},h('b',{},x.name),h('div',{class:'small muted'},`${x.race} · ${x.cls} 2 ур. · ХП ${x.hpMax} · КД ${x.ac}`)),
+  for(const x of list)kids.push(h('div',{class:'hero'},x.img?ava(x.img,x.color,'ava-sm'):h('span',{class:'dot',style:`background:${x.color||'#777'}`}),h('div',{class:'nm'},h('b',{},x.name),h('div',{class:'small muted'},`${x.race} · ${x.cls} 2 ур. · ХП ${x.hpMax} · КД ${x.ac}`)),
     h('button',{class:'btn sm',type:'button',onclick:()=>{const d=LS.get('smgla-drafts',{})[x.id];if(!d){toast('Этот герой импортирован кодом — его можно только скопировать или удалить.');return}H=Object.assign(blank(),d);step=7;render();scrollTop()}},'Изменить'),
     h('button',{class:'btn sm',type:'button',onclick:()=>copyCode(x)},'Код'),
     h('button',{class:'btn sm',type:'button',onclick:()=>download(x)},'JSON'),
     h('button',{class:'btn sm bad',type:'button',onclick:e=>{const b=e.currentTarget;if(b.dataset.arm){LS.set('smgla-heroes',heroes().filter(y=>y.id!==x.id));const d=LS.get('smgla-drafts',{});delete d[x.id];LS.set('smgla-drafts',d);renderMine();toast('Герой удалён')}else{b.dataset.arm='1';b.textContent='Точно удалить?';setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent='Удалить'}},4000)}}},'Удалить')));
   box.replaceChildren(...kids)}
 function importBox(){const ta=h('textarea',{class:'code',rows:4,placeholder:'Вставьте код героя','aria-label':'Код героя'});
-  const box=h('div',{style:'margin-top:10px'},ta,h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn pri sm',type:'button',onclick:()=>{try{const x=decode(ta.value);if(x.v!==1||!x.name||!x.id)throw 0;const list=heroes().filter(y=>y.id!==x.id);list.push(x);LS.set('smgla-heroes',list);renderMine();toast('Герой «'+x.name+'» добавлен')}catch(e){toast('Не получилось прочитать код. Скопируйте его целиком.')}}},'Добавить'),h('button',{class:'btn sm',type:'button',onclick:()=>box.remove()},'Отмена')));
+  const box=h('div',{style:'margin-top:10px'},ta,h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn pri sm',type:'button',onclick:async()=>{try{const x=await window.HeroCode.decode(ta.value);if(x.v!==1||!x.id)throw new Error('Это не код героя из регистрации.');const list=heroes().filter(y=>y.id!==x.id);list.push(x);LS.set('smgla-heroes',list);renderMine();toast('Герой «'+x.name+'» добавлен')}catch(e){toast((e&&e.message)||'Не получилось прочитать код. Скопируйте его целиком.')}}},'Добавить'),h('button',{class:'btn sm',type:'button',onclick:()=>box.remove()},'Отмена')));
   $('mine').append(box);ta.focus()}
 
 render();
