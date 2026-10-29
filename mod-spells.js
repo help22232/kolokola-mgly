@@ -48,12 +48,17 @@ function scaledDice(base,spell,slot,heroLvl){if(!base)return'';let d=String(base
   else if(slot>spell.lvl){const per=(String(spell.upcast||spell.higher||'').replace(/к/g,'d').match(/(\d+)d(\d+)/));if(per){const k=slot-spell.lvl;d=d.replace(/(\d*)d(\d+)/,(m,n,f)=>f===per[2]?`${(Number(n)||1)+Number(per[1])*k}d${f}`:m)}}
   return d}
 
-async function cast(t,c,spell,slot,targetId,ab,dc,atk){const sp=c.spells||{};const tg=targetId&&V.S.tokens[targetId];const heroLvl=Number(c.lvl)||1;
-  if(spell.lvl>0&&!(spell.ritual&&slot==='ritual')){if(freeSlots(sp,slot)<=0)return V.toast('Нет свободной ячейки этого круга.');save(t,c,{used:{...(sp.used||{}),[slot]:Number((sp.used||{})[slot]||0)+1}})}
-  const lvlTxt=spell.lvl===0?'заговор':slot==='ritual'?'ритуал':`ячейка ${slot} круга`;
+// трата ячейки и концентрация — общие для обычного сотворения и для размещения области
+async function pay(t,c,spell,slot){const sp=c.spells||{};
+  if(spell.lvl>0&&!(spell.ritual&&slot==='ritual')){if(freeSlots(sp,slot)<=0){V.toast('Нет свободной ячейки этого круга.');return false}save(t,c,{used:{...(sp.used||{}),[slot]:Number((sp.used||{})[slot]||0)+1}})}
+  if(spell.conc){const cond=(t.cond||[]).filter(x=>x!=='Концентрация');if((t.cond||[]).includes('Концентрация'))V.post({kind:'sys',text:`${t.name} теряет прежнюю концентрацию`});await V.store.update('tokens/'+t.id,{cond:[...cond,'Концентрация'],concOn:spell.name})}
+  return true}
+const lvlTxtOf=(spell,slot)=>spell.lvl===0?'заговор':slot==='ritual'?'ритуал':`ячейка ${slot} круга`;
+async function cast(t,c,spell,slot,targetId,ab,dc,atk){const tg=targetId&&V.S.tokens[targetId];const heroLvl=Number(c.lvl)||1;
+  if(!await pay(t,c,spell,slot))return;
+  const lvlTxt=lvlTxtOf(spell,slot);
   const head=`✨ ${t.name}: «${spell.name}» (${lvlTxt})${tg?' → '+tg.name:''}`;
   const ns=slot==='ritual'?spell.lvl:Number(slot)||spell.lvl;
-  if(spell.conc){const cond=(t.cond||[]).filter(x=>x!=='Концентрация');if((t.cond||[]).includes('Концентрация'))V.post({kind:'sys',text:`${t.name} теряет прежнюю концентрацию`});await V.store.update('tokens/'+t.id,{cond:[...cond,'Концентрация'],concOn:spell.name})}
   if(spell.attack){const cm=V.condMode?V.condMode(t,tg||null,spell.attack==='ranged'):{mode:null,why:''};const r=V.roll('1d20'+sg(atk),cm.mode);const crit=r.nat===20,miss=r.nat===1;let dd=scaledDice(spell.dmg,spell,ns,heroLvl);if(crit)dd=dd.replace(/(\d*)d(\d+)/g,(m,n,f)=>`${(Number(n)||1)*2}d${f}`);
     const dr=dd?V.roll(dd+(spell.dmgMod?sg(md(c[ab])):'')):null;
     return V.post({kind:'roll',text:`${head}${crit?' · КРИТ!':miss?' · промах (1)':''}`,total:r.total,det:`${cm.why?'['+cm.why+'] ':''}атака заклинанием ${r.det}${dr?` · урон ${dr.total} ${spell.dmgType||''} (${dr.det})`:''}`,nat:r.nat,target:tg?tg.id:null,dmg:dr&&!miss?dr.total:null})}
@@ -64,6 +69,24 @@ async function cast(t,c,spell,slot,targetId,ab,dc,atk){const sp=c.spells||{};con
     const r=V.roll(hd+(spell.healMod!==false?sg(md(c[ab])):''));const target=tg||t;
     V.post({kind:'roll',text:`${head} · лечение`,total:r.total,det:r.det});if(V.applyHp&&target.kind!=='monster')await V.applyHp(target.id,r.total,'heal');return}
   V.post({kind:'sys',text:`${head}${spell.dur?' · длительность: '+spell.dur:''}`})}
+
+// область заклинания из данных: поле area, скобки в дистанции «На себя (конус 15 фт)» или описание
+const SAVE_KEY={'сил':'str','лов':'dex','тел':'con','инт':'int','мдр':'wis','хар':'cha'};
+function areaOf(s){if(s.attack)return null;const par=(String(s.range||'').match(/\(([^)]*)\)/)||[])[1]||'';const self=/^на себя/.test(norm(s.range));
+  for(const x of [s.area,par,s.save||s.dmg?s.desc:null]){if(!x)continue;const m=norm(x).match(/(?:^|[^а-я])(конус\S*|куб\S*|квадрат\S*|лини\S*|стен\S*|сфер\S*|полусфер\S*|цилиндр\S*|круг\S*|кольц\S*|аур\S*|радиус\S*)\s+(?:радиусом\s+|длиной\s+|до\s+)?(\d+)\s*(?:×\s*\d+\s*)?фт/);
+    if(m){const w=m[1];return{kind:/^кон/.test(w)?'cone':/^(куб|квадрат)/.test(w)?'cube':/^(лин|стен)/.test(w)?'line':'sphere',size:Number(m[2]),self}}}
+  const m=norm(par).match(/^(\d+)\s*фт$/);return m&&self?{kind:'sphere',size:Number(m[1]),self}:null}
+async function placeArea(t,c,spell,slot,ctx){const ar=areaOf(spell);if(!ar)return;if(!V.aoe||!V.aoe.start)return V.toast('Инструмент областей ещё не загрузился.');
+  if(V.mapInfo().id!==t.map)return V.toast('Герой не на этой карте.');
+  if(!await pay(t,c,spell,slot))return;
+  const ns=slot==='ritual'?spell.lvl:Number(slot)||spell.lvl;
+  let dice=scaledDice(spell.dmg,spell,ns,Number(c.lvl)||1);
+  const extra=String(spell.dmgType||'').replace(/к/g,'d').match(/\+\s*(\d+d\d+)/);if(dice&&extra)dice+='+'+extra[1];// «Град»: 2к8 дробящего + 4к6 холодом
+  const sv=spell.save?SAVE_KEY[norm(spell.save).slice(0,3)]||null:null;
+  const half=spell.halfOnSave===false?false:spell.halfOnSave===true?true:spell.lvl>0||/половин/.test(norm(spell.desc));
+  const eff=spell.save||dice?{dice:dice||'',type:spell.dmgType||'',save:sv,dc:ctx.dc,half,spell:spell.name,caster:t.name}:null;
+  V.post({kind:'sys',text:`✨ ${t.name}: «${spell.name}» (${lvlTxtOf(spell,slot)}) — ${{cone:'конус',cube:'куб',line:'линия',sphere:'сфера'}[ar.kind]} ${ar.size} фт`});
+  V.aoe.start({kind:ar.kind,size:ar.size,from:ar.self?t.id:null,effect:eff})}
 
 function spellCard(t,c,spell,ctx){const k=spell.name;const isOpen=open.has(t.id+k);
   const tags=[spell.lvl===0?'заговор':spell.lvl+' круг',spell.school,spell.conc?'К':null,spell.ritual?'Р':null].filter(Boolean).join(' · ');
@@ -78,7 +101,8 @@ function spellCard(t,c,spell,ctx){const k=spell.name;const isOpen=open.has(t.id+
       if(spell.lvl===0)opts.push(['0','без ячейки']);else{for(let l=spell.lvl;l<=9;l++)if(freeSlots(sp,l)>0)opts.push([String(l),`ячейка ${l} круга (свободно ${freeSlots(sp,l)})`]);if(spell.ritual)opts.unshift(['ritual','ритуалом (+10 мин, без ячейки)'])}
       const sl=h('select',{'aria-label':'Ячейка'},...opts.map(([v,n])=>h('option',{value:v},n)));
       const tg=h('select',{'aria-label':'Цель'},h('option',{value:''},'— цель —'),...V.tokList().filter(x=>x.map===V.st().map&&V.canSee(x)).map(x=>h('option',{value:x.id},x.name)));
-      body.append(h('div',{class:'sp-cast'},opts.length?h('div',{class:'sp-row'},sl,tg,h('button',{class:'btn pri sm',type:'button',onclick:()=>cast(t,c,spell,sl.value==='ritual'?'ritual':Number(sl.value),tg.value,ctx.ab,ctx.dc,ctx.atk)},'✨ Сотворить')):h('div',{class:'sp-meta'},'Нет свободных ячеек — нужен отдых.')))}
+      body.append(h('div',{class:'sp-cast'},opts.length?h('div',{class:'sp-row'},sl,tg,h('button',{class:'btn pri sm',type:'button',onclick:()=>cast(t,c,spell,sl.value==='ritual'?'ritual':Number(sl.value),tg.value,ctx.ab,ctx.dc,ctx.atk)},'✨ Сотворить'),
+        areaOf(spell)?h('button',{class:'btn sm',type:'button',title:'Поставить шаблон на карте и бросить спасброски всем в области',onclick:()=>placeArea(t,c,spell,sl.value==='ritual'?'ritual':Number(sl.value),ctx)},'🎯 Разместить область'):null):h('div',{class:'sp-meta'},'Нет свободных ячеек — нужен отдых.')))}
     kids.push(body)}
   return h('div',{class:'sp-item'},...kids)}
 

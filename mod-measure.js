@@ -25,7 +25,41 @@ const css=document.createElement('style');css.textContent=`
 .mm-dock .mm-tip{display:none}
 .mm-dock .mm-q{display:inline-flex;align-items:center;justify-content:center}
 .mm-dock .mm-list{display:flex;flex:0 0 auto;max-height:none;overflow:visible}
-.mm-dock .mm-li{white-space:nowrap}`;
+.mm-dock .mm-li{white-space:nowrap}
+/* панель «В области» и окно эффекта */
+.mm-hit{position:fixed;z-index:6;background:var(--panel,#111819);border:1px solid var(--brass,#d9b36c);border-radius:10px;padding:8px 10px;display:grid;gap:6px;box-shadow:0 6px 20px rgba(0,0,0,.5);font-size:13px;color:var(--ink,#e3ebe8);max-width:calc(100vw - 16px);box-sizing:border-box}
+.mm-hh{display:flex;align-items:center;gap:8px;min-width:0}
+.mm-hh>b{white-space:nowrap}
+.mm-sub{color:var(--muted,#8e9e9b);font-size:12px;min-width:0;overflow-wrap:anywhere}
+.mm-hh .mm-sub{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm-x{margin-left:auto;flex:0 0 auto}
+.mm-names{display:flex;flex-wrap:wrap;gap:4px;max-height:84px;overflow:auto}
+.mm-chip{border:1px solid var(--line,#243235);border-radius:999px;padding:2px 8px;font-size:12px;background:var(--panel2,#162022);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mm-chip.mon{border-color:rgba(229,138,128,.5)}
+.mm-ov{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box}
+.mm-dlg{width:min(440px,100%);max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);overflow:auto;background:var(--panel,#111819);border:1px solid var(--brass,#d9b36c);border-radius:12px;padding:12px;display:grid;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.6);color:var(--ink,#e3ebe8);font-size:14px;box-sizing:border-box}
+.mm-dlg .mm-hh>b{font-size:16px;white-space:normal}
+.mm-db{display:grid;gap:8px;min-width:0}
+.mm-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mm-fl{display:grid;gap:3px;min-width:0;font-size:12px;color:var(--muted,#8e9e9b)}
+.mm-fl input,.mm-fl select{width:100%;box-sizing:border-box;color:var(--ink,#e3ebe8);min-height:34px}
+.mm-foot{justify-content:flex-end}
+.mm-sum{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;color:var(--muted,#8e9e9b);font-size:13px}
+.mm-big{font-family:var(--f-mono,monospace);font-size:26px;color:var(--brass,#d9b36c)}
+.mm-res{display:grid;gap:2px;margin-top:4px;min-width:0}
+.mm-tr{display:grid;grid-template-columns:minmax(0,1fr) 34px 54px 38px;gap:6px;align-items:center;padding:4px 2px;border-top:1px solid var(--line,#243235);font-size:13px}
+.mm-res.gm .mm-tr{grid-template-columns:22px minmax(0,1fr) 34px 54px 38px}
+.mm-tr.mm-th{border-top:0;color:var(--muted,#8e9e9b);font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding-top:0}
+.mm-tr.off{opacity:.45}
+.mm-tr input[type=checkbox]{width:18px;height:18px;margin:0;accent-color:var(--brass,#d9b36c)}
+.mm-nm{min-width:0;display:grid}.mm-nm>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mm-nm small{color:var(--warn,#e8c46a);font-size:11px;overflow-wrap:anywhere}
+.mm-n{font-family:var(--f-mono,monospace);text-align:right}
+.mm-ok{color:var(--ok,#8fcf8a)}.mm-bad{color:var(--danger,#e58a80)}
+.mm-log .mm-res{margin-top:6px}.mm-log .mm-row{margin-top:6px}
+@media (max-width:600px){.mm-hit .btn,.mm-dlg .btn,.mm-log .btn{min-height:40px;min-width:40px}.mm-fl input,.mm-fl select{min-height:40px;font-size:16px}
+  .mm-tr input[type=checkbox]{width:22px;height:22px}.mm-res.gm .mm-tr{grid-template-columns:26px minmax(0,1fr) 30px 50px 36px}.mm-tr{grid-template-columns:minmax(0,1fr) 30px 50px 36px;min-height:36px}
+  .mm-dlg{padding:10px;align-self:flex-end}.mm-ov{align-items:flex-end}}`;
 document.head.append(css);
 
 const narrow=()=>innerWidth<600;
@@ -33,7 +67,8 @@ const onceHint=(key,txt)=>{let seen=false;try{seen=localStorage.getItem('vtt-hin
 const KINDS=[['cone','Конус'],['sphere','Сфера'],['line','Линия'],['cube','Куб']];
 const COLORS=[['#e8734a','огонь'],['#6fb7e8','холод'],['#9fd36a','яд'],['#c79bf0','магия']];
 const KNAME=Object.fromEntries(KINDS);
-let shapes=[];V.watch('shapes',a=>{shapes=a;V.requestDraw();refreshPanel()});
+let shapes=[];V.watch('shapes',a=>{shapes=a;V.requestDraw();refreshPanel();if(hl.shape&&!a.some(s=>s.id===hl.shape.id))closeHits()});
+const hl={shape:null,ids:[]};// подсветка существ в только что поставленной области
 
 /* ---------- геометрия ---------- */
 const cellOf=m=>V.cellPx(m);
@@ -59,7 +94,15 @@ function outline(g,s,m){const fp=ftpx(m),L=s.size*fp;g.beginPath();
   else if(s.kind==='line')pts=[P(0,-2.5*fp),P(L,-2.5*fp),P(L,2.5*fp),P(0,2.5*fp)];
   else pts=[P(0,0),P(L,-L/2),P(L,L/2)];
   pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath()}
-const tokensIn=(s,m)=>V.tokList().filter(t=>t.map===s.map&&inside(s,m,t.x,t.y));
+// Кто в области (Книга игрока 2014, гл. 10 «Области действия» + вариант сетки из Руководства Мастера):
+// существо задето, если шаблон накрывает хотя бы одну клетку, которую оно занимает; клетка накрыта,
+// если её центр внутри фигуры (это те же клетки, что подсвечены на карте, — «накрыта хотя бы половина клетки»).
+// Большая фишка (2×2, 3×3…) задета, если накрыта любая её клетка. Без сетки — центр фишки или точка на её краю.
+// Заклинатель, из которого исходит область «на себя» (конус, линия, аура), сам в неё не входит.
+function covers(s,m,t){const c=m.grid||cellOf(m),n=Math.max(1,t.size||1),half=n*c/2;
+  if(m.grid){for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(inside(s,m,t.x-half+(i+.5)*c,t.y-half+(j+.5)*c))return true;return false}
+  if(inside(s,m,t.x,t.y))return true;const r=half*.7;for(let k=0;k<8;k++){const a=k*Math.PI/4;if(inside(s,m,t.x+Math.cos(a)*r,t.y+Math.sin(a)*r))return true}return false}
+const tokensIn=(s,m)=>V.tokList().filter(t=>t.map===s.map&&t.id!==s.from&&covers(s,m,t));
 
 /* ---------- рисование ---------- */
 function rgba(hex,a){const n=parseInt(hex.slice(1),16);return`rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
@@ -78,6 +121,8 @@ function drawRuler(g,pts,z,col,who,m){if(pts.length<2)return;g.strokeStyle='rgba
 V.onDraw('top',(g,m,cam)=>{const z=cam.z;
   for(const s of shapes)if(s.map===m.id)drawShape(g,s,m,z,false);
   if(aoe.preview&&aoe.preview.map===m.id)drawShape(g,aoe.preview,m,z,true);
+  if(hl.ids.length){const c=m.grid||cellOf(m);g.lineWidth=3/z;g.setLineDash([7/z,4/z]);g.strokeStyle='#ffe08a';
+    for(const id of hl.ids){const t=V.S.tokens[id];if(!t||t.map!==m.id||!V.canSee(t))continue;g.beginPath();g.arc(t.x,t.y,(t.size||1)*c/2+3/z,0,7);g.stroke()}g.setLineDash([])}
   if(rul.pts.length)drawRuler(g,rul.pts.concat(rul.cur?[rul.cur]:[]),z,'#ffe08a','',m);
   const R=V.room;if(R&&R.peers)for(const p of R.peers()){const r=p.presence&&p.presence.ruler;if(!p.sameTab&&r&&r.map===m.id&&Array.isArray(r.pts))drawRuler(g,r.pts,z,'#8fd1c4',String(r.who||'').slice(0,20),m)}});
 if(V.room&&V.room.onPeers)V.room.onPeers(()=>V.requestDraw());
@@ -101,21 +146,25 @@ let panel=null,menu=null;
 const cvRect=()=>{const c=document.getElementById('cv');return c?c.getBoundingClientRect():{left:0,top:0,width:innerWidth,height:innerHeight}};
 const toScreen=(x,y)=>{const r=cvRect(),c=V.cam;return[r.left+x*c.z+c.ox,r.top+y*c.z+c.oy]};
 function mkPreview(ox,oy,tx,ty){const m=V.mapInfo();let dx=0,dy=0;if(tx!=null){const L=Math.hypot(tx-ox,ty-oy);if(L>4){dx=(tx-ox)/L;dy=(ty-oy)/L}}
-  if((aoe.kind==='cone'||aoe.kind==='line')&&!dx&&!dy){dx=1;dy=0}
-  return{map:m.id,kind:aoe.kind,x:Math.round(ox),y:Math.round(oy),dx:+dx.toFixed(4),dy:+dy.toFixed(4),size:aoe.size,color:aoe.color}}
+  if((aoe.kind==='cone'||aoe.kind==='line'||aoe.self)&&!dx&&!dy){dx=1;dy=0}
+  // область «на себя» (конус, линия, куб) начинается от края фишки заклинателя в сторону направления
+  if(aoe.self){ox=aoe.self.x+dx*aoe.self.r;oy=aoe.self.y+dy*aoe.self.r}
+  const p={map:m.id,kind:aoe.kind,x:Math.round(ox),y:Math.round(oy),dx:+dx.toFixed(4),dy:+dy.toFixed(4),size:aoe.size,color:aoe.color};if(aoe.self)p.from=aoe.self.tid;return p}
 function originFor(wx,wy){const m=V.mapInfo();if(!m.grid)return[wx,wy];
   // сфера/куб по центру — в центр клетки; конус/линия начинаются на пересечении линий сетки (как в Книге игрока)
   if(aoe.kind==='sphere')return[Math.round(wx/m.grid)*m.grid,Math.round(wy/m.grid)*m.grid];
   return[Math.round(wx/m.grid)*m.grid,Math.round(wy/m.grid)*m.grid]}
-async function saveShape(p){if(V.readOnly)return;const id=V.store.newId('shapes');await V.store.set('shapes/'+id,{...p,by:V.myId,who:V.whoAmI(),ts:Date.now()});
-  const n=tokensIn(p,V.mapInfo()).filter(t=>V.canSee(t)).length;V.toast(`${KNAME[p.kind]} ${p.size} фт ${p.kind==='sphere'||p.kind==='line'?'поставлена':'поставлен'}${n?` · в области: ${n}`:''}`)}
+async function saveShape(p){if(V.readOnly)return null;const id=V.store.newId('shapes');const s={...p,by:V.myId,who:V.whoAmI(),ts:Date.now()};await V.store.set('shapes/'+id,s);
+  const n=tokensIn(p,V.mapInfo()).filter(t=>V.canSee(t)).length;V.toast(`${KNAME[p.kind]} ${p.size} фт ${p.kind==='sphere'||p.kind==='line'?'поставлена':'поставлен'}${n?` · в области: ${n}`:''}`);
+  const shape={...s,id},eff=aoe.pending;aoe.pending=null;aoe.self=null;
+  if(eff&&(eff.dice||eff.save))openEffect(shape,eff);else showHits(shape);return shape}
 function hitShape(wx,wy){const r=18/V.cam.z,id=V.st().map;return shapes.slice().reverse().find(s=>s.map===id&&Math.hypot(s.x-wx,s.y-wy)<=r)}
 function closeMenu(){if(menu){menu.remove();menu=null}}
 function openMenu(s,sx,sy){closeMenu();const m=V.mapInfo(),mine=s.by===V.myId||V.isOwner;
   const kids=[h('div',{class:'mm-who'},`${KNAME[s.kind]} ${s.size} фт · ${s.who||'Игрок'}`)];
   if(V.isOwner){const ts=tokensIn(s,m);kids.push(h('b',{},ts.length?'В области:':'В области никого нет'));if(ts.length)kids.push(h('ul',{},...ts.map(t=>h('li',{},t.name+(t.hidden?' (скрыт)':'')))))}
   else{const ts=tokensIn(s,m).filter(t=>V.canSee(t));if(ts.length)kids.push(h('div',{},'Видно в области: '+ts.map(t=>t.name).join(', ')))}
-  kids.push(h('div',{class:'mm-row',style:'margin-top:8px'},mine&&!V.readOnly?h('button',{class:'mm-b',type:'button',onclick:async()=>{await V.store.del('shapes/'+s.id);closeMenu()}},'Убрать'):null,h('button',{class:'mm-b',type:'button',onclick:closeMenu},'Закрыть')));
+  kids.push(h('div',{class:'mm-row',style:'margin-top:8px'},!V.readOnly?h('button',{class:'mm-b',type:'button',onclick:()=>{closeMenu();openEffect(s,{})}},'Применить эффект…'):null,mine&&!V.readOnly?h('button',{class:'mm-b',type:'button',onclick:async()=>{await V.store.del('shapes/'+s.id);closeMenu()}},'Убрать'):null,h('button',{class:'mm-b',type:'button',onclick:closeMenu},'Закрыть')));
   menu=h('div',{class:'mm-menu'},...kids);menu.style.left=Math.min(Math.max(8,sx+12),innerWidth-270)+'px';menu.style.top=Math.min(Math.max(8,sy+12),innerHeight-220)+'px';(V.overlay()||document.body).append(menu)}
 function dockPanel(){if(!panel)return;const r=cvRect(),nw=narrow();panel.classList.toggle('mm-dock',nw);
   if(nw){panel.style.left=(r.left+8)+'px';panel.style.top='auto';panel.style.bottom=Math.max(8,innerHeight-r.bottom+10)+'px';panel.style.maxWidth='none';panel.style.width=Math.max(150,r.width-206)+'px'}
@@ -126,7 +175,7 @@ function refreshPanel(){if(!panel)return;dockPanel();
   const mineHere=shapes.filter(s=>s.map===V.st().map&&(s.by===V.myId||V.isOwner));
   const tip=aoe.origin?'Коснитесь, куда направить':(aoe.kind==='cone'||aoe.kind==='line')?'Коснитесь точки начала, потом направления (или тяните)':'Коснитесь центра области';panel.title=tip;
   panel.replaceChildren(
-    h('div',{class:'mm-row'},...KINDS.map(([k,n])=>h('button',{class:'mm-b',type:'button','aria-pressed':String(aoe.kind===k),onclick:()=>{aoe.kind=k;aoe.origin=null;aoe.preview=null;refreshPanel();V.requestDraw()}},n))),
+    h('div',{class:'mm-row'},...KINDS.map(([k,n])=>h('button',{class:'mm-b',type:'button','aria-pressed':String(aoe.kind===k),onclick:()=>{aoe.kind=k;aoe.origin=null;aoe.self=null;aoe.awaitDir=false;aoe.preview=null;refreshPanel();V.requestDraw()}},n))),
     h('div',{class:'mm-row'},...[10,15,20,30,60].map(n=>h('button',{class:'mm-b',type:'button','aria-pressed':String(aoe.size===n),onclick:()=>{aoe.size=n;refreshPanel()}},n)),sz,h('span',{},'фт')),
     h('div',{class:'mm-row'},...COLORS.map(([c,n])=>h('button',{class:'mm-c',type:'button',title:n,'aria-label':n,'aria-pressed':String(aoe.color===c),style:`background:${c}`,onclick:()=>{aoe.color=c;refreshPanel()}})),
       h('span',{class:'mm-tip',style:'color:#8e9e9b;font-size:12px'},tip)),
@@ -134,9 +183,9 @@ function refreshPanel(){if(!panel)return;dockPanel();
     mineHere.length?h('div',{class:'mm-list'},...mineHere.map(s=>h('div',{class:'mm-li'},h('span',{},`${KNAME[s.kind]} ${s.size} фт · ${s.who||''}`),h('button',{class:'mm-b',type:'button',style:'min-height:28px;padding:3px 8px',onclick:()=>V.store.del('shapes/'+s.id)},'✕')))):null)}
 V.addTool({id:'aoe',icon:'🔥',title:'Область заклинания: конус, сфера, линия, куб',get hint(){return onceHint('aoe','Коснитесь карты — область')},
   activate(){if(!panel){panel=h('div',{class:'mm-panel'});(V.overlay()||document.body).append(panel)}refreshPanel()},
-  cancel(){aoe.origin=null;aoe.preview=null;closeMenu();if(panel){panel.remove();panel=null}V.requestDraw()},
+  cancel(){aoe.origin=null;aoe.preview=null;aoe.self=null;aoe.pending=null;aoe.awaitDir=false;closeMenu();if(panel){panel.remove();panel=null}V.requestDraw()},
   down(wx,wy,e){if(e&&e.isPrimary===false)return;closeMenu();aoe.downAt=[e?e.clientX:0,e?e.clientY:0];
-    if(!aoe.origin){const hs=hitShape(wx,wy);if(hs){aoe.hit=hs;return}const o=originFor(wx,wy);aoe.origin=o;aoe.preview=mkPreview(o[0],o[1],null,null);aoe.dragging=true}
+    if(!aoe.origin){const hs=hitShape(wx,wy);closeHits();if(hs){aoe.hit=hs;return}const o=originFor(wx,wy);aoe.origin=o;aoe.preview=mkPreview(o[0],o[1],null,null);aoe.dragging=true}
     else{aoe.dragging=true;aoe.preview=mkPreview(aoe.origin[0],aoe.origin[1],wx,wy)}V.requestDraw()},
   move(wx,wy){if(!aoe.origin)return;aoe.preview=mkPreview(aoe.origin[0],aoe.origin[1],wx,wy);V.requestDraw()},
   hover(wx,wy){if(!aoe.origin||aoe.dragging)return;aoe.preview=mkPreview(aoe.origin[0],aoe.origin[1],wx,wy);V.requestDraw()},
@@ -147,6 +196,115 @@ V.addTool({id:'aoe',icon:'🔥',title:'Область заклинания: ко
     if(!moved&&directional&&!aoe.awaitDir){aoe.awaitDir=true;aoe.preview=mkPreview(aoe.origin[0],aoe.origin[1],null,null);refreshPanel();V.requestDraw();return}
     const p=moved||aoe.awaitDir?mkPreview(aoe.origin[0],aoe.origin[1],wx,wy):mkPreview(aoe.origin[0],aoe.origin[1],null,null);
     aoe.origin=null;aoe.awaitDir=false;aoe.preview=null;refreshPanel();V.requestDraw();saveShape(p)}});
+
+/* ---------- кто в области: панель «В области: N» ---------- */
+let hitBox=null;
+function closeHits(){if(hitBox){hitBox.remove();hitBox=null}if(!effBox){hl.shape=null;hl.ids=[]}V.requestDraw()}
+function placeHits(){if(!hitBox)return;const r=cvRect(),nw=narrow(),left=r.left+(nw?54:56),w=Math.min(360,r.right-left-(nw?54:12));hitBox.style.left=left+'px';hitBox.style.top=(r.top+8)+'px';hitBox.style.width=Math.max(200,w)+'px'}
+addEventListener('resize',placeHits);
+function showHits(s){const m=V.mapInfo();const all=tokensIn(s,m);const vis=V.isGM()?all:all.filter(t=>V.canSee(t));
+  hl.shape=s;hl.ids=vis.map(t=>t.id);V.requestDraw();if(hitBox)hitBox.remove();
+  hitBox=h('div',{class:'mm-hit',role:'region','aria-label':'Существа в области'},
+    h('div',{class:'mm-hh'},h('b',{},`В области: ${vis.length}`),h('span',{class:'mm-sub'},`${KNAME[s.kind]} ${s.size} фт`),h('button',{class:'btn sm mm-x',type:'button','aria-label':'Закрыть',onclick:closeHits},'✕')),
+    vis.length?h('div',{class:'mm-names'},...vis.map(t=>h('span',{class:'mm-chip'+(t.kind==='monster'?' mon':'')},t.name+(t.hidden?' (скрыт)':'')))):h('div',{class:'mm-sub'},'Никого — уберите область и поставьте заново.'),
+    V.readOnly?null:h('div',{class:'mm-row'},h('button',{class:'btn pri sm',type:'button',disabled:!all.length,onclick:()=>openEffect(s,{})},'Применить эффект…'),h('button',{class:'btn sm',type:'button',onclick:async()=>{await V.store.del('shapes/'+s.id);closeHits()}},'Убрать область')));
+  (V.overlay()||document.body).append(hitBox);placeHits()}
+
+/* ---------- эффект по области: спасброски и урон ---------- */
+const SAVES=[['str','Сил'],['dex','Лов'],['con','Тел'],['int','Инт'],['wis','Мдр'],['cha','Хар']],SAVEN=Object.fromEntries(SAVES);
+const AUTO_FAIL=['Парализован','Ошеломлён','Без сознания','Окаменел'];
+const md=v=>Math.floor((Number(v||10)-10)/2),sg=n=>(n>=0?'+':'')+n;
+const lc=x=>String(x||'').toLowerCase().replace(/ё/g,'е');
+const DT=[['fire',/огон|огн|пламен/],['cold',/холод|мороз/],['lightning',/электр|молни/],['thunder',/звук|гром/],['acid',/кислот/],['poison',/(^|[^а-я])яд|отрав/],['necrotic',/некрот/],['radiant',/излуч|сиян|свят/],['force',/силов/],['psychic',/психи/],['bludgeoning',/дробя/],['piercing',/колю/],['slashing',/рубя/]];
+const dtKeys=x=>{const s=lc(x);return DT.filter(([k,r])=>r.test(s)||s.includes(k)).map(([k])=>k)};
+const bestOf=t=>{const B=window.BESTIARY||{};return t.kind==='monster'?(B[t.monster]||B[t.name]||null):null};
+function saveBonus(t,ab){
+  if(t.kind==='monster'){const bx=bestOf(t);if(bx&&bx.saves&&bx.saves[ab]!=null)return Number(bx.saves[ab])||0;const b=(V.BEST||{})[t.monster];return ab==='dex'&&b?Number(b.dex)||0:0}
+  const c=V.S.chars[t.id];if(!c)return 0;return md(c[ab])+((c.saves||[]).includes(ab)?(Number(c.prof)||2):0)}
+// сопротивление/иммунитет/уязвимость: у монстров — из window.BESTIARY, у героев — поля resist/immune/vuln листа, если есть
+function defenses(t,type,magic){const src=t.kind==='monster'?bestOf(t):V.S.chars[t.id];const keys=dtKeys(type);if(!src||!keys.length)return{mult:1,note:''};
+  const hit=f=>keys.filter(k=>[].concat(src[f]||[]).some(x=>!(magic&&/немагич|nonmagic/.test(lc(x)))&&dtKeys(x).includes(k)));
+  for(const [f,mult,n] of [['immune',0,'иммунитет'],['resist',.5,'сопротивление'],['vuln',2,'уязвимость']]){const hk=hit(f);if(!hk.length)continue;
+    if(hk.length===keys.length)return{mult,note:n};return{mult:1,note:`${n} к части урона — учтите вручную`}}
+  return{mult:1,note:''}}
+function resolveEffect(eff,targets){const dr=eff.dice?V.roll(eff.dice):null;if(eff.dice&&!dr){V.toast('Не понял кубы урона: '+eff.dice);return null}
+  const base=dr?Math.max(0,dr.total):0;
+  const rows=targets.map(t=>{const r={tid:t.id,name:t.name,h:!!(t.hidden||V.has(t,'Невидим')||!V.canSee(t))};// h — скрыт от игроков: в журнале его видит только Мастер
+    if(eff.save){const auto=(eff.save==='str'||eff.save==='dex')&&AUTO_FAIL.find(c=>V.has(t,c));
+      if(auto){r.ok=false;r.roll=null;r.note=auto+' — авто-провал'}
+      else{const b=saveBonus(t,eff.save),mode=eff.save==='dex'&&V.has(t,'Опутан')?'dis':null,x=V.roll('1d20'+sg(b),mode);r.roll=x.total;r.det=x.det+(mode?' помеха (опутан)':'');r.ok=x.total>=eff.dc}}
+    if(eff.dice){let d=base;if(eff.save&&r.ok)d=eff.half?Math.floor(base/2):0;const df=defenses(t,eff.type,!!eff.spell);if(df.mult!==1)d=Math.floor(d*df.mult);if(df.note)r.note=(r.note?r.note+'; ':'')+df.note;r.dmg=d}
+    return r});
+  return{base,det:dr?dr.det:'',rows}}
+function effText(e){return[e.dice?`урон ${e.dice}${e.type?' '+e.type:''}`:null,e.save?`спасбросок ${SAVEN[e.save]} СЛ ${e.dc}${e.dice?', при успехе '+(e.half?'половина':'урона нет'):''}`:'без спасброска'].filter(Boolean).join(' · ')}
+const skips=new Map();// снятые Мастером галочки: id записи журнала → Set(id фишек)
+const skipOf=id=>{if(!skips.has(id))skips.set(id,new Set());return skips.get(id)};
+async function applyAoe(m){if(!V.isGM())return V.toast('Урон наносит Мастер.');const cur=(V.S.log||[]).find(x=>x.id===m.id)||m;if(cur.aoeDone)return V.toast('Урон по этой области уже нанесён.');
+  const sk=skipOf(m.id),rows=m.aoe.rows.filter(r=>!sk.has(r.tid)&&r.dmg>0&&V.S.tokens[r.tid]);m.aoeDone=true;
+  await V.store.update('log/'+m.id,{aoeDone:true,aoeApplied:rows.map(r=>r.tid)});
+  for(const r of rows)await V.applyHp(r.tid,r.dmg,'dmg');V.toast(rows.length?`Урон нанесён: ${rows.length}`:'Некому наносить урон')}
+function resultView(m){const a=m.aoe,gm=V.isGM(),done=!!m.aoeDone,sk=skipOf(m.id);const rows=gm?a.rows:a.rows.filter(r=>!r.h);const hidden=a.rows.length-rows.length;
+  const box=h('div',{class:'mm-res'+(gm&&!done&&a.dice?' gm':'')}),chk=gm&&!done&&a.dice;
+  box.append(h('div',{class:'mm-tr mm-th'},chk?h('span',{}):null,h('span',{},'Кто'),h('span',{},a.save?'к20':''),h('span',{},a.save?'Итог':''),h('span',{},a.dice?'Урон':'')));
+  for(const r of rows){const cb=chk?h('input',{type:'checkbox',checked:!sk.has(r.tid),'aria-label':'Наносить урон: '+r.name,onchange:e=>{e.target.checked?sk.delete(r.tid):sk.add(r.tid)}}):null;
+    box.append(h(chk?'label':'div',{class:'mm-tr'+(done&&a.dice&&!(m.aoeApplied||[]).includes(r.tid)?' off':'')},cb,h('span',{class:'mm-nm',title:r.det||''},h('span',{},r.name+(r.h&&gm?' (скрыт)':'')),r.note?h('small',{},r.note):null),
+      h('span',{class:'mm-n',title:r.det||''},a.save?(r.roll==null?'—':String(r.roll)):''),h('span',{class:a.save?(r.ok?'mm-ok':'mm-bad'):''},a.save?(r.ok?'успех':'провал'):''),h('b',{class:'mm-n'},a.dice?String(r.dmg):'')))}
+  if(hidden>0)box.append(h('div',{class:'mm-sub'},`и ещё ${hidden} — видит Мастер`));
+  if(gm&&a.dice&&!V.readOnly)box.append(done?h('div',{class:'mm-sub'},'✔ Урон нанесён'):h('div',{class:'mm-row'},h('button',{class:'btn pri',type:'button',onclick:async e=>{e.currentTarget.disabled=true;await applyAoe(m);if(effBox&&effBox.dataset.mid===m.id)closeEffect()}},'Нанести всем')));
+  else if(a.dice&&!done)box.append(h('div',{class:'mm-sub'},'Урон нанесёт Мастер.'));
+  return box}
+V.addLogRenderer(m=>{if(!m||!m.aoe||!Array.isArray(m.aoe.rows))return null;
+  return h('div',{class:'msg roll mm-log'},h('div',{class:'who'},`${m.who||''} · ${new Date(m.ts||Date.now()).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})}`),h('div',{},String(m.text||'')),
+    m.aoe.dice?h('div',{},h('span',{class:'tot'},String(m.total)),' ',h('span',{class:'det'},String(m.det||''))):h('div',{class:'det'},String(m.det||'')),resultView(m))});
+
+let effBox=null;
+function closeEffect(){if(effBox){effBox.remove();effBox=null}if(!hitBox){hl.shape=null;hl.ids=[]}V.requestDraw()}
+addEventListener('keydown',e=>{if(e.key==='Escape'&&effBox)closeEffect()});
+function openEffect(s,pre){closeEffect();closeHits();const m=V.mapInfo();const targets=tokensIn(s,m);const vis=V.isGM()?targets:targets.filter(t=>V.canSee(t));
+  hl.shape=s;hl.ids=vis.map(t=>t.id);V.requestDraw();pre=pre||{};
+  const dice=h('input',{type:'text',value:pre.dice||'',placeholder:'8d6',autocomplete:'off','aria-label':'Урон, кубы'});
+  const type=h('input',{type:'text',value:pre.type||'',placeholder:'огонь','aria-label':'Тип урона'});
+  const sv=h('select',{'aria-label':'Спасбросок'},h('option',{value:''},'без спасброска'),...SAVES.map(([k,n])=>h('option',{value:k,selected:pre.save===k},n)));
+  const dc=h('input',{type:'number',min:1,max:30,value:pre.dc||13,'aria-label':'Сложность'});
+  const half=h('select',{'aria-label':'При успехе'},h('option',{value:'1',selected:pre.half!==false},'половина'),h('option',{value:'0',selected:pre.half===false},'ничего'));
+  const lab=(t,el,cls)=>h('label',{class:'mm-fl'+(cls?' '+cls:'')},h('span',{},t),el);
+  const sync=()=>{const on=!!sv.value;dc.disabled=!on;half.disabled=!on};sv.onchange=sync;sync();
+  const title=pre.spell?`«${pre.spell}»`:'Эффект по области';
+  const body=h('div',{class:'mm-db'});
+  body.append(h('div',{class:'mm-form'},lab('Урон (кубы)',dice),lab('Тип урона',type),lab('Спасбросок',sv),lab('СЛ',dc),lab('При успехе',half,'w2')),
+    h('div',{class:'mm-sub'},vis.length?'Цели: '+vis.map(t=>t.name).join(', '):'В области никого нет.'));
+  const go=h('button',{class:'btn pri',type:'button',disabled:!targets.length||V.readOnly},'🎲 Бросить');
+  const foot=h('div',{class:'mm-row mm-foot'},go,h('button',{class:'btn',type:'button',onclick:closeEffect},'Отмена'));
+  go.onclick=async()=>{const eff={dice:dice.value.trim().replace(/к/gi,'d').replace(/\s+/g,''),type:type.value.trim().slice(0,40),save:sv.value||null,dc:Math.max(1,Math.min(30,Number(dc.value)||10)),half:half.value==='1',spell:pre.spell||null,caster:pre.caster||null};
+    if(!eff.dice&&!eff.save)return V.toast('Укажите урон или спасбросок.');
+    if(V.readOnly)return;const res=resolveEffect(eff,targets);if(!res)return;go.disabled=true;
+    const id=V.store.newId('log'),seen=res.rows.filter(r=>!r.h);
+    const entry={ts:Date.now(),who:V.whoAmI(),by:V.myId,kind:'roll',
+      text:`🎯 ${pre.caster?pre.caster+': ':''}${title} — ${KNAME[s.kind].toLowerCase()} ${s.size} фт, в области ${seen.length}${eff.save?` · провалили ${seen.filter(r=>r.ok===false).length}`:''}`,
+      total:eff.dice?res.base:eff.dc,det:(eff.dice?`${res.det}${eff.type?' '+eff.type:''} · `:'')+(eff.save?`спасбросок ${SAVEN[eff.save]} СЛ ${eff.dc}${eff.dice?', при успехе '+(eff.half?'половина':'урона нет'):''}`:'без спасброска'),
+      aoe:{...eff,base:res.base,rows:res.rows,shape:s.id}};
+    await V.store.set('log/'+id,entry);
+    const msg={...entry,id};if(!effBox)return;effBox.dataset.mid=id;
+    body.replaceChildren(h('div',{class:'mm-sum'},eff.dice?h('b',{class:'mm-big'},String(res.base)):null,h('span',{},effText(eff))),resultView(msg));
+    foot.replaceChildren(h('button',{class:'btn',type:'button',onclick:closeEffect},'Закрыть'));
+    if(!V.isGM())V.toast('Результат в журнале — урон нанесёт Мастер.')};
+  effBox=h('div',{class:'mm-ov',onclick:e=>{if(e.target===effBox)closeEffect()}},h('div',{class:'mm-dlg',role:'dialog','aria-modal':'true','aria-label':'Применить эффект'},
+    h('div',{class:'mm-hh'},h('b',{},title),h('span',{class:'mm-sub'},`${KNAME[s.kind]} ${s.size} фт · в области ${vis.length}`),h('button',{class:'btn sm mm-x',type:'button','aria-label':'Закрыть',onclick:closeEffect},'✕')),body,foot));
+  document.body.append(effBox);setTimeout(()=>{try{(pre.dice?go:dice).focus({preventScroll:true})}catch(e){}},30)}
+
+/* ---------- для других модулей: V.aoe.start({kind,size,from,effect}) ---------- */
+const TYPE_COL=[[/огон|огн|пламен|излуч/,'#e8734a'],[/холод|мороз/,'#6fb7e8'],[/яд|кислот|некрот/,'#9fd36a']];
+function startAoe(o){if(V.readOnly)return;V.setTool('aoe');
+  aoe.kind=KNAME[o.kind]?o.kind:'sphere';aoe.size=Math.max(5,Math.min(300,Number(o.size)||20));aoe.color=(TYPE_COL.find(([r])=>r.test(lc(o.effect&&o.effect.type)))||[0,'#c79bf0'])[1];
+  aoe.pending=o.effect||null;aoe.self=null;aoe.origin=null;aoe.awaitDir=false;aoe.preview=null;closeHits();
+  const m=V.mapInfo(),t=o.from&&V.S.tokens[o.from];
+  if(t&&t.map===m.id){try{V.centerOn(t.x,t.y)}catch(e){}const r=(t.size||1)*(m.grid||cellOf(m))/2;
+    if(aoe.kind==='sphere'){// аура «на себя»: радиус считается от края фишки заклинателя
+      const sz=aoe.size;aoe.size=sz+(t.size||1)*2.5;const p=mkPreview(t.x,t.y,null,null);p.from=t.id;aoe.size=sz;refreshPanel();saveShape(p);return}
+    aoe.self={tid:t.id,x:t.x,y:t.y,r};aoe.origin=[t.x,t.y];aoe.awaitDir=true;aoe.preview=mkPreview(t.x,t.y,null,null);V.toast('Коснитесь карты — куда направить: '+KNAME[aoe.kind].toLowerCase())}
+  else V.toast(aoe.kind==='sphere'||aoe.kind==='cube'?'Коснитесь карты — центр области':'Коснитесь точки начала, потом направления');
+  refreshPanel();V.requestDraw()}
+V.aoe={start:startAoe,openEffect,tokensIn:s=>tokensIn(s,V.mapInfo())};
 
 /* ---------- Мастер: очистка ---------- */
 V.addGmSection(()=>{const here=shapes.filter(s=>s.map===V.st().map);return[h('h3',{},'Области заклинаний'),

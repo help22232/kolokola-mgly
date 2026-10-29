@@ -151,7 +151,7 @@ details>summary{cursor:pointer;color:var(--sea);margin-top:8px}
 .rollfx{position:absolute;right:10px;top:10px;z-index:4;display:flex;flex-direction:column;gap:6px;width:min(300px,calc(100% - 70px));pointer-events:none}
 .rcard{pointer-events:auto;display:flex;gap:10px;align-items:center;background:rgba(17,24,25,.95);border:1px solid var(--line);border-left:4px solid #d9b36c;border-radius:10px;padding:7px 10px;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:rin .25s ease-out;transition:opacity .4s,transform .4s;cursor:pointer}
 .rcard.out{opacity:0;transform:translateX(30px)}
-.rcard.conc{border-left-color:#8fb4ff}.rcard .btn.sm{min-height:32px}
+.rcard.conc{border-left-color:#8fb4ff}.rcard.oa{border-left-color:#f0c050}.rcard .btn.sm{min-height:32px}
 .rcard.crit{border-left-color:#7fd68a;background:rgba(20,40,26,.96)}.rcard.fail{border-left-color:#e5786f;background:rgba(44,20,20,.96)}
 .rtot{font:700 28px/1 'IBM Plex Mono',monospace;color:#ffe6a0;min-width:42px;text-align:center}
 .rcard.crit .rtot{color:#9cf0a6}.rcard.fail .rtot{color:#ff9a90}
@@ -261,7 +261,7 @@ const BEST={
  'Сахуагин':{ac:12,hp:'4d8+4',avg:22,dex:0,dv:120,sz:1,atk:[['Укус',3,'1d4+1'],['Когти',3,'1d4+1'],['Копьё',3,'1d6+1']]},
  'Жрица сахуагинов':{ac:12,hp:'6d8+6',avg:33,dex:0,dv:120,sz:1,atk:[['Укус',3,'1d4+1'],['Когти',3,'1d4+1']]},
  'Мерроу':{ac:13,hp:'6d10+12',avg:45,dex:0,dv:60,sz:2,atk:[['Укус',6,'1d8+4'],['Когти',6,'2d4+4'],['Гарпун',6,'2d6+4']]},
- 'Акула-охотник':{ac:12,hp:'6d10+6',avg:45,dex:1,dv:0,sz:2,atk:[['Укус',6,'2d8+4']]},
+ 'Акула-охотник':{ac:12,hp:'6d10+12',avg:45,dex:1,dv:0,sz:2,atk:[['Укус',6,'2d8+4']]},
  'Зомби':{ac:8,hp:'3d8+9',avg:22,dex:-2,dv:60,sz:1,atk:[['Удар',3,'1d6+1']]},
  'Гуль':{ac:12,hp:'5d8',avg:22,dex:2,dv:60,sz:1,atk:[['Укус',2,'2d6+2'],['Когти (паралич СЛ 10)',4,'2d4+2']]},
  'Колокольный Страж':{ac:17,hp:'9d10+27',avg:76,dex:-1,dv:60,sz:2,atk:[['Удар',6,'1d10+4']]},
@@ -304,6 +304,64 @@ const addL=(m,k,f)=>{if(!m.has(k))m.set(k,new Set());m.get(k).add(f);return()=>m
 const isPrivate=p=>p.startsWith('gm/');
 const okPath=p=>typeof p==='string'&&/^(tokens|chars|log|maps|ready|notes|shapes|drawings|handouts)\/[A-Za-z0-9_\-]{1,40}$|^game\/(state|audio)$/.test(p);
 function applyOp(op,p,d){if(op==='set')docs.set(p,clone(d));else if(op==='update'){if(!docs.has(p))return false;docs.set(p,merge(docs.get(p),clone(d)))}else if(op==='del')docs.delete(p);else return false;fire(p);return true}
+/* защита на стороне Мастера: что игрок (по id из приветствия) может писать — по смыслу, а не только по пути */
+const stab=v=>v&&typeof v==='object'?Array.isArray(v)?'['+v.map(stab).join(',')+']':'{'+Object.keys(v).filter(k=>k!=='id'&&v[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+stab(v[k])).join(',')+'}':JSON.stringify(v===undefined?null:v);
+const sameBut=(a,b,skip)=>{const o1={...(a||{})},o2={...(b||{})};for(const k of skip){delete o1[k];delete o2[k]}return stab(o1)===stab(o2)};
+const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+const num=(v,lo,hi)=>typeof v==='number'&&isFinite(v)&&v>=lo&&v<=hi;
+const str=(v,n)=>typeof v==='string'&&v.length<=n;
+const tokOf=id=>docs.get('tokens/'+id)||null;
+const ownsTok=(id,who)=>{const t=tokOf(id);return!!(t&&t.owner&&t.owner===who)};
+function turnIsMine(who){const s=docs.get('game/state');const cb=s&&s.combat;return!!(cb&&cb.on&&cb.turn&&ownsTok(cb.turn,who))}
+const condOk=(a,b)=>{if(!Array.isArray(b)||b.some(x=>typeof x!=='string'))return false;const A=new Set(a||[]),B=new Set(b);
+  for(const x of B)if(!A.has(x)&&x!=='Концентрация')return false;           // сам игрок добавляет только концентрацию
+  for(const x of A)if(!B.has(x)&&x!=='Концентрация'&&x!=='Отравлен')return false;return true}; // снимает: концентрацию, «Отравлен» противоядием
+// поля своей фишки, которые игрок меняет сам (перемещение, бой, лист героя, зелья, прокачка); hidden/kind/map/hpTemp/size — только Мастер
+const OWN_T={x:v=>num(v,-1e5,1e5),y:v=>num(v,-1e5,1e5),moved:v=>num(v,0,1e4),dash:v=>typeof v==='boolean',reacted:v=>typeof v==='boolean',disengage:v=>typeof v==='boolean',init:v=>v===null||num(v,-50,100),inCombat:v=>v===true,
+  ds:v=>num(v,0,3),df:v=>num(v,0,3),name:v=>str(v,40)&&v.length>0,color:v=>str(v,20),img:v=>v===null||str(v,60),ac:v=>num(v,0,40),dv:v=>num(v,0,300),light:v=>num(v,0,60),
+  aura:v=>v===null||isObj(v),concOn:v=>v===null||str(v,80),lvlUp:v=>v===false,
+  cond:(v,t)=>condOk(t.cond,v),hp:(v,t,d)=>num(v,0,Number('hpMax' in d?d.hpMax:t.hpMax)||0),
+  hpMax:(v,t)=>t.lvlUp===true&&num(v,Number(t.hpMax)||0,(Number(t.hpMax)||0)+40), // только в мастере повышения уровня
+  owner:v=>v===null}; // «Выбрать другого» — отказаться от своей фишки
+function okToken(who,op,p,d){const id=p.slice(7),t=docs.get(p);
+  if(op==='del')return false;
+  if(op==='set'){if(t)return false; // новая фишка: только свой герой
+    return isObj(d)&&d.owner===who&&d.kind==='pc'&&!d.hidden&&!d.lvlUp&&str(d.name,40)&&num(Number(d.hpMax)||0,0,400)&&num(Number(d.hp)||0,0,Number(d.hpMax)||0)&&num(Number(d.ac)||0,0,40)&&(d.size==null||d.size===1)}
+  if(!t||!isObj(d))return false;const ks=Object.keys(d);
+  if(!t.owner&&t.kind==='pc'&&ks.length===1&&d.owner===who)return true;        // занять свободного героя
+  if(t.owner!==who){const R={moved:0,dash:false,reacted:false,disengage:false};return ks.length>0&&ks.every(k=>k in R&&d[k]===R[k])&&turnIsMine(who)} // «Закончить ход» сбрасывает ход следующему
+  return ks.every(k=>OWN_T[k]&&OWN_T[k](d[k],t,d))}
+function okChars(who,op,p,d){const id=p.slice(6);if(op==='del')return false;
+  if(ownsTok(id,who))return isObj(d);                       // свой лист героя — целиком
+  // чужой лист: только передача предметов/монет (giveItem/giveCoins) — что-то добавить, ничего не убрать
+  const t=tokOf(id);if(op!=='set'||!t||t.kind==='monster'||!isObj(d))return false;
+  if(![...docs.keys()].some(k=>k.startsWith('tokens/')&&docs.get(k).owner===who))return false;
+  const c=docs.get(p)||{};if(!sameBut(c,d,['inv','gp','sp','cp']))return false;
+  for(const k of ['gp','sp','cp']){const a=Number(c[k])||0,b=d[k]==null?0:d[k];if(!num(b,a,a+1e6))return false}
+  const oi=Array.isArray(c.inv)?c.inv:[],ni=d.inv==null?[]:d.inv;if(!Array.isArray(ni)||ni.length>500)return false;
+  const cnt=a=>{const m=new Map();for(const x of a)if(Array.isArray(x)&&typeof x[0]==='string')m.set(x[0],(m.get(x[0])||0)+(Number(x[1])||0));return m};
+  const A=cnt(oi),B=cnt(ni);for(const [k,v] of A)if((B.get(k)||0)<v)return false;
+  return ni.every(x=>Array.isArray(x)&&str(x[0],80)&&num(Number(x[1]),0,1e5))}
+function okState(who,op,p,d){if(p!=='game/state'||op!=='set'||!isObj(d)||!turnIsMine(who))return false; // только «Закончить ход» в свой ход
+  let base={};try{base=DEF_STATE}catch(e){}const cur=merge(base,docs.get('game/state')||{});
+  if(!sameBut(cur,d,['combat']))return false;const a=cur.combat||{},b=d.combat;if(!isObj(b)||!sameBut(a,b,['turn','round'])||b.on!==true)return false;
+  const nt=tokOf(b.turn);return!!(nt&&nt.inCombat)&&(b.round===a.round||b.round===a.round+1)}
+function okMap(who,op,p,d){if(op!=='set'||!isObj(d))return false; // игрок только открывает/закрывает двери
+  const id=p.slice(5),cur=docs.get(p);let walls=cur&&Array.isArray(cur.walls)?cur.walls:null;
+  if(!walls){try{walls=defWalls[id]}catch(e){}}if(!Array.isArray(walls)||!Array.isArray(d.walls)||d.walls.length!==walls.length)return false;
+  if(!sameBut(cur||{},d,['walls']))return false;
+  return walls.every((w,i)=>{const n=d.walls[i];return isObj(n)&&sameBut(w,n,['o'])&&(stab(w.o)===stab(n.o)||(w.d&&(n.o===0||n.o===1)))})}
+// заметки/фигуры/рисунки: свои создаёт (by = отправитель), меняет и удаляет только свои
+function okOwnDoc(who,op,p,d){const cur=docs.get(p);if(op==='set'&&!cur)return isObj(d)&&d.by===who;if(!cur||cur.by!==who)return false;return op==='del'||(isObj(d)&&(d.by===undefined||d.by===who))}
+function allowW(who,op,p,d){if(!who||!okPath(p)||!['set','update','del'].includes(op))return false;const col=p.split('/')[0];
+  if(col==='tokens')return okToken(who,op,p,d);
+  if(col==='chars')return okChars(who,op,p,d);
+  if(col==='game')return okState(who,op,p,d);
+  if(col==='maps')return okMap(who,op,p,d);
+  if(col==='log')return op==='set'&&!docs.has(p)&&isObj(d)&&d.by===who&&d.kind!=='secret';
+  if(col==='ready')return p==='ready/'+who&&op!=='update'&&(op==='del'||isObj(d));
+  if(col==='notes'||col==='shapes'||col==='drawings')return okOwnDoc(who,op,p,d);
+  return false} // handouts, game/audio и прочее — только Мастер
 
 /* сеть */
 const SAVE_KEY='smgla-room-'+ROOM;
@@ -316,7 +374,7 @@ let saveT=0;function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{if(!LSx
 function bcast(msg){for(const c of conns.values())if(c.conn.open)try{c.conn.send(msg)}catch(e){}}
 function hsend(m){if(hostConn&&hostConn.open)try{hostConn.send(m);return true}catch(e){}return false}
 let netMsg='';function netStatus(t){netMsg=t;try{showBanner(t)}catch(e){}try{renderLobby()}catch(e){}}
-window.__net={ok:()=>isOwner||!!(hostConn&&hostConn.open),msg:()=>netMsg};
+window.__net={ok:()=>isOwner||!!(hostConn&&hostConn.open),msg:()=>netMsg,queued:()=>pending.length};
 // STUN + публичный TURN (Open Relay): без ретранслятора мобильные сети часто не соединяются напрямую
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'},
   {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
@@ -324,10 +382,11 @@ const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls
   {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}]}};
 function write(op,p,d){
   if(isOwner){if(!applyOp(op,p,d))return;persist();if(!isPrivate(p))bcast({t:'doc',p,d:docs.has(p)?docs.get(p):null});return}
+  d=d===undefined?null:clone(d); // простой объект: BinaryPack не упакует, например, прокси или объект из другого окна
   if(hostConn&&hostConn.open&&!pending.length){applyOp(op,p,d);try{hostConn.send({t:'w',op,p,d});return}catch(e){}}
   // нет связи: показываем изменение сразу, а Мастеру отправим после переподключения
   if(pending.length>=PEND_MAX){toast('Нет связи с Мастером слишком долго — изменение не сохранено.');return}
-  applyOp(op,p,d);pending.push({op,p,d:d===undefined?null:clone(d),ts:Date.now()});
+  applyOp(op,p,d);pending.push({op,p,d,ts:Date.now()});
   if(pending.length===1)toast('Нет связи с Мастером — изменение отправится, когда связь вернётся.')}
 function flushPending(){if(!pending.length)return;const now=Date.now(),q=pending;pending=[];let lost=0;
   for(const w of q){if(now-w.ts>PEND_TTL){lost++;continue}applyOp(w.op,w.p,w.d);try{hostConn.send({t:'w',op:w.op,p:w.p,d:w.d})}catch(e){lost++}}
@@ -381,11 +440,12 @@ else if(isOwner){
       conn.on('open',()=>{conns.set(conn,{conn,id:null,name:'Игрок',pres:{},last:Date.now()});const o={};for(const [k,v] of docs)if(!isPrivate(k))o[k]=v;conn.send({t:'snap',docs:o})});
       conn.on('data',m=>{const c=conns.get(conn);if(!c||!m||typeof m!=='object')return;c.last=Date.now();
         if(m.t==='ping'){try{conn.send({t:'pong'})}catch(e){}}
-        else if(m.t==='hello'){c.id=String(m.id||'').slice(0,40)||conn.peer;c.name=String(m.name||'Игрок').slice(0,30);
+        else if(m.t==='hello'){c.id=String(m.id||'').slice(0,40)||conn.peer;if(c.id===myId)c.id='p-'+String(conn.peer).slice(0,30); // чужой id Мастера не присвоить
+         c.name=String(m.name||'Игрок').slice(0,30);
           // тот же игрок переподключился — старое соединение убираем, чтобы не было дублей
           let again=false;for(const [k,o] of conns)if(k!==conn&&o.id===c.id){again=true;conns.delete(k);try{k.close()}catch(e){}}
           bcastPeers();if(!again)deliverEv('joined',{name:c.name},c.id)}
-        else if(m.t==='w'){if(!okPath(m.p))return;if(!applyOp(m.op,m.p,m.d))return;persist();bcast({t:'doc',p:m.p,d:docs.has(m.p)?docs.get(m.p):null})}
+        else if(m.t==='w'){if(!allowW(c.id,m.op,m.p,m.d)){try{conn.send({t:'deny',p:m.p,d:okPath(m.p)&&docs.has(m.p)?docs.get(m.p):null})}catch(e){}return}if(!applyOp(m.op,m.p,m.d))return;persist();bcast({t:'doc',p:m.p,d:docs.has(m.p)?docs.get(m.p):null})}
         else if(m.t==='ev'&&typeof m.topic==='string'&&!['fogreset','cutscene','view','sfx','handout'].includes(m.topic)){deliverEv(m.topic,m.data,c.id);bcast({t:'ev',topic:m.topic,data:m.data,from:c.id})}
         else if(m.t==='pres'&&m.pres&&typeof m.pres==='object'){c.pres=m.pres;bcastPeers()}});
       conn.on('close',()=>{if(conns.delete(conn))bcastPeers()});conn.on('error',()=>{})})};
@@ -396,7 +456,7 @@ else if(isOwner){
   open();
 }else{
   // игрок: бесконечные переподключения 2→4→8→15 с, пинг раз в 5 с, тишина >15 с = обрыв
-  let tryN=0,retryT=0,lastRx=0,was=false,peerBorn=0,probeT=0,sigDown=false,lastS=2;
+  let denyT=0,tryN=0,retryT=0,lastRx=0,was=false,peerBorn=0,probeT=0,sigDown=false,lastS=2;
   const lostMsg=()=>!myPeer&&!was?`Подключаюсь к серверу связи… (попытка ${tryN})`:was?`Связь с Мастером потеряна, переподключаюсь… (попытка ${tryN})`:`Мастер ещё не открыл стол ${ROOM} (или перезагружает страницу). Жду… (попытка ${tryN})`;
   const later=()=>{if(retryT)return;tryN++;const s=lastS=Math.min(15,2**tryN);netStatus(sigDown?SIG_MSG(s):lostMsg());retryT=setTimeout(()=>{retryT=0;connectNow()},s*1000)};
   const drop=c=>{if(hostConn!==c)return;hostConn=null;try{c.close()}catch(e){}};
@@ -422,6 +482,8 @@ else if(isOwner){
       // полный снимок: заменяем документы и будим всех подписчиков watchDoc/watchCol — интерфейс обновится без перезагрузки
       if(m.t==='snap'&&m.docs){docs.clear();for(const k in m.docs)docs.set(k,m.docs[k]);fireAll();flushPending()}
       else if(m.t==='doc'&&typeof m.p==='string'){if(m.d==null)docs.delete(m.p);else docs.set(m.p,m.d);fire(m.p)}
+      // Мастер отклонил запись: откатываем свою оптимистичную правку к его версии
+      else if(m.t==='deny'&&typeof m.p==='string'){if(m.d==null)docs.delete(m.p);else docs.set(m.p,m.d);fire(m.p);if(Date.now()-denyT>3000){denyT=Date.now();toast('Это может менять только Мастер')}}
       else if(m.t==='ev')deliverEv(m.topic,m.data,m.from);
       else if(m.t==='peers')setPeers(m.list)});
     c.on('close',()=>{if(hostConn!==c)return;hostConn=null;later()});
@@ -675,7 +737,7 @@ function endPtr(e){ptrs.delete(e.pointerId);clearTimeout(longT);if(ptrs.size<2)p
       if(inTurnLock(t)&&st().combat.turn!==t.id){toast('Сейчас не ваш ход.')}
       else if(inTurnLock(t)&&cost>moveLeft(t)){toast(`Слишком далеко: ${cost} фт, а осталось ${moveLeft(t)} фт. Можно сделать Рывок.`)}
       else if(!isGM()&&blocked(d.sx,d.sy,x,y)){toast('Туда не пройти: путь преграждает стена или закрытая дверь.')}
-      else{t.x=x;t.y=y;lightDirty=true;const p={x,y};if(st().combat.on&&t.inCombat)p.moved=(t.moved||0)+cost;store.update('tokens/'+d.id,p)}}
+      else{t.x=x;t.y=y;lightDirty=true;const p={x,y};if(st().combat.on&&t.inCombat)p.moved=(t.moved||0)+cost;store.update('tokens/'+d.id,p);if(st().combat.on)checkOA(t,d.sx,d.sy,x,y)}}
     else selectToken(d.id);requestDraw();return}
   if(!di.moved){const nt=!di.t&&noteAt(di.wx,di.wy);if(nt){openNote(nt);return}if(di.t){selectToken(di.t.id)}else{const w=doorAt(di.wx,di.wy);if(w)toggleDoor(w);else{sel=null;changed('panel')}}}requestDraw()}
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
@@ -740,7 +802,7 @@ async function rollPost(label,expr,opt={}){const r=roll(expr,opt.mode);if(!r){to
 function fxBox(){let b=$('rollFx');if(!b){b=h('div',{id:'rollFx',class:'rollfx','aria-live':'polite'});$('board').appendChild(b)}return b}
 function floatNum(tid,delta){const t=S.tokens[tid];if(!t||!canSee(t))return;const sx=t.x*cam.z+cam.ox,sy=t.y*cam.z+cam.oy;
   const n=h('div',{class:'fnum '+(delta<0?'dmg':'heal')},(delta<0?'−':'+')+Math.abs(delta));n.style.left=sx+'px';n.style.top=sy+'px';$('board').appendChild(n);setTimeout(()=>n.remove(),1900)}
-function showFx(m){if(m.tid&&m.delta){floatNum(m.tid,m.delta);if(m.delta<0)concCheck(m.tid,-m.delta)}if(m.kind!=='roll'||m.total==null)return;
+function showFx(m){if(m.oa){oaCard(m);return}if(m.tid&&m.delta){floatNum(m.tid,m.delta);if(m.delta<0)concCheck(m.tid,-m.delta)}if(m.kind!=='roll'||m.total==null)return;
   const crit=m.nat===20,fail=m.nat===1,tg=m.target&&S.tokens[m.target];
   const c=h('div',{class:'rcard'+(crit?' crit':fail?' fail':''),onclick:()=>c.remove()},
     h('div',{class:'rtot'},String(m.total)),
@@ -893,9 +955,9 @@ function renderHeader(){const s=st(),m=mapInfo();$('mistCells').replaceChildren(
 function combatOrder(){return tokList().filter(t=>t.inCombat&&t.map===st().map&&(isOwner||!t.hidden)).sort((a,b)=>(b.init??-99)-(a.init??-99)||(a.name>b.name?1:-1))}
 function hpText(t){if(t.kind==='monster'){if(isOwner&&S.gm[t.id])return`${S.gm[t.id].hp}/${S.gm[t.id].hpMax} · КД ${S.gm[t.id].ac}`;return{ok:'невредим',hurt:'ранен',bloodied:'тяжело ранен',down:'повержен'}[t.hpState||'ok']}return`${t.hp}/${t.hpMax}${t.hpTemp?` +${t.hpTemp}`:''} · КД ${t.ac}`}
 async function nextTurn(){const o=combatOrder().filter(t=>t.init!=null);if(!o.length)return;const s=st();let i=o.findIndex(t=>t.id===s.combat.turn),round=s.combat.round;i++;if(i>=o.length){i=0;round++}
-  await store.update('tokens/'+o[i].id,{moved:0,dash:false});await store.set('game/state',{...s,combat:{...s.combat,turn:o[i].id,round}});const t=o[i];await post({kind:'sys',text:`Ход: ${t.name}${i===0?` · раунд ${round}`:''}`});if(t.map===st().map&&canSee(t))centerOn(t.x,t.y)}
+  await store.update('tokens/'+o[i].id,{moved:0,dash:false,reacted:false,disengage:false});await store.set('game/state',{...s,combat:{...s.combat,turn:o[i].id,round}});const t=o[i];await post({kind:'sys',text:`Ход: ${t.name}${i===0?` · раунд ${round}`:''}`});if(t.map===st().map&&canSee(t))centerOn(t.x,t.y)}
 async function startCombat(){const s=st();const here=tokList().filter(t=>t.map===s.map&&!t.hidden);
-  for(const t of here){const patch={inCombat:true,moved:0,dash:false};if(t.kind!=='pc'&&t.init==null){const b=BEST[t.monster]||{dex:t.kind==='npc'?3:0};patch.init=rnd(20)+(b.dex||0)}await store.update('tokens/'+t.id,patch)}
+  for(const t of here){const patch={inCombat:true,moved:0,dash:false,reacted:false,disengage:false};if(t.kind!=='pc'&&t.init==null){const b=BEST[t.monster]||{dex:t.kind==='npc'?3:0};patch.init=rnd(20)+(b.dex||0)}await store.update('tokens/'+t.id,patch)}
   await store.set('game/state',{...s,combat:{on:true,round:1,turn:null}});await post({kind:'sys',text:'⚔ Бой начался! Бросайте инициативу.'})}
 async function endCombat(){for(const t of tokList())if(t.inCombat||t.init!=null)await store.update('tokens/'+t.id,{inCombat:false,init:null});await store.set('game/state',{...st(),combat:{on:false,round:1,turn:null}});await post({kind:'sys',text:'Бой окончен.'})}
 async function rollInit(t){const c=S.chars[t.id]||{};const b=BEST[t.monster];const m=b?b.dex:mod(c.dex);const r=await rollPost(`${t.name}: инициатива`,'1d20'+sgn(m));if(r)await store.update('tokens/'+t.id,{init:r.total,inCombat:true})}
@@ -906,7 +968,7 @@ function paneCombat(){const s=st(),o=combatOrder(),out=[];
     if(cur&&cur.owner===myId&&!isOwner&&cur.kind==='pc'&&cur.hp<=0)out.push(h('div',{class:'card',style:'border-color:#e5786f'},h('b',{},`Ваш ход, ${cur.name} — вы без сознания`),
       h('div',{class:'small',style:'margin:6px 0'},`Успехи ${'●'.repeat(cur.ds||0)}${'○'.repeat(Math.max(0,3-(cur.ds||0)))} · Провалы ${'●'.repeat(cur.df||0)}${'○'.repeat(Math.max(0,3-(cur.df||0)))}. 10+ — успех, 20 — встаёте с 1 хитом, 1 — два провала.`),
       h('div',{class:'row'},(cur.ds||0)<3&&(cur.df||0)<3?h('button',{class:'btn pri',type:'button',onclick:async()=>{await deathSave(S.tokens[cur.id]);const x=S.tokens[cur.id];if(x&&x.hp<=0)nextTurn()}},'🎲 Спасбросок от смерти'):null,h('button',{class:'btn',type:'button',onclick:nextTurn},'✓ Закончить ход'))));
-    else if(cur&&cur.owner===myId&&!isOwner)out.push(h('div',{class:'card',style:'border-color:rgba(217,179,108,.7)'},h('b',{},`Ваш ход, ${cur.name}!`),h('div',{class:'small',style:'margin:6px 0'},`Перемещение: осталось ${moveLeft(cur)} из ${moveBudget(cur)} фт${cur.dash?' (Рывок)':''}. Ещё есть действие, бонусное действие и реакция.`),h('div',{class:'row'},cur.dash?null:h('button',{class:'btn sm',type:'button',onclick:()=>{store.update('tokens/'+cur.id,{dash:true});post({kind:'sys',text:`${cur.name} совершает Рывок: +${speedOf(cur)} фт перемещения`})}},'🏃 Рывок (действие)'),h('button',{class:'btn pri',type:'button',onclick:nextTurn},'✓ Закончить ход'))));
+    else if(cur&&cur.owner===myId&&!isOwner)out.push(h('div',{class:'card',style:'border-color:rgba(217,179,108,.7)'},h('b',{},`Ваш ход, ${cur.name}!`),h('div',{class:'small',style:'margin:6px 0'},`Перемещение: осталось ${moveLeft(cur)} из ${moveBudget(cur)} фт${cur.dash?' (Рывок)':''}. Ещё есть действие, бонусное действие и реакция.`),h('div',{class:'row'},cur.dash?null:h('button',{class:'btn sm',type:'button',onclick:()=>{store.update('tokens/'+cur.id,{dash:true});post({kind:'sys',text:`${cur.name} совершает Рывок: +${speedOf(cur)} фт перемещения`})}},'🏃 Рывок (действие)'),cur.disengage?h('span',{class:'small muted'},'Отход: без атак по возможности'):h('button',{class:'btn sm',type:'button',title:'До конца хода ваше перемещение не провоцирует атак по возможности',onclick:()=>{store.update('tokens/'+cur.id,{disengage:true});post({kind:'sys',text:`${cur.name} совершает Отход (действие)`})}},'🛡 Отход'),h('button',{class:'btn pri',type:'button',onclick:nextTurn},'✓ Закончить ход'))));
     else if(cur&&isOwner&&cur.kind==='monster'&&BEST[cur.monster])out.push(monsterTurnCard(cur));
     else if(cur)out.push(h('p',{class:'small muted'},`Сейчас ходит: ${cur.hidden&&!isOwner?'кто-то':cur.name}${isOwner?` · перемещение ${moveLeft(cur)}/${moveBudget(cur)} фт`:''}`));
     if(isOwner){const noInit=tokList().filter(t=>t.map===s.map&&!t.hidden&&t.init==null);if(noInit.length)out.push(h('div',{class:'row'},h('button',{class:'btn sm',type:'button',onclick:async()=>{for(const t of noInit)await rollInit(t)}},`🎲 Инициатива за всех без неё (${noInit.length})`)))}
@@ -930,7 +992,7 @@ function monsterTurnCard(t){const b=BEST[t.monster],m=mapInfo(),g2=S.gm[t.id]||{
     foes.length?h('div',{class:'row',style:'margin-top:6px'},'Цель: ',tgt):h('p',{class:'small muted'},'Рядом нет целей.'),
     h('div',{class:'row',style:'margin-top:4px;flex-wrap:wrap'},...b.atk.map(a=>h('button',{class:'btn sm pri',type:'button',disabled:!foes.length,onclick:()=>attack(t,a,tgt.value)},`⚔ ${a[0]} ${sgn(a[1])} · ${a[2]}`))),
     h('label',{class:'row small',style:'margin-top:6px'},h('input',{type:'checkbox',checked:autoDmg,onchange:e=>{autoDmg=e.target.checked;try{localStorage.setItem('smgla-autodmg',autoDmg?'1':'0')}catch(_){}}}),'Попал — урон наносится сразу'),
-    h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn pri',type:'button',onclick:nextTurn},'Следующий ход ▸')))}
+    h('div',{class:'row',style:'margin-top:6px'},t.disengage?null:h('button',{class:'btn sm',type:'button',onclick:()=>{store.update('tokens/'+t.id,{disengage:true});post({kind:'sys',text:`${t.name} совершает Отход`})}},'🛡 Отход'),h('button',{class:'btn pri',type:'button',onclick:nextTurn},'Следующий ход ▸')))}
 function selectedCard(t){const kids=[h('b',{},t.name),h('div',{class:'small muted'},({pc:'Герой',npc:'Союзник',monster:t.monster||'Существо'})[t.kind]+' · '+hpText(t))];
   const can=isOwner||t.owner===myId;
   if(isGM()&&!readOnly){const inp=h('input',{type:'number',min:0,value:'',placeholder:'0','aria-label':'Сколько хитов'});
@@ -1005,13 +1067,36 @@ function atkRange(t,a,tg){const m=mapInfo();const sz=((t.size||1)-1+(tg.size||1)
     const foe=tokList().find(x=>x.id!==t.id&&x.map===t.map&&!x.hidden&&(x.kind==='monster')!==(t.kind==='monster')&&!has(x,'Без сознания')&&(x.kind==='monster'?(S.gm[x.id]||{hp:1}).hp>0:x.hp>0)&&gridFt(m,t.x,t.y,x.x,x.y)<=5);
     if(foe)dis.push('враг рядом');return{dist,ok:true,dis,thrown:!ranged}}
   if(/волна|луч/i.test(a[0]))return{dist,ok:true,dis:[]};return{dist,ok:false,max:reach}}
-async function attack(t,a,tid){const tg=tid&&S.tokens[tid];const ranged=/лук|арбалет|дротик|праща|снаряд|волна|луч|стрел|метат/i.test(a[0]);
+// атака по возможности: враг покидает досягаемость существа, у которого есть реакция (ПХБ, гл. 9)
+const alive=x=>x.kind==='monster'?((S.gm[x.id]||{hp:1}).hp>0&&x.hpState!=='down'):x.hp>0;
+const INCAP=['Недееспособен','Парализован','Ошеломлён','Без сознания','Окаменел'];
+function checkOA(t,ax,ay,bx,by){if(t.disengage||readOnly)return;const m=mapInfo();
+  for(const x of tokList()){if(x.id===t.id||x.map!==t.map||x.hidden&&!isOwner||!x.inCombat||x.reacted||!alive(x)||INCAP.some(c=>has(x,c)))continue;
+    if((x.kind==='monster')===(t.kind==='monster'))continue;const reach=(meleeAtks(x).some(a=>REACH.test(a[0]))?10:5)+((x.size||1)-1)*2.5;
+    if(gridFt(m,x.x,x.y,ax,ay)<=reach&&gridFt(m,x.x,x.y,bx,by)>reach)post({kind:'sys',oa:{by:x.id,tg:t.id},text:`⚡ ${t.name} покидает досягаемость ${x.name} — можно атаковать по возможности (реакция)`})}}
+function meleeAtks(x){const list=x.kind==='monster'?((BEST[x.monster]||{}).atk||[]):((S.chars[x.id]||{}).attacks||[]);return list.filter(a=>!/лук|арбалет|праща|дротик|снаряд|волна|луч|стрел/i.test(a[0]))}
+function oaCard(m){const x=S.tokens[m.oa.by],tg=S.tokens[m.oa.tg];if(!x||!tg||x.reacted)return;
+  const mine=isOwner?(x.kind!=='pc'||!x.owner):x.owner===myId;if(!mine||readOnly)return;
+  const card=h('div',{class:'rcard oa'},h('div',{class:'rtot'},'⚡'),h('div',{class:'rtxt'},h('b',{},`${x.name}: атака по возможности`),h('div',{class:'small muted'},`по ${tg.name} · тратит реакцию`),
+    h('div',{class:'row',style:'margin-top:4px;gap:4px;flex-wrap:wrap'},...meleeAtks(x).slice(0,3).map(a=>h('button',{class:'btn sm pri',type:'button',onclick:async e=>{e.stopPropagation();card.remove();await store.update('tokens/'+x.id,{reacted:true});await attack(x,a,tg.id,{oa:true})}},`⚔ ${a[0]}`)),
+      h('button',{class:'btn sm',type:'button',onclick:e=>{e.stopPropagation();card.remove()}},'Пропустить'))));
+  fxBox().prepend(card);setTimeout(()=>card.remove(),20000)}
+// укрытие: линии от атакующего к центру и углам клетки цели; стены и существа на пути
+function coverOf(t,tg){const m=mapInfo(),c=cellPx(m)*(tg.size||1)*.4;const pts=[[0,0],[-c,-c],[c,-c],[-c,c],[c,c]].map(([dx,dy])=>[tg.x+dx,tg.y+dy]);
+  const nb=pts.filter(([px,py])=>blocked(t.x,t.y,px,py)).length;if(nb===5)return{lvl:3,ac:0,why:'полное укрытие'};if(nb>=3)return{lvl:2,ac:5,why:'укрытие ¾ (+5 КД)'};
+  const seg=(px,py)=>{const vx=tg.x-t.x,vy=tg.y-t.y,L=vx*vx+vy*vy||1;const k=clamp(((px-t.x)*vx+(py-t.y)*vy)/L,0,1);return Math.hypot(t.x+vx*k-px,t.y+vy*k-py)};
+  const body=tokList().some(x=>x.id!==t.id&&x.id!==tg.id&&x.map===tg.map&&!x.hidden&&alive(x)&&seg(x.x,x.y)<cellPx(m)*.35&&Math.hypot(x.x-t.x,x.y-t.y)>cellPx(m)*.6&&Math.hypot(x.x-tg.x,x.y-tg.y)>cellPx(m)*.6);
+  if(nb>=1||body)return{lvl:1,ac:2,why:'укрытие ½ (+2 КД)'+(body&&!nb?' — существо на пути':'')};return{lvl:0,ac:0,why:''}}
+async function attack(t,a,tid,opt={}){const tg=tid&&S.tokens[tid];const ranged=/лук|арбалет|дротик|праща|снаряд|волна|луч|стрел|метат/i.test(a[0]);
   const rr=tg&&tg.map===t.map?atkRange(t,a,tg):null;
+  if(opt.oa&&rr)rr.ok=true;
+  const cov=tg&&tg.map===t.map?coverOf(t,tg):{lvl:0,ac:0,why:''};
+  if(cov.lvl===3){const msg=`${tg.name} за полным укрытием — его нельзя выбрать целью атаки.`;if(!isOwner){toast(msg);return}if(!confirm(msg+' Всё равно атаковать?'))return}
   if(rr&&!rr.ok){const msg=`${tg.name} в ${rr.dist} фт — ${a[0]} достаёт только на ${rr.max} фт.`;if(!isOwner){toast('Слишком далеко: '+msg);return}if(!confirm(msg+' Всё равно атаковать?'))return}
   const cm=condMode(t,tg,ranged||(rr&&rr.thrown),rr?rr.dis:[]);const r=roll('1d20'+sgn(a[1]),cm.mode);if(!r)return;let crit=r.nat===20;const miss1=r.nat===1;
   if(!crit&&tg&&!miss1&&(has(tg,'Парализован')||has(tg,'Без сознания'))&&Math.hypot(t.x-tg.x,t.y-tg.y)<=cellPx(mapInfo())*1.6)crit=true;
-  const dr=roll(crit?critDice(a[2]):a[2]);let hit=null;if(tg&&isOwner){const ac=tg.kind==='monster'?(S.gm[tg.id]||{}).ac:tg.ac;if(ac)hit=crit||(!miss1&&r.total>=ac)}
-  await post({kind:'roll',text:`${t.name} · ${a[0]}${tg?' → '+tg.name:''}${crit?' · КРИТ!':miss1?' · промах (1)':''}${hit===true?' · попал':hit===false?' · мимо':''}`,total:r.total,det:`${cm.why?'['+cm.why+'] ':''}атака ${r.det}${sgn(0)==='+0'?'':''} · урон ${dr?dr.total:'?'} (${dr?dr.det:''})`,nat:r.nat,target:tg?tg.id:null,dmg:dr&&!miss1?dr.total:null,applied:!!(autoDmg&&isOwner&&hit===true&&dr)});
+  const dr=roll(crit?critDice(a[2]):a[2]);let hit=null;if(tg&&isOwner){const ac=tg.kind==='monster'?(S.gm[tg.id]||{}).ac:tg.ac;if(ac)hit=crit||(!miss1&&r.total>=ac+cov.ac)}
+  await post({kind:'roll',text:`${t.name} · ${a[0]}${tg?' → '+tg.name:''}${crit?' · КРИТ!':miss1?' · промах (1)':''}${hit===true?' · попал':hit===false?' · мимо':''}`,total:r.total,det:`${opt.oa?'[по возможности] ':''}${cm.why?'['+cm.why+'] ':''}${cov.why?'['+cov.why+'] ':''}атака ${r.det}${sgn(0)==='+0'?'':''} · урон ${dr?dr.total:'?'} (${dr?dr.det:''})`,nat:r.nat,target:tg?tg.id:null,dmg:dr&&!miss1?dr.total:null,applied:!!(autoDmg&&isOwner&&hit===true&&dr)});
   if(autoDmg&&isOwner&&hit===true&&dr)await applyHp(tg.id,dr.total,'dmg')}
 let autoDmg=true;try{autoDmg=localStorage.getItem('smgla-autodmg')!=='0'}catch(e){}
 
@@ -1110,7 +1195,7 @@ async function clearLog(){for(let i=0;i<20;i++){const ids=await store.list('log'
 
 /* ---- МАСТЕР ---- */
 // вкладки Мастера: scene — ход игры, map — карта, mob — существа, mat — материалы; разделы модулей раскладываются по заголовку
-const GM_SEC_TAB=[['Отдых','scene'],['Итоги','scene'],['Резервн','scene'],['Отмен','scene'],['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Случайные','mat'],['Записки','mat']];
+const GM_SEC_TAB=[['Отдых','scene'],['Итоги','scene'],['Резервн','scene'],['Отмен','scene'],['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Бестиарий','mob'],['Случайные','mat'],['Записки','mat']];
 function paneGM(part='scene'){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   if(part==='scene'){
   const heroes=tokList().filter(t=>t.kind!=='monster'&&t.map===s.map);
@@ -1250,7 +1335,7 @@ window.VTT={
   onChat(fn){chatHooks.push(fn)},addLogFilter(fn){logFilters.push(fn)},addLogRenderer(fn){logRenderers.push(fn)},
   watch(col,cb,q){return store.watchCol(col,cb,q)},
   overlay(){return $('modov')}};
-for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js','mod-spells.js','mod-abilities.js','mod-undo.js','mod-backup.js','mod-summary.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
+for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js','mod-spells.js','mod-abilities.js','mod-undo.js','mod-backup.js','mod-summary.js','mod-bestiary.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
 window.__table={S,st,cam,frame:()=>draw()};
 })();
 </script>
