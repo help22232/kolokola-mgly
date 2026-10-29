@@ -7,6 +7,17 @@ const xpFor=l=>{l=Math.max(1,Math.min(20,Number(l)||1));return window.LevelUp&&L
 const num=v=>Math.max(0,Math.floor(Number(v)||0));
 const fmt=n=>Number(n||0).toLocaleString('ru');
 const LOADED=Date.now();
+const CR_XP={'0':10,'1/8':25,'1/4':50,'1/2':100,'1':200,'2':450,'3':700,'4':1100,'5':1800,'6':2300,'7':2900,'8':3900,'9':5000,'10':5900,'11':7200,'12':8400,'13':10000,'14':11500,'15':13000,'16':15000,'17':18000,'18':20000,'19':22000,'20':25000,'21':33000,'22':41000,'23':50000,'24':62000,'25':75000,'26':90000,'27':105000,'28':120000,'29':135000,'30':155000};
+function loadBestiary(){if(window.BESTIARY)return Promise.resolve();return new Promise(res=>{let s=document.querySelector('script[src="bestiary.js"]');
+  if(!s){s=document.createElement('script');s.src='bestiary.js';document.head.append(s)}
+  s.addEventListener('load',()=>res());s.addEventListener('error',()=>res());const t=setInterval(()=>{if(window.BESTIARY){clearInterval(t);res()}},100);setTimeout(()=>{clearInterval(t);res()},4000)})}
+loadBestiary();
+/* опыт за одного павшего: BESTIARY.xp → по CR (таблица ДМГ) → 0 с «?» */
+function foeXp(f){const toks=V.tokList();const tok=V.S.tokens[f.tid]||toks.find(t=>t.name===f.name)||null;
+  const type=(tok&&tok.monster)||String(f.name).replace(/\s+\d+$/,'');const B=(window.BESTIARY||{})[type]||null,b2=(V.BEST||{})[type]||{};
+  const cr=B&&B.cr!=null?String(B.cr):b2.cr!=null?String(b2.cr):null;
+  const xp=B&&Number.isFinite(Number(B.xp))&&B.xp!==''?Number(B.xp):cr!=null&&CR_XP[cr]!=null?CR_XP[cr]:null;
+  return{name:f.name,type,cr,xp:xp==null?0:xp,unknown:xp==null}}
 
 /* ---------- стили ---------- */
 const css=document.createElement('style');css.textContent=`
@@ -64,7 +75,7 @@ function analyze(log){
   const who=m=>{const tx=String(m.text||'').replace(/^✨\s*/,'');
     for(const t of byName)if(t.name&&tx.startsWith(t.name))return t.id;
     const own=pcs.filter(t=>t.owner&&t.owner===m.by);return own.length===1?own[0].id:null};
-  let fights=0,rounds=0,cur=0;const foes=[],loot=[],pend={},unused=[];
+  let fights=0,rounds=0,cur=0;const foes=[],foeT=[],seenFoe=new Set(),loot=[],pend={},unused=[],active=new Set();
   const closeFight=()=>{if(cur){rounds+=cur;cur=0}};
   for(const m of log){const tx=String(m.text||'');
     if(m.kind==='sys'){
@@ -76,23 +87,30 @@ function analyze(log){
         if(st[m.tid])st[m.tid].taken+=amt;
         else{const p=pend[m.tid]&&!pend[m.tid].used&&m.ts-pend[m.tid].ts<600000?pend[m.tid]:(pend._&&!pend._.used&&m.ts-pend._.ts<120000?pend._:null);
           if(p){st[p.pc].done+=amt;p.used=true}}
-        if(/повержен/.test(tx)&&!st[m.tid])foes.push(tx.split(':')[0].trim())}
+        if(/повержен/.test(tx)&&!st[m.tid]&&!seenFoe.has(m.tid)){seenFoe.add(m.tid);const nm=tx.split(':')[0].trim();foes.push(nm);foeT.push({tid:m.tid,name:nm})}}
+      if(m.tid&&st[m.tid])active.add(m.tid);
       continue}
-    if(m.kind==='roll'){const pc=who(m);if(!pc||!st[pc])continue;
+    if(m.kind==='roll'){if(m.target&&st[m.target])active.add(m.target);const pc=who(m);if(!pc||!st[pc])continue;active.add(pc);
       if(/КРИТ/.test(tx)||(m.nat===20&&m.dmg!=null))st[pc].crits++;
       if(m.dmg!=null&&!/мимо|промах/.test(tx)){const k=m.target&&!st[m.target]?m.target:'_';
         if(pend[k]&&!pend[k].used)unused.push(pend[k]);pend[k]={pc,ts:m.ts,dmg:num(m.dmg),hit:/попал|КРИТ/.test(tx),used:false}}}}
   closeFight();
   /* бросок урона с отметкой «попал», который Мастер не провёл через хиты, — тоже засчитываем */
   for(const p of [...unused,...Object.values(pend)])if(!p.used&&p.hit)st[p.pc].done+=p.dmg;
-  return{pcs,st,fights,rounds,foes,loot}}
+  for(const t of pcs)if(pend._&&pend._.pc===t.id)active.add(t.id);
+  return{pcs,st,fights,rounds,foes,foeT,loot,active}}
 
 /* ---------- окно Мастера ---------- */
 let gmOpen=false;
 async function openGM(startedAt){if(!V.isOwner||gmOpen)return;gmOpen=true;
-  const since=Number(startedAt)||Date.now()-6*3600e3;const log=await readLog(since);const A=analyze(log);
+  const since=Number(startedAt)||Date.now()-6*3600e3;const [log]=await Promise.all([readLog(since),loadBestiary()]);const A=analyze(log);
+  const FX=A.foeT.map(foeXp),foesXp=FX.reduce((a,f)=>a+f.xp,0);let auto=true;
+  const grp=new Map();for(const f of FX){const k=f.type+'|'+f.xp+'|'+f.unknown;const g=grp.get(k)||{...f,n:0};g.n++;grp.set(k,g)}
   const rows=[];
   const total=h('input',{type:'number',min:0,step:10,placeholder:'напр. 900','aria-label':'Всего опыта'});
+  const bonus=h('input',{type:'number',min:0,step:10,value:'0','aria-label':'Опыт за вехи и квесты'});
+  const autoBtn=h('button',{class:'btn sm',type:'button',hidden:true,onclick:()=>{auto=true;applyAuto()}},'↺ вернуть авто');
+  const autoInfo=h('span',{class:'ms-mut'});
   const note=h('textarea',{placeholder:'Что запомнилось, куда двигаемся дальше…','aria-label':'Заметка для игроков',maxlength:1500});
   const heroBox=h('div');
   for(const t of A.pcs){const c=V.S.chars[t.id]||{};const lvl=Number(c.lvl)||1,xp=num(c.xp),s=A.st[t.id];
@@ -103,14 +121,18 @@ async function openGM(startedAt){if(!V.isOwner||gmOpen)return;gmOpen=true;
       info.textContent=`итого ${fmt(nx)} / ${need===Infinity?'макс.':fmt(need)}`;
       chkL.hidden=!ok;if(ok&&!chk.dataset.touched)chk.checked=true;if(!ok)chk.checked=false};
     chk.onchange=()=>{chk.dataset.touched='1'};inp.oninput=upd;
-    rows.push({t,inp,chk,chkL,s,xp,lvl,upd});
+    const act=A.active.has(t.id)||!A.active.size;rows.push({t,inp,chk,chkL,s,xp,lvl,upd,act});
+    inp.addEventListener('input',()=>{auto=false;autoBtn.hidden=false;autoInfo.textContent='вручную'});
     heroBox.append(h('div',{class:'ms-hero'},
       h('div',{class:'ms-top'},h('b',{},t.name||'Герой'),h('span',{class:'ms-mut'},`${c.cls?c.cls+' · ':''}ур. ${lvl} · опыт ${fmt(xp)}${t.lvlUp?' · повышение уже разрешено':''}`)),
-      h('div',{class:'ms-mut',style:'margin-top:4px'},`⚔ нанёс ${s.done} · 🩸 получил ${s.taken} · 🎯 критов ${s.crits}`),
+      h('div',{class:'ms-mut',style:'margin-top:4px'},`⚔ нанёс ${s.done} · 🩸 получил ${s.taken} · 🎯 критов ${s.crits}${act?'':' · не участвовал в сессии'}`),
       h('div',{class:'ms-row'},h('label',{},'Опыт за сессию',inp),info),
       h('div',{class:'ms-row'},chkL)));upd()}
   if(!A.pcs.length)heroBox.append(h('p',{class:'ms-mut'},'На столе нет героев игроков.'));
-  const split=()=>{const n=rows.length;if(!n)return;const each=Math.floor(num(total.value)/n);for(const r of rows){r.inp.value=each;r.upd()}};
+  const split=()=>{const who=rows.filter(r=>r.act),n=who.length;if(!n)return;const each=Math.floor(num(total.value)/n);for(const r of rows){r.inp.value=r.act?each:0;r.upd()}};
+  const applyAuto=()=>{total.value=foesXp+num(bonus.value);split();autoBtn.hidden=true;autoInfo.textContent=`авто: враги ${fmt(foesXp)} + вехи ${fmt(num(bonus.value))}, поровну на ${rows.filter(r=>r.act).length}`};
+  total.addEventListener('input',()=>{auto=false;autoBtn.hidden=false;autoInfo.textContent='вручную'});
+  bonus.addEventListener('input',()=>{if(auto)applyAuto()});
   const stat=(v,l)=>h('div',{class:'ms-stat'},h('b',{},String(v)),h('span',{},l));
   let close;
   const save=async btn=>{btn.disabled=true;const now=Date.now();
@@ -118,7 +140,7 @@ async function openGM(startedAt){if(!V.isOwner||gmOpen)return;gmOpen=true;
         if(add){if(V.S.chars[r.t.id])await store.update('chars/'+r.t.id,{xp:nx});else await store.set('chars/'+r.t.id,{xp:nx})}
         if(r.chk.checked&&!r.chkL.hidden)await store.update('tokens/'+r.t.id,{lvlUp:true})}
       const heroes=rows.map(r=>({id:r.t.id,name:r.t.name||'Герой',xp:num(r.inp.value),xpTotal:r.xp+num(r.inp.value),dmgDone:r.s.done,dmgTaken:r.s.taken,crits:r.s.crits,lvlUp:!!(r.chk.checked&&!r.chkL.hidden)}));
-      const doc={ts:now,startedAt:since,endedAt:now,fights:A.fights,rounds:A.rounds,heroes,foes:A.foes,loot:A.loot.slice(0,40),note:String(note.value||'').slice(0,1500)};
+      const doc={ts:now,startedAt:since,endedAt:now,fights:A.fights,rounds:A.rounds,heroes,foes:A.foes,foesXp,bonusXp:num(bonus.value),loot:A.loot.slice(0,40),note:String(note.value||'').slice(0,1500)};
       await store.set('game/summary',doc);
       const xpTxt=heroes.filter(x=>x.xp).map(x=>`${x.name} +${fmt(x.xp)}`).join(', ');
       const ups=heroes.filter(x=>x.lvlUp).map(x=>x.name);
@@ -132,14 +154,17 @@ async function openGM(startedAt){if(!V.isOwner||gmOpen)return;gmOpen=true;
     h('h2',{},'Итоги сессии'),
     h('div',{class:'ms-mut'},`С ${new Date(since).toLocaleString('ru',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})} · записей в журнале: ${log.length}`),
     h('div',{class:'ms-stats'},stat(A.fights,'боёв'),stat(A.rounds,'раундов боя'),stat(A.foes.length,'врагов повержено'),stat(A.loot.length,'находок')),
-    A.foes.length?h('div',{},h('h4',{},'Павшие враги'),h('div',{class:'ms-mut',style:'overflow-wrap:anywhere'},A.foes.join(', '))):null,
+    A.foes.length?h('div',{},h('h4',{},'Павшие враги'),h('div',{class:'ms-mut',style:'overflow-wrap:anywhere'},A.foes.join(', ')),
+      h('div',{style:'margin-top:6px'},h('b',{style:'color:#ffe6a0'},`Опыт за врагов: ${fmt(foesXp)}`)),
+      h('ul',{class:'ms-list ms-mut'},...[...grp.values()].map(g=>h('li',{},`${g.type}${g.n>1?' ×'+g.n:''} — ${g.unknown?'? (нет опыта и ПО в бестиарии)':`${fmt(g.xp*g.n)}${g.n>1?` (по ${fmt(g.xp)})`:''}${g.cr?` · ПО ${g.cr}`:''}`}`)))):null,
     A.loot.length?h('div',{},h('h4',{},'Добыча'),h('ul',{class:'ms-list'},...A.loot.slice(0,40).map(x=>h('li',{},x)))):null,
     h('h4',{},'Герои и опыт'),
-    h('div',{class:'ms-row'},h('label',{},'Всего опыта',total),h('button',{class:'btn sm',type:'button',onclick:split},'поровну')),
+    h('div',{class:'ms-row'},h('label',{},'Опыт за вехи/квесты',bonus)),
+    h('div',{class:'ms-row'},h('label',{},'Всего опыта',total),h('button',{class:'btn sm',type:'button',onclick:split},'поровну'),autoBtn,autoInfo),
     heroBox,
     h('h4',{},'Заметка для игроков'),note,
     acts);
-  close=overlay(box,()=>{gmOpen=false})}
+  close=overlay(box,()=>{gmOpen=false});applyAuto()}
 
 window.addEventListener('vtt-session-end',e=>{if(V.isOwner)openGM((e.detail&&e.detail.startedAt)||(V.st()||{}).startedAt)});
 
@@ -169,7 +194,9 @@ async function makeImage(d){
   let y=336;const foes=groupFoes(d.foes),stats=[[d.fights||0,'боёв'],[d.rounds||0,'раундов'],[(d.foes||[]).length,'врагов повержено']],sw=(cw-2*24)/3;
   stats.forEach(([v,l],i)=>{const x=P+i*(sw+24);g.fillStyle='rgba(22,32,34,.92)';rrect(g,x,y,sw,112,14);g.fill();g.strokeStyle='#2c3d40';g.lineWidth=2;g.stroke();
     g.fillStyle='#ffe6a0';g.font=`700 50px ${DISP}`;g.fillText(String(v),x+sw/2,y+60);g.fillStyle=MUT;g.font=`400 26px ${BODY}`;g.fillText(l,x+sw/2,y+96)});
-  y+=146;g.textAlign='left';
+  y+=146;
+  if(d.foesXp||d.bonusXp){g.fillStyle='#ffe6a0';g.font=`500 32px ${DISP}`;g.fillText(`Опыт за врагов: ${fmt(d.foesXp||0)}${d.bonusXp?` · за вехи: ${fmt(d.bonusXp)}`:''}`,W/2,y+14);y+=46}
+  g.textAlign='left';
   const maxY=H-110,head=t=>{g.fillStyle=GOLD;g.font=`700 32px ${DISP}`;g.fillText(t,P,y+30);y+=50};
   /* герои */
   const heroes=(d.heroes||[]).slice(0,4),hh=heroes.length>2?112:128;
@@ -214,6 +241,7 @@ function openPlayer(d){const mine=(d.heroes||[]).filter(x=>{const t=V.S.tokens[x
     h('div',{class:'ms-mut',style:'margin-top:6px'},`⚔ урон нанесён: ${x.dmgDone} · 🩸 получен: ${x.dmgTaken} · 🎯 критов: ${x.crits}`)));
   if(!mine.length&&(d.heroes||[]).length)box.append(h('p',{class:'ms-mut'},'Опыт: '+d.heroes.map(x=>`${x.name} +${fmt(x.xp)}`).join(', ')));
   box.append(h('div',{class:'ms-stats'},h('div',{class:'ms-stat'},h('b',{},String(d.fights||0)),h('span',{},'боёв')),h('div',{class:'ms-stat'},h('b',{},String((d.foes||[]).length)),h('span',{},'врагов повержено'))));
+  if(d.foesXp||d.bonusXp)box.append(h('div',{class:'ms-mut'},`Опыт за врагов: ${fmt(d.foesXp||0)}${d.bonusXp?` · за вехи и квесты: ${fmt(d.bonusXp)}`:''}`));
   if((d.loot||[]).length)box.append(h('h4',{},'Добыча отряда'),h('ul',{class:'ms-list'},...d.loot.map(x=>h('li',{},x))));
   if(d.note)box.append(h('h4',{},'Слово Мастера'),h('div',{class:'ms-note'},d.note));
   let close;box.append(h('div',{class:'ms-acts'},shareBtn(d,'btn'),h('button',{class:'btn pri',type:'button',onclick:()=>close()},'Закрыть')));

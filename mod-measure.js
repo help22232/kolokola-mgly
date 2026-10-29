@@ -67,7 +67,8 @@ const onceHint=(key,txt)=>{let seen=false;try{seen=localStorage.getItem('vtt-hin
 const KINDS=[['cone','Конус'],['sphere','Сфера'],['line','Линия'],['cube','Куб']];
 const COLORS=[['#e8734a','огонь'],['#6fb7e8','холод'],['#9fd36a','яд'],['#c79bf0','магия']];
 const KNAME=Object.fromEntries(KINDS);
-let shapes=[];V.watch('shapes',a=>{shapes=a;V.requestDraw();refreshPanel();if(hl.shape&&!a.some(s=>s.id===hl.shape.id))closeHits()});
+let shapes=[];V.watch('shapes',a=>{shapes=a.filter(s=>KNAME[s.kind]);// shapes/<id> kind:'light' — источники света заклинаний (mod-spells.js), тут не рисуются
+  V.requestDraw();refreshPanel();if(hl.shape&&!a.some(s=>s.id===hl.shape.id))closeHits()});
 const hl={shape:null,ids:[]};// подсветка существ в только что поставленной области
 
 /* ---------- геометрия ---------- */

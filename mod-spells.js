@@ -88,6 +88,89 @@ async function placeArea(t,c,spell,slot,ctx){const ar=areaOf(spell);if(!ar)retur
   V.post({kind:'sys',text:`✨ ${t.name}: «${spell.name}» (${lvlTxtOf(spell,slot)}) — ${{cone:'конус',cube:'куб',line:'линия',sphere:'сфера'}[ar.kind]} ${ar.size} фт`});
   V.aoe.start({kind:ar.kind,size:ar.size,from:ar.self?t.id:null,effect:eff})}
 
+/* ---------- свет от заклинаний ---------- */
+// r — яркий свет, фт; dim — тусклый ДОБАВОЧНО к яркому (нет поля — тусклый = r). mode: self — на свою фишку (поле light),
+// place — касанием карты (shapes/<id> kind:'light'), choose — выбор «на себя» или «на карту». Радиусы — по Книге игрока 2014.
+const LIGHT={
+  'light':{mode:'choose',r:20,range:5},                 // Свет: предмет, яркий 20 + тусклый 20, 1 час
+  'continual-flame':{mode:'choose',r:20,range:5},       // Вечный огонь: как факел, пока не рассеют
+  'daylight':{mode:'choose',r:60,dim:60,range:60,day:1}, // Дневной свет: 60 + 60, гасит магическую тьму 3 круга и ниже
+  'produce-flame':{mode:'self',r:10},                   // Сотворение пламени: 10 + 10 в ладони
+  'flame-blade':{mode:'self',r:10},                     // Пылающий клинок: 10 + 10, концентрация
+  'fire-shield':{mode:'self',r:10},                     // Огненный щит: 10 + 10
+  'dancing-lights':{mode:'place',n:4,r:0,dim:10,range:120}, // Танцующие огоньки: до 4, тусклый 10, концентрация
+  'flaming-sphere':{mode:'place',n:1,r:20,range:60},     // Пылающий шар: 20 + 20, концентрация
+  'moonbeam':{mode:'place',n:1,r:0,dim:5,range:120}};    // Лунный луч: тусклый свет в цилиндре 5 фт, концентрация
+const lightOf=s=>s&&LIGHT[s.id]||null;
+const lightTxt=s=>`${s.r?`ярко ${s.r} фт, `:''}тускло ${s.dim!=null?s.dim:s.r} фт`;
+let lights=[],lightKey='';
+V.watch('shapes',a=>{lights=a.filter(s=>s.kind==='light');const k=lights.map(s=>s.id).sort().join();V.requestDraw();if(k!==lightKey){lightKey=k;V.renderPane()}checkConc()});
+const canWriteTok=t=>!!t&&!V.readOnly&&(V.isOwner||t.owner===V.myId);
+const canDelLight=s=>!V.readOnly&&(V.isOwner||s.by===V.myId);
+const concOk=(t,name)=>!!t&&(t.cond||[]).includes('Концентрация')&&(!t.concOn||t.concOn===name);
+// концентрация потеряна (или начата другая) — огоньки концентрации гаснут, свет на фишке возвращается к прежнему
+const dying=new Set();
+function checkConc(){const T=V.S.tokens||{};
+  for(const s of lights)if(s.conc&&canDelLight(s)&&!dying.has(s.id)&&!concOk(T[s.caster],s.label)){dying.add(s.id);V.store.del('shapes/'+s.id).catch(()=>{}).finally(()=>dying.delete(s.id))}
+  for(const t of Object.values(T)){const c=V.S.chars&&V.S.chars[t.id],sl=c&&c.spellLight;if(sl&&sl.conc&&canWriteTok(t)&&!dying.has('t'+t.id)&&!concOk(t,sl.spell)){dying.add('t'+t.id);lightOff(t,true).finally(()=>dying.delete('t'+t.id))}}}
+V.watch('tokens',()=>setTimeout(checkConc,0));
+async function lightOn(t,spell,L){const c=V.S.chars[t.id]||{};const prev=c.spellLight?Number(c.lightPrev)||0:Number(t.light)||0;
+  await V.store.update('chars/'+t.id,{lightPrev:prev,spellLight:{spell:spell.name,r:L.r,conc:!!spell.conc,ts:Date.now()}});await V.store.update('tokens/'+t.id,{light:L.r})}
+async function lightOff(t,auto){const c=V.S.chars[t.id]||{};if(!c.spellLight)return;const prev=Number(c.lightPrev)||0;
+  await V.store.update('tokens/'+t.id,{light:prev});await V.store.update('chars/'+t.id,{lightPrev:null,spellLight:null});
+  V.post({kind:'sys',text:`${t.name}: «${c.spellLight.spell}» гаснет${auto?' — концентрация прервана':''}`})}
+// размещение огоньков касанием карты
+const place={L:null};let lbar=null;
+const lcss=document.createElement('style');lcss.textContent=`
+.spl-bar{position:fixed;z-index:6;background:var(--panel,#111819);border:1px solid var(--brass,#d9b36c);border-radius:10px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.5);font-size:13px;max-width:calc(100vw - 16px);box-sizing:border-box}
+.spl-bar span{flex:1 1 160px;min-width:0}
+.spl-pop{position:fixed;z-index:8;background:var(--panel,#111819);border:1px solid var(--brass,#d9b36c);border-radius:10px;padding:10px;display:grid;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.6);font-size:13px;width:min(240px,calc(100vw - 20px));box-sizing:border-box}
+.sp-fx{display:flex;align-items:center;gap:6px;font-size:13px;padding:4px 0;border-top:1px solid var(--line)}
+.sp-fx span{flex:1;min-width:0;overflow-wrap:anywhere}
+@media (max-width:600px){.spl-bar .btn,.spl-pop .btn,.sp-fx .btn{min-height:40px;min-width:40px}}`;document.head.append(lcss);
+const cvRect=()=>{const c=document.getElementById('cv');return c?c.getBoundingClientRect():{left:0,top:0,right:innerWidth,width:innerWidth,height:innerHeight}};
+function closeBar(){if(lbar){lbar.remove();lbar=null}}
+function showBar(){closeBar();if(!place.L)return;const r=cvRect(),nw=innerWidth<600,left=r.left+(nw?54:56);
+  lbar=h('div',{class:'spl-bar',role:'region','aria-label':'Размещение света'},h('span',{},`💡 «${place.spell}»: коснитесь карты в пределах ${place.L.range} фт${place.left>1?` · осталось ${place.left}`:''}`),
+    h('button',{class:'btn pri sm',type:'button',onclick:()=>V.setTool('select')},'Готово'));
+  lbar.style.left=left+'px';lbar.style.top=(r.top+8)+'px';lbar.style.width=Math.max(200,Math.min(380,r.right-left-(nw?54:12)))+'px';(V.overlay()||document.body).append(lbar)}
+V.addTool({id:'splight',icon:'💡',title:'Свет заклинания',
+  down(wx,wy,e){place.down=e?[e.clientX,e.clientY]:null},
+  up(wx,wy,e){if(e&&place.down&&Math.hypot(e.clientX-place.down[0],e.clientY-place.down[1])>8)return;putLight(wx,wy)},
+  cancel(){place.L=null;closeBar()}});
+{const b=document.querySelector('#tools [data-tool="splight"]');if(b)b.style.display='none'}// кнопка не нужна: инструмент включается из раздела «Магия»
+async function putLight(wx,wy){const L=place.L;if(!L||V.readOnly)return;const m=V.mapInfo(),t=V.S.tokens[place.t];let x=wx,y=wy;
+  if(m.grid){x=(Math.floor(wx/m.grid)+.5)*m.grid;y=(Math.floor(wy/m.grid)+.5)*m.grid}
+  if(t&&t.map===m.id&&L.range){const ft=m.grid?V.gridFt(m,t.x,t.y,x,y):Math.hypot(x-t.x,y-t.y)/V.ftPx(m);if(ft>L.range+2.5)return V.toast(`Слишком далеко: ${Math.round(ft)} фт, можно до ${L.range} фт от ${t.name}.`)}
+  const s={kind:'light',map:m.id,x:Math.round(x),y:Math.round(y),r:L.r,label:place.spell,by:V.myId,who:V.whoAmI(),caster:place.t,conc:!!place.conc,ts:Date.now()};
+  if(L.dim!=null)s.dim=L.dim;if(L.day)s.day=true;
+  await V.store.set('shapes/'+V.store.newId('shapes'),s);place.left--;if(place.left<=0)V.setTool('select');else showBar()}
+async function castLight(t,c,spell,slot,where){const L=lightOf(spell);if(!L)return;
+  if(where!=='self'&&V.mapInfo().id!==t.map)return V.toast('Герой не на этой карте.');
+  if(!await pay(t,c,spell,slot))return;
+  if(spell.conc)for(const s of lights.filter(s=>s.caster===t.id&&s.label===spell.name&&canDelLight(s)))await V.store.del('shapes/'+s.id);// повторное сотворение заменяет прежнее
+  V.post({kind:'sys',text:`💡 ${t.name}: «${spell.name}» (${lvlTxtOf(spell,slot)}) — ${lightTxt(L)}${where==='self'?' на себе':''}`});
+  if(where==='self')return lightOn(t,spell,L);
+  V.setTool('splight');place.L={...L,range:L.range||5};place.spell=spell.name;place.conc=!!spell.conc;place.t=t.id;place.left=L.n||1;// setTool вызывает cancel — заполняем ещё раз
+  try{V.centerOn(t.x,t.y)}catch(e){}showBar()}
+// значок огонька на карте; касание значка (в режиме выбора) — меню «Погасить» для владельца и Мастера
+V.onDraw('top',(g,m,cam)=>{const z=cam.z;for(const s of lights){if(s.map!==m.id)continue;
+  g.beginPath();g.arc(s.x,s.y,9/z,0,7);g.fillStyle='rgba(0,0,0,.55)';g.fill();g.beginPath();g.arc(s.x,s.y,5/z,0,7);g.fillStyle=s.day?'#fff3c4':'#ffd36a';g.fill();g.lineWidth=1.5/z;g.strokeStyle='#fff';g.stroke()}});
+let lpop=null;const closePop=()=>{if(lpop){lpop.remove();lpop=null}};
+function lightAt(cx,cy){const r=cvRect(),c=V.cam,id=V.st().map;return lights.slice().reverse().find(s=>s.map===id&&Math.hypot(r.left+s.x*c.z+c.ox-cx,r.top+s.y*c.z+c.oy-cy)<=14)}
+addEventListener('pointerdown',e=>{if(lpop&&!lpop.contains(e.target))closePop();const cv=document.getElementById('cv');if(e.target!==cv||(V.tool!=='select'&&V.tool!=='splight'))return;
+  const s=lightAt(e.clientX,e.clientY);if(!s||!canDelLight(s))return;e.stopPropagation();e.preventDefault();
+  lpop=h('div',{class:'spl-pop',role:'dialog','aria-label':'Источник света'},h('b',{},`💡 «${s.label||'Свет'}»`),h('div',{class:'small muted'},`${lightTxt(s)} · ${s.who||''}${s.conc?' · концентрация':''}`),
+    h('div',{class:'sp-row'},h('button',{class:'btn sm bad',type:'button',onclick:async()=>{closePop();await V.store.del('shapes/'+s.id)}},'Погасить'),h('button',{class:'btn sm',type:'button',onclick:closePop},'Закрыть')));
+  lpop.style.left=Math.min(Math.max(8,e.clientX+10),innerWidth-250)+'px';lpop.style.top=Math.min(Math.max(8,e.clientY+10),innerHeight-140)+'px';document.body.append(lpop)},true);
+// «Активные эффекты» в разделе «Магия»
+function activeFx(t,c,canCast){const sl=c.spellLight,mine=lights.filter(s=>s.caster===t.id);if(!sl&&!mine.length)return[];
+  const out=[h('div',{class:'sp-lvl'},'Активные эффекты')];
+  if(sl)out.push(h('div',{class:'sp-fx'},h('span',{},`💡 «${sl.spell}»: свет ${sl.r} фт на ${t.name}${sl.conc?' · К':''}`),canCast?h('button',{class:'btn sm',type:'button',onclick:()=>lightOff(t)},'Погасить свет'):null));
+  for(const s of mine)out.push(h('div',{class:'sp-fx'},h('span',{},`✦ «${s.label}»: ${lightTxt(s)}${s.conc?' · К':''}`),canCast&&canDelLight(s)?h('button',{class:'btn sm',type:'button','aria-label':'Погасить','title':'Погасить',onclick:()=>V.store.del('shapes/'+s.id)},'✕'):null));
+  if(canCast&&mine.length>1)out.push(h('div',{class:'sp-row'},h('button',{class:'btn sm',type:'button',onclick:async()=>{for(const s of mine)if(canDelLight(s))await V.store.del('shapes/'+s.id)}},'Погасить все огоньки')));
+  return out}
+
 function spellCard(t,c,spell,ctx){const k=spell.name;const isOpen=open.has(t.id+k);
   const tags=[spell.lvl===0?'заговор':spell.lvl+' круг',spell.school,spell.conc?'К':null,spell.ritual?'Р':null].filter(Boolean).join(' · ');
   const head=h('div',{class:'sp-head',role:'button',tabindex:0,onclick:()=>{isOpen?open.delete(t.id+k):open.add(t.id+k);V.renderPane()}},h('b',{},spell.name),h('span',{class:'sp-tags'},tags));
@@ -102,6 +185,8 @@ function spellCard(t,c,spell,ctx){const k=spell.name;const isOpen=open.has(t.id+
       const sl=h('select',{'aria-label':'Ячейка'},...opts.map(([v,n])=>h('option',{value:v},n)));
       const tg=h('select',{'aria-label':'Цель'},h('option',{value:''},'— цель —'),...V.tokList().filter(x=>x.map===V.st().map&&V.canSee(x)).map(x=>h('option',{value:x.id},x.name)));
       body.append(h('div',{class:'sp-cast'},opts.length?h('div',{class:'sp-row'},sl,tg,h('button',{class:'btn pri sm',type:'button',onclick:()=>cast(t,c,spell,sl.value==='ritual'?'ritual':Number(sl.value),tg.value,ctx.ab,ctx.dc,ctx.atk)},'✨ Сотворить'),
+        ...(()=>{const L=lightOf(spell);if(!L)return[];const sv=()=>sl.value==='ritual'?'ritual':Number(sl.value);const B=(txt,where)=>h('button',{class:'btn sm',type:'button',onclick:()=>castLight(t,c,spell,sv(),where)},txt);
+          return L.mode==='self'?[B('💡 Зажечь на себе','self')]:L.mode==='choose'?[B('💡 На себя (оружие/предмет)','self'),B('📍 На карту','map')]:[B(L.n>1?`📍 Разместить огоньки (до ${L.n})`:'📍 Разместить свет','map')]})(),
         areaOf(spell)?h('button',{class:'btn sm',type:'button',title:'Поставить шаблон на карте и бросить спасброски всем в области',onclick:()=>placeArea(t,c,spell,sl.value==='ritual'?'ritual':Number(sl.value),ctx)},'🎯 Разместить область'):null):h('div',{class:'sp-meta'},'Нет свободных ячеек — нужен отдых.')))}
     kids.push(body)}
   return h('div',{class:'sp-item'},...kids)}
@@ -135,6 +220,7 @@ const ck=clsKeyOf(c);if(!ck&&!c.spells)return null;
     return h('button',{type:'button',class:'sp-pip'+(used?' used':''),'aria-label':`Ячейка ${l} круга ${used?'потрачена':'свободна'}`,disabled:!canCast,onclick:()=>{const u=Number((sp.used||{})[l]||0);save(t,c,{used:{...(sp.used||{}),[l]:used?u-1:u+1}})}})})))));
   if(gm){const inp=h('input',{type:'text',value:lv.map(l=>`${l}:${sp.slots[l]}`).join(' '),placeholder:'1:4 2:3','aria-label':'Ячейки'});
     out.push(h('div',{class:'sp-row'},h('span',{class:'small muted'},'Ячейки (Мастер):'),inp,h('button',{class:'btn sm',type:'button',onclick:()=>{const s={};for(const m of inp.value.matchAll(/(\d)\s*:\s*(\d+)/g))s[m[1]]=Number(m[2]);save(t,c,{slots:s})}},'OK')))}
+  out.push(...activeFx(t,c,canCast));
   if(canCast)out.push(h('div',{class:'sp-row'},h('button',{class:'btn sm',type:'button',onclick:()=>{window.dispatchEvent(new CustomEvent('vtt-rest',{detail:{kind:'short',tokenId:t.id,from:'spells'}}))}},'Короткий отдых'),h('button',{class:'btn sm',type:'button',onclick:()=>{window.dispatchEvent(new CustomEvent('vtt-rest',{detail:{kind:'long',tokenId:t.id,from:'spells'}}))}},'Долгий отдых')));
   // список
   const cantrips=(sp.cantrips||[]).map(byName).filter(Boolean);const known=(sp.known||[]).map(byName).filter(Boolean);
