@@ -274,7 +274,7 @@ const MON_IC={'Бандит':'bandit','Головорез':'thug','Гигант�
 const HERO_IC=[['h-barbarian','Варвар'],['h-knight','Рыцарь'],['h-swordwoman','Воительница'],['h-viking','Северянин'],['h-dwarf','Дварф'],['h-dwarf-king','Дварф в короне'],['h-elf-woman','Эльфийка'],['h-elf-helm','Эльф-страж'],['h-archer','Лучник'],['h-bowman','Стрелок'],['h-hood','Следопыт'],['h-rogue','Плут'],['h-assassin','Убийца в капюшоне'],['h-ninja','Тень'],['h-wizard','Волшебник'],['h-witch','Ведьма'],['h-priest','Жрец солнца'],['h-nun','Жрица'],['h-monk','Монах'],['h-orc','Полуорк'],['h-gnome','Гном'],['h-devil','Тифлинг'],['captain','Капитан'],['tamsi','Юнга']];
 const ALL_IC=[...HERO_IC,...Object.entries(MON_IC).map(([n,k])=>[k,n]),['siren','Сирена']];
 const icOf=t=>t.img||(t.kind==='monster'?MON_IC[t.monster]:(/тамси/i.test(t.name||'')?'tamsi':null));
-const CONDS=['Ослеплён','Очарован','Оглохший','Испуган','Схвачен','Недееспособен','Невидим','Парализован','Окаменел','Отравлен','Сбит с ног','Опутан','Ошеломлён','Без сознания','Концентрация'];
+const CONDS=['Очерчен','Ослеплён','Очарован','Оглохший','Испуган','Схвачен','Недееспособен','Невидим','Парализован','Окаменел','Отравлен','Сбит с ног','Опутан','Ошеломлён','Без сознания','Концентрация'];
 const ABIL=[['str','СИЛ'],['dex','ЛОВ'],['con','ТЕЛ'],['int','ИНТ'],['wis','МДР'],['cha','ХАР']];
 const COLORS=['#c0603f','#3f7fc0','#6aa84f','#a64dc0','#c0a43f','#3fb3a6','#c03f6b','#7d8a96'];
 const ITEMS=[['Зелье лечения',1,.5],['Верёвка пеньковая, 50 фт',1,10],['Факел',5,1],['Рационы (1 день)',5,2],['Бурдюк',1,5],['Набор целителя',1,3],['Кинжал',1,1],['Короткий меч',1,2],['Лёгкий арбалет',1,5],['Болты (20)',1,1.5],['Стрелы (20)',1,1],['Фонарь закрытый',1,2],['Масло, фляга',2,1],['Восковые затычки',2,0],['Ломик',1,5],['Кошка',1,4],['Спальник',1,7],['Святая вода',1,1]];
@@ -612,7 +612,7 @@ function pathPoly(c,p){c.beginPath();p.forEach((q,i)=>i?c.lineTo(q[1],q[2]):c.mo
 let previewTok=null; // Мастер смотрит глазами одного героя
 function setPreview(on,tid){preview=!!on;previewTok=on?(tid||null):null;$('btnPreview').setAttribute('aria-pressed',String(preview));lightDirty=true;changed()}
 function viewerTokens(){if(isGM())return null;if(preview&&previewTok&&S.tokens[previewTok])return[S.tokens[previewTok]];const here=tokList().filter(t=>t.map===st().map);const mine=here.filter(t=>t.owner&&t.owner===myId);return mine.length?mine:here.filter(t=>t.kind==='pc')}
-function lightSources(m){const L=[];for(const t of tokList())if(t.map===m.id&&t.light>0&&(!t.hidden||isGM()))L.push({x:t.x,y:t.y,r:t.light});for(const l of (S.maps[m.id]||{}).lights||[])L.push({x:l.x,y:l.y,r:l.r});
+function lightSources(m){const L=[];for(const t of tokList()){if(t.map!==m.id||(t.hidden&&!isGM()))continue;if(t.light>0)L.push({x:t.x,y:t.y,r:t.light});if(t.glow>0)L.push({x:t.x,y:t.y,r:0,R:t.glow})}for(const l of (S.maps[m.id]||{}).lights||[])L.push({x:l.x,y:l.y,r:l.r});
   for(const l of S.lshapes||[])if(l.map===m.id&&((l.r||0)>0||(l.dim||0)>0))L.push({x:l.x,y:l.y,r:l.r||0,R:(l.r||0)+(l.dim!=null?l.dim:(l.r||0)),day:!!l.day});return L}
 // магическая тьма гаснет там, где её накрывает «Дневной свет» (заклинание 3 круга против тьмы 2 круга)
 function darksOf(id){const ds=(S.maps[id]||{}).darks||[],fp=ftPx(MAPS.find(x=>x.id===id)||mapInfo());const day=(S.lshapes||[]).filter(l=>l.day&&l.map===id);return ds.filter(z=>!day.some(l=>Math.hypot(l.x-z.x,l.y-z.y)<=(l.r+(l.dim??l.r))*fp+z.r*fp))}
@@ -643,7 +643,7 @@ function buildLight(){
     if(!vpolys.length){f.fillStyle='rgba(0,0,0,.6)';f.fillRect(0,0,W,H)}else{ // героя ещё нет — карта приглушена, существ не видно
     f.fillStyle='#000';f.fillRect(0,0,W,H);f.globalCompositeOperation='destination-out';f.globalAlpha=.5;f.drawImage(ex,0,0);f.globalAlpha=1;f.drawImage(visCv,0,0);f.globalCompositeOperation='source-over'}}
   LC={m,s,amb,lights,vpolys,fogOn,fp};lightDirty=false}
-function canSee(t){if(isGM())return true;if(t.owner&&t.owner===myId)return true;if(t.hidden||has(t,'Невидим'))return false;
+function canSee(t){if(isGM())return true;if(t.owner&&t.owner===myId)return true;if(t.hidden||(has(t,'Невидим')&&!has(t,'Очерчен')))return false;
   if(darksOf(st().map).some(z=>Math.hypot(t.x-z.x,t.y-z.y)<=z.r*ftPx(mapInfo())))return false;if(!LC||!LC.fogOn)return true;
   if(!LC.vpolys.some(v=>inPoly(t.x,t.y,v.poly)))return false;if(LC.amb<.5)return true;
   if(LC.lights.some(l=>Math.hypot(t.x-l.x,t.y-l.y)<=(l.R??l.r*2)*LC.fp&&inPoly(t.x,t.y,l.poly)))return true;
@@ -827,7 +827,13 @@ async function rollPost(label,expr,opt={}){const r=roll(expr,opt.mode);if(!r){to
 function fxBox(){let b=$('rollFx');if(!b){b=h('div',{id:'rollFx',class:'rollfx','aria-live':'polite'});$('board').appendChild(b)}return b}
 function floatNum(tid,delta){const t=S.tokens[tid];if(!t||!canSee(t))return;const sx=t.x*cam.z+cam.ox,sy=t.y*cam.z+cam.oy;
   const n=h('div',{class:'fnum '+(delta<0?'dmg':'heal')},(delta<0?'−':'+')+Math.abs(delta));n.style.left=sx+'px';n.style.top=sy+'px';$('board').appendChild(n);setTimeout(()=>n.remove(),1900)}
-function showFx(m){if(m.oa){oaCard(m);return}if(m.tid&&m.delta){floatNum(m.tid,m.delta);if(m.delta<0)concCheck(m.tid,-m.delta)}if(m.kind!=='roll'||m.total==null)return;
+async function applyFx(m){const f=m.fx;if(!isOwner||readOnly||!f)return;
+  // на фишке список эффектов fxl:[{src,spell,cond,glow}] — у каждого заклинателя свой, чтобы одно не затирало другое
+  if(f.end){for(const t of tokList()){const L=t.fxl||[];const gone=L.filter(e=>e.src===f.end&&(!f.spell||e.spell===f.spell));if(!gone.length)continue;const rest=L.filter(e=>!gone.includes(e));
+      const drop=gone.map(e=>e.cond).filter(c=>c&&!rest.some(e=>e.cond===c));await store.update('tokens/'+t.id,{fxl:rest,cond:(t.cond||[]).filter(c=>!drop.includes(c)),glow:Math.max(0,...rest.map(e=>e.glow||0))})}return}
+  for(const id of f.targets||[]){const t=S.tokens[id];if(!t)continue;const p={};if(f.cond&&!has(t,f.cond))p.cond=[...(t.cond||[]),f.cond];if(f.glow)p.glow=Math.max(t.glow||0,f.glow);
+    if(f.src)p.fxl=[...(t.fxl||[]).filter(e=>!(e.src===f.src&&e.spell===f.spell)),{src:f.src,spell:f.spell||'',cond:f.cond||null,glow:f.glow||0}];await store.update('tokens/'+id,p)}}
+function showFx(m){if(m.fx){applyFx(m)}if(m.oa){oaCard(m);return}if(m.tid&&m.delta){floatNum(m.tid,m.delta);if(m.delta<0)concCheck(m.tid,-m.delta)}if(m.kind!=='roll'||m.total==null)return;
   const crit=m.nat===20,fail=m.nat===1,tg=m.target&&S.tokens[m.target];
   const c=h('div',{class:'rcard'+(crit?' crit':fail?' fail':''),onclick:()=>c.remove()},
     h('div',{class:'rtot'},String(m.total)),
@@ -841,7 +847,7 @@ function showFx(m){if(m.oa){oaCard(m);return}if(m.tid&&m.delta){floatNum(m.tid,m
 // концентрация: после урона владелец (или Мастер за существ) сразу бросает спасбросок Телосложения
 function concCheck(tid,dmg){setTimeout(async()=>{const t=S.tokens[tid];if(!t||!has(t,'Концентрация')||readOnly)return;
   const mine=t.owner&&t.owner===myId&&!isOwner,gmSide=isOwner&&(t.kind!=='pc'||!t.owner);if(!mine&&!gmSide)return;
-  const drop=async why=>{const x=S.tokens[tid];if(!x||!has(x,'Концентрация'))return;await store.update('tokens/'+tid,{cond:x.cond.filter(c=>c!=='Концентрация')});await post({kind:'sys',text:`${x.name} теряет концентрацию${why?' ('+why+')':''}`})};
+  const drop=async why=>{const x=S.tokens[tid];if(!x||!has(x,'Концентрация'))return;await store.update('tokens/'+tid,{cond:x.cond.filter(c=>c!=='Концентрация')});await post({kind:'sys',fx:{end:tid},text:`${x.name} теряет концентрацию${why?' ('+why+')':''}`})};
   const hpNow=t.kind==='monster'?((S.gm[tid]||{}).hp??1):t.hp;if(hpNow<=0){await drop('без сознания');return}
   const dc=Math.max(10,Math.floor(dmg/2)),c=S.chars[tid]||{},bonus=t.kind==='monster'?0:mod(c.con)+((c.saves||[]).includes('con')?(c.prof||2):0);
   const card=h('div',{class:'rcard conc'},h('div',{class:'rtot'},'🧠'),h('div',{class:'rtxt'},h('b',{},`${t.name}: концентрация`),h('div',{class:'small muted'},`Спасбросок Телосложения, СЛ ${dc}`),
@@ -1013,6 +1019,15 @@ async function deathSave(t){const upT=p=>store.update('tokens/'+t.id,p);const r=
   else{const df=Math.min(3,(t.df||0)+(v===1?2:1));await upT({df});await post({kind:'sys',text:`${t.name}: провал ${df}/3${v===1?' (1 — два провала)':''}${df>=3?' — погибает…':''}`})}}
 /* ---- автоход монстра: путь по клеткам в обход стен, затем атака; Мастер подтверждает ---- */
 const isRangedAtk=a=>/лук|арбалет|праща|дротик|снаряд|стрел|метат|гарпун/i.test(a[0]);
+// тактика: кто не бежит, кто колдует (ячейки считаются в gm/mon_<id>.spUsed)
+const BRAVE=/Зомби|Гуль|Страж|элементаль|Вейра|Акула|краб|Цепь/i;
+const TACT={'Жрица сахуагинов':{sp:['Направленный снаряд (излучение)',4,'4d6'],uses:2},'Фанатик культа':{sp:['Причинение ран (некротическая)',4,'3d10'],uses:2},'Вейра Тиш':{sp:['Направленный снаряд (излучение)',7,'4d6'],uses:3}};
+function fleeTo(t,budget){const m=mapInfo(),c=cellPx(m),cx=i=>(i+.5)*c,at=(x,y)=>[Math.floor(x/c),Math.floor(y/c)];const foes=tokList().filter(x=>x.map===t.map&&x.kind!=='monster'&&x.hp>0&&!x.hidden);
+  const occ=new Set(tokList().filter(x=>x.map===m.id&&x.id!==t.id).map(x=>at(x.x,x.y).join(',')));const [sx,sy]=at(t.x,t.y);const seen=new Set([sx+','+sy]);let q=[[sx,sy]],best=null,bd=-1,steps=0;
+  const score=(i,j)=>Math.min(...foes.map(f=>Math.hypot(cx(i)-f.x,cx(j)-f.y)));
+  while(q.length&&steps<=Math.floor(budget/5)){const nq=[];for(const [i,j] of q){if(!occ.has(i+','+j)||(i===sx&&j===sy)){const sc=score(i,j);if(sc>bd){bd=sc;best=[i,j,steps]}}
+      for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){const ni=i+di,nj=j+dj,k=ni+','+nj;if(ni<0||nj<0||cx(ni)>m.w||cx(nj)>m.h||seen.has(k)||blocked(cx(i),cx(j),cx(ni),cx(nj)))continue;seen.add(k);nq.push([ni,nj])}}q=nq;steps++}
+  return best&&best[2]>0?{x:cx(best[0]),y:cx(best[1]),ft:best[2]*5}:null}
 function pathTo(t,tg,budget){const m=mapInfo(),c=cellPx(m),W=Math.ceil(m.w/c),H=Math.ceil(m.h/c),cx=i=>(i+.5)*c;
   const at=(x,y)=>[Math.floor(x/c),Math.floor(y/c)],[sx,sy]=at(t.x,t.y),[tx,ty]=at(tg.x,tg.y);
   const occ=new Set(tokList().filter(x=>x.map===m.id&&x.id!==t.id&&!(x.kind==='monster'&&x.hidden)).map(x=>at(x.x,x.y).join(',')));
@@ -1029,7 +1044,14 @@ function pathTo(t,tg,budget){const m=mapInfo(),c=cellPx(m),W=Math.ceil(m.w/c),H=
   const [ei,ej]=cells[n];return{x:cx(ei),y:cx(ej),ft:n*5,arrives:!!found&&n===cells.length-1,total:(cells.length-1)*5}}
 function planMonster(t){const b=BEST[t.monster];if(!b)return null;const m=mapInfo();
   const foes=tokList().filter(x=>x.map===t.map&&x.kind!=='monster'&&!x.hidden&&x.hp>0);if(!foes.length)return{text:'Целей нет — монстр стоит.',steps:[]};
-  const mel=b.atk.filter(a=>!isRangedAtk(a)),rng=b.atk.filter(isRangedAtk),left=moveLeft(t);
+  const mel=b.atk.filter(a=>!isRangedAtk(a)),rng=b.atk.filter(isRangedAtk),left=moveLeft(t),g2=S.gm[t.id]||{};
+  // тяжело ранен (≤ ¼ хитов) и не бесстрашный — отходит
+  if(g2.hpMax&&g2.hp<=g2.hpMax/4&&!BRAVE.test(t.monster)&&left>0){const fl=fleeTo(t,left);if(fl)return{flee:true,move:{...fl,arrives:false,total:fl.ft},text:`тяжело ранен — Отход и бегство на ${fl.ft} фт`}}
+  // заклинатель бьёт заклинанием самого раненого в досягаемости
+  const ta=TACT[t.monster];if(ta&&(g2.spUsed||0)<ta.uses){const cand=foes.filter(f=>atkRange(t,ta.sp,f).ok&&coverOf(t,f).lvl<3).sort((p,q)=>p.hp-q.hp);if(cand.length)return{f:cand[0],move:null,atk:ta.sp,spell:true,text:`колдует «${ta.sp[0]}» в ${cand[0].name} (осталось ${ta.uses-(g2.spUsed||0)})`}}
+  // стрелок держит дистанцию: если никто не рядом и цель видна — стреляет с места
+  const adj=foes.find(f=>gridFt(m,t.x,t.y,f.x,f.y)<=5);
+  if(!adj)for(const a of rng){const cand=foes.filter(f=>{const r=atkRange(t,a,f);return r.ok&&!r.dis.length&&coverOf(t,f).lvl<3}).sort((p,q)=>p.hp-q.hp);if(cand.length)return{f:cand[0],move:null,atk:a,text:`держит дистанцию и стреляет «${a[0]}» в ${cand[0].name}`}}
   const opts=foes.map(f=>({f,p:pathTo(t,f,left)})).sort((a,c)=>(c.p.arrives-a.p.arrives)||(a.p.total-c.p.total));
   const o=opts[0];const near=gridFt(m,t.x,t.y,o.f.x,o.f.y)<=5;
   if(mel.length&&(near||o.p.arrives))return{f:o.f,move:near?null:o.p,atk:mel[0],text:`${near?'стоит рядом':'идёт '+o.p.ft+' фт'} → ${o.f.name}, атака «${mel[0][0]}»`};
@@ -1037,7 +1059,9 @@ function planMonster(t){const b=BEST[t.monster];if(!b)return null;const m=mapInf
   if(o.p.ft>0){const fake={...t,x:o.p.x,y:o.p.y};const a=rng.find(a=>atkRange(fake,a,o.f).ok&&coverOf(fake,o.f).lvl<3);
     return{f:o.f,move:o.p,atk:a||null,text:`идёт ${o.p.ft} фт к ${o.f.name}${a?`, затем стреляет «${a[0]}»`:' (не успевает атаковать)'}`}}
   return{text:'Не может добраться до целей.',steps:[]}}
-async function runMonster(t,p){if(p.move){const ax=t.x,ay=t.y;await store.update('tokens/'+t.id,{x:p.move.x,y:p.move.y,moved:(t.moved||0)+p.move.ft});t.x=p.move.x;t.y=p.move.y;lightDirty=true;if(!t.hidden)post({kind:'sys',text:`${t.name} перемещается на ${p.move.ft} фт`});checkOA(t,ax,ay,p.move.x,p.move.y)}
+async function runMonster(t,p){if(p.flee){await store.update('tokens/'+t.id,{disengage:true});t.disengage=true;await post({kind:'sys',text:`${t.name} совершает Отход`})}
+  if(p.spell)await store.update('gm/mon_'+t.id,{spUsed:((S.gm[t.id]||{}).spUsed||0)+1});
+  if(p.move){const ax=t.x,ay=t.y;await store.update('tokens/'+t.id,{x:p.move.x,y:p.move.y,moved:(t.moved||0)+p.move.ft});t.x=p.move.x;t.y=p.move.y;lightDirty=true;if(!t.hidden)post({kind:'sys',text:`${t.name} перемещается на ${p.move.ft} фт`});checkOA(t,ax,ay,p.move.x,p.move.y)}
   if(p.atk&&p.f){const times=Number((p.atk[0].match(/×\s*(\d)/)||[])[1]||1);for(let i=0;i<times;i++){const f=S.tokens[p.f.id];if(!f||f.hp<=0)break;await attack({...S.tokens[t.id],...(p.move?{x:p.move.x,y:p.move.y}:{})},p.atk,f.id,{auto:true})}}}
 function monsterTurnCard(t){const b=BEST[t.monster],m=mapInfo(),g2=S.gm[t.id]||{};
   const foes=tokList().filter(x=>x.map===t.map&&x.kind!=='monster'&&!x.hidden&&x.hp>0).sort((p,q)=>gridFt(m,t.x,t.y,p.x,p.y)-gridFt(m,t.x,t.y,q.x,q.y));
@@ -1110,10 +1134,13 @@ function condMode(t,tg,ranged,extra=[]){let adv=[],dis=[...extra];
   if(advMode==='adv')adv.push('выбрано');if(advMode==='dis')dis.push('выбрано');
   for(const c of ['Ослеплён','Отравлен','Испуган','Опутан','Сбит с ног'])if(has(t,c))dis.push(c.toLowerCase());if(has(t,'Невидим'))adv.push('невидим');
   if(tg){for(const c of ['Ослеплён','Опутан','Парализован','Окаменел','Ошеломлён','Без сознания','Недееспособен'])if(has(tg,c))adv.push('цель: '+c.toLowerCase());
-    if(has(tg,'Невидим'))dis.push('цель невидима');if(has(tg,'Сбит с ног'))(ranged?dis:adv).push('цель лежит');}
+    if(has(tg,'Невидим')&&!has(tg,'Очерчен'))dis.push('цель невидима');if(has(tg,'Очерчен'))adv.push('цель очерчена');if(has(tg,'Сбит с ног'))(ranged?dis:adv).push('цель лежит');}
+  const tr=((window.BESTIARY||{})[t.monster]||{}).traits||[],trait=n=>tr.some(x=>x[0]===n);
+  if(tg&&trait('Кровавое бешенство')&&!ranged&&(tg.kind==='monster'?((S.gm[tg.id]||{}).hp<(S.gm[tg.id]||{}).hpMax):tg.hp<tg.hpMax))adv.push('кровавое бешенство');
+  if(tg&&trait('Тактика стаи')&&tokList().some(x=>x.id!==t.id&&x.map===tg.map&&x.kind==='monster'&&alive(x)&&!INCAP.some(c=>has(x,c))&&gridFt(mapInfo(),x.x,x.y,tg.x,tg.y)<=5))adv.push('тактика стаи');
   const mode=adv.length&&!dis.length?'adv':dis.length&&!adv.length?'dis':null;return{mode,why:[...adv.map(x=>'+'+x),...dis.map(x=>'−'+x)].join(', ')}}
 // дальность по Книге игрока: обычная/максимальная, досягаемость ближнего боя
-const RANGES=[[/ручной арбалет/i,30,120],[/л[её]гкий арбалет/i,80,320],[/т[яе]ж[её]лый арбалет/i,100,400],[/короткий лук/i,80,320],[/лук/i,150,600],[/праща/i,30,120],[/дротик/i,20,60],[/метательн|джавелин/i,30,120],[/сеть/i,5,15],
+const RANGES=[[/направленный снаряд/i,120,120],[/ручной арбалет/i,30,120],[/л[её]гкий арбалет/i,80,320],[/т[яе]ж[её]лый арбалет/i,100,400],[/короткий лук/i,80,320],[/лук/i,150,600],[/праща/i,30,120],[/дротик/i,20,60],[/метательн|джавелин/i,30,120],[/сеть/i,5,15],
   [/кинжал|ручной топор|копь[её]|трезубец|л[её]гкий молот|гарпун/i,20,60]];
 const REACH=/кнут|глефа|алебарда|пика|щупальц|длинное копь/i;
 function atkRange(t,a,tg){const m=mapInfo();const sz=((t.size||1)-1+(tg.size||1)-1)*2.5;const dist=Math.max(0,Math.round((gridFt(m,t.x,t.y,tg.x,tg.y)-sz)/5)*5);
@@ -1252,7 +1279,7 @@ async function clearLog(){for(let i=0;i<20;i++){const ids=await store.list('log'
 
 /* ---- МАСТЕР ---- */
 // вкладки Мастера: scene — ход игры, map — карта, mob — существа, mat — материалы; разделы модулей раскладываются по заголовку
-const GM_SEC_TAB=[['Отдых','scene'],['Итоги','scene'],['Резервн','scene'],['Отмен','scene'],['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Бестиарий','mob'],['Случайные','mat'],['Записки','mat']];
+const GM_SEC_TAB=[['Отдых','scene'],['Время','scene'],['Голоса','scene'],['Итоги','scene'],['Резервн','scene'],['Отмен','scene'],['Музыка','scene'],['Рисунки','map'],['Области','map'],['Камера','map'],['Аура','mob'],['Бестиарий','mob'],['Случайные','mat'],['Записки','mat']];
 function paneGM(part='scene'){const s=st(),m=mapInfo(),md=S.maps[m.id]||{};const out=[];
   if(part==='scene'){
   const heroes=tokList().filter(t=>t.kind!=='monster'&&t.map===s.map);
@@ -1380,7 +1407,7 @@ function addToolButton(t){const b=h('button',{type:'button','data-tool':t.id,tit
 window.VTT={
   get S(){return S},st,store,h,clone,mapInfo,cellPx,ftPx,cam,toWorld,clamp,roll,rollPost,post,toast,requestDraw,changed,renderPane:()=>renderPane(true),renderTabs,
   tokList,canSee,isGM,whoAmI,names,resolveNames,mod,sgn,rnd,showCutAll,selectToken,centerOn,ping,myToken,icOf,picker,applyHp,condMode,has,checkMode,
-  BEST,combatOrder,nextTurn,rollInit,attack,hpText,myTokens,endSession,speedOf,moveLeft,gridFt,coverOf,blocked,wallsOf,planMonster,
+  BEST,combatOrder,nextTurn,rollInit,attack,hpText,myTokens,endSession,speedOf,moveLeft,gridFt,coverOf,blocked,wallsOf,planMonster,MAPS,setMap:id=>isOwner&&MAPS.some(x=>x.id===id)?store.set('game/state',{...st(),map:id}):null,
   get myId(){return myId},get isOwner(){return isOwner},get readOnly(){return readOnly},get room(){return room},get sel(){return sel},get tool(){return tool},LIVE,NET,
   get VW(){return VW},get VH(){return VH},
   onDraw(layer,fn){drawHooks[layer].push(fn);requestDraw()},
@@ -1392,7 +1419,7 @@ window.VTT={
   onChat(fn){chatHooks.push(fn)},addLogFilter(fn){logFilters.push(fn)},addLogRenderer(fn){logRenderers.push(fn)},
   watch(col,cb,q){return store.watchCol(col,cb,q)},
   overlay(){return $('modov')}};
-for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js','mod-spells.js','mod-abilities.js','mod-undo.js','mod-backup.js','mod-summary.js','mod-bestiary.js','mod-journal.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
+for(const src of ['mod-measure.js','mod-draw.js','mod-chat.js','mod-sound.js','mod-handouts.js','mod-view.js','mod-loot.js','mod-spells.js','mod-abilities.js','mod-undo.js','mod-backup.js','mod-summary.js','mod-bestiary.js','mod-journal.js','mod-gametime.js','mod-voices.js','mod-readaloud.js']){const s=document.createElement('script');s.src=src;s.onerror=()=>{};document.body.append(s)}
 window.__table={S,st,cam,frame:()=>draw()};
 })();
 </script>

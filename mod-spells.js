@@ -51,7 +51,7 @@ function scaledDice(base,spell,slot,heroLvl){if(!base)return'';let d=String(base
 // трата ячейки и концентрация — общие для обычного сотворения и для размещения области
 async function pay(t,c,spell,slot){const sp=c.spells||{};
   if(spell.lvl>0&&!(spell.ritual&&slot==='ritual')){if(freeSlots(sp,slot)<=0){V.toast('Нет свободной ячейки этого круга.');return false}save(t,c,{used:{...(sp.used||{}),[slot]:Number((sp.used||{})[slot]||0)+1}})}
-  if(spell.conc){const cond=(t.cond||[]).filter(x=>x!=='Концентрация');if((t.cond||[]).includes('Концентрация'))V.post({kind:'sys',text:`${t.name} теряет прежнюю концентрацию`});await V.store.update('tokens/'+t.id,{cond:[...cond,'Концентрация'],concOn:spell.name})}
+  if(spell.conc){const cond=(t.cond||[]).filter(x=>x!=='Концентрация');if((t.cond||[]).includes('Концентрация'))V.post({kind:'sys',fx:{end:t.id},text:`${t.name} теряет прежнюю концентрацию`});await V.store.update('tokens/'+t.id,{cond:[...cond,'Концентрация'],concOn:spell.name})}
   return true}
 const lvlTxtOf=(spell,slot)=>spell.lvl===0?'заговор':slot==='ritual'?'ритуал':`ячейка ${slot} круга`;
 async function cast(t,c,spell,slot,targetId,ab,dc,atk){const tg=targetId&&V.S.tokens[targetId];const heroLvl=Number(c.lvl)||1;
@@ -70,10 +70,30 @@ async function cast(t,c,spell,slot,targetId,ab,dc,atk){const tg=targetId&&V.S.to
     V.post({kind:'roll',text:`${head} · лечение`,total:r.total,det:r.det});if(V.applyHp&&target.kind!=='monster')await V.applyHp(target.id,r.total,'heal');return}
   V.post({kind:'sys',text:`${head}${spell.dur?' · длительность: '+spell.dur:''}`})}
 
+// заклинания-состояния: при провале спасброска (или из пула хитов) Мастер ставит состояние через fx журнала.
+// cond — состояние; glow — тусклое свечение, фт; pool/per — пул хитов и прибавка за круг; only — тип существа; maxT/perT — число целей без области
+const CFX={
+  'faerie-fire':{cond:'Очерчен',glow:10},
+  'entangle':{cond:'Опутан'},
+  'web':{cond:'Опутан'},
+  'fear':{cond:'Испуган'},
+  'sleep':{cond:'Без сознания',pool:'5d8',per:'2d8',charm:true,noUndead:true},
+  'color-spray':{cond:'Ослеплён',pool:'6d10',per:'2d10'},
+  'hold-person':{cond:'Парализован',only:'гуманоид',maxT:1,perT:1},
+  'blindness-deafness':{cond:'Ослеплён',maxT:1,perT:1}};
+function cfxEffect(t,c,spell,ns,ctx){const f=CFX[spell.id];if(!f)return null;const up=Math.max(0,ns-spell.lvl);
+  let pool=null;if(f.pool){const m=f.pool.match(/(\d+)d(\d+)/),pm=f.per.match(/(\d+)d(\d+)/);pool=`${Number(m[1])+Number(pm[1])*up}d${m[2]}`}
+  const sv=spell.save?SAVE_KEY[norm(spell.save).slice(0,3)]||null:null;
+  return{dice:pool||'',pool:!!pool,save:pool?null:sv,dc:ctx.dc,cond:f.cond,glow:f.glow||0,only:f.only||null,charm:!!f.charm,noUndead:!!f.noUndead,
+    src:spell.conc?t.id:null,spell:spell.name,caster:t.name,maxTargets:f.maxT?f.maxT+(f.perT||0)*up:1}}
+async function castCond(t,c,spell,slot,ctx){if(!V.aoe||!V.aoe.openEffect)return V.toast('Модуль эффектов ещё не загрузился.');
+  if(!await pay(t,c,spell,slot))return;const ns=slot==='ritual'?spell.lvl:Number(slot)||spell.lvl;
+  V.post({kind:'sys',text:`✨ ${t.name}: «${spell.name}» (${lvlTxtOf(spell,slot)})`});
+  V.aoe.openEffect(null,cfxEffect(t,c,spell,ns,ctx))}
 // область заклинания из данных: поле area, скобки в дистанции «На себя (конус 15 фт)» или описание
 const SAVE_KEY={'сил':'str','лов':'dex','тел':'con','инт':'int','мдр':'wis','хар':'cha'};
 function areaOf(s){if(s.attack)return null;const par=(String(s.range||'').match(/\(([^)]*)\)/)||[])[1]||'';const self=/^на себя/.test(norm(s.range));
-  for(const x of [s.area,par,s.save||s.dmg?s.desc:null]){if(!x)continue;const m=norm(x).match(/(?:^|[^а-я])(конус\S*|куб\S*|квадрат\S*|лини\S*|стен\S*|сфер\S*|полусфер\S*|цилиндр\S*|круг\S*|кольц\S*|аур\S*|радиус\S*)\s+(?:радиусом\s+|длиной\s+|до\s+)?(\d+)\s*(?:×\s*\d+\s*)?фт/);
+  for(const x of [s.area,par,s.save||s.dmg||CFX[s.id]?s.desc:null]){if(!x)continue;const m=norm(x).match(/(?:^|[^а-я])(конус\S*|куб\S*|квадрат\S*|лини\S*|стен\S*|сфер\S*|полусфер\S*|цилиндр\S*|круг\S*|кольц\S*|аур\S*|радиус\S*)\s+(?:радиусом\s+|длиной\s+|до\s+)?(\d+)\s*(?:×\s*\d+\s*)?фт/);
     if(m){const w=m[1];return{kind:/^кон/.test(w)?'cone':/^(куб|квадрат)/.test(w)?'cube':/^(лин|стен)/.test(w)?'line':'sphere',size:Number(m[2]),self}}}
   const m=norm(par).match(/^(\d+)\s*фт$/);return m&&self?{kind:'sphere',size:Number(m[1]),self}:null}
 async function placeArea(t,c,spell,slot,ctx){const ar=areaOf(spell);if(!ar)return;if(!V.aoe||!V.aoe.start)return V.toast('Инструмент областей ещё не загрузился.');
@@ -84,7 +104,7 @@ async function placeArea(t,c,spell,slot,ctx){const ar=areaOf(spell);if(!ar)retur
   const extra=String(spell.dmgType||'').replace(/к/g,'d').match(/\+\s*(\d+d\d+)/);if(dice&&extra)dice+='+'+extra[1];// «Град»: 2к8 дробящего + 4к6 холодом
   const sv=spell.save?SAVE_KEY[norm(spell.save).slice(0,3)]||null:null;
   const half=spell.halfOnSave===false?false:spell.halfOnSave===true?true:spell.lvl>0||/половин/.test(norm(spell.desc));
-  const eff=spell.save||dice?{dice:dice||'',type:spell.dmgType||'',save:sv,dc:ctx.dc,half,spell:spell.name,caster:t.name}:null;
+  const eff=cfxEffect(t,c,spell,ns,ctx)||(spell.save||dice?{dice:dice||'',type:spell.dmgType||'',save:sv,dc:ctx.dc,half,spell:spell.name,caster:t.name}:null);
   V.post({kind:'sys',text:`✨ ${t.name}: «${spell.name}» (${lvlTxtOf(spell,slot)}) — ${{cone:'конус',cube:'куб',line:'линия',sphere:'сфера'}[ar.kind]} ${ar.size} фт`});
   V.aoe.start({kind:ar.kind,size:ar.size,from:ar.self?t.id:null,effect:eff})}
 
@@ -187,6 +207,7 @@ function spellCard(t,c,spell,ctx){const k=spell.name;const isOpen=open.has(t.id+
       body.append(h('div',{class:'sp-cast'},opts.length?h('div',{class:'sp-row'},sl,tg,h('button',{class:'btn pri sm',type:'button',onclick:()=>cast(t,c,spell,sl.value==='ritual'?'ritual':Number(sl.value),tg.value,ctx.ab,ctx.dc,ctx.atk)},'✨ Сотворить'),
         ...(()=>{const L=lightOf(spell);if(!L)return[];const sv=()=>sl.value==='ritual'?'ritual':Number(sl.value);const B=(txt,where)=>h('button',{class:'btn sm',type:'button',onclick:()=>castLight(t,c,spell,sv(),where)},txt);
           return L.mode==='self'?[B('💡 Зажечь на себе','self')]:L.mode==='choose'?[B('💡 На себя (оружие/предмет)','self'),B('📍 На карту','map')]:[B(L.n>1?`📍 Разместить огоньки (до ${L.n})`:'📍 Разместить свет','map')]})(),
+        CFX[spell.id]&&!areaOf(spell)?h('button',{class:'btn sm',type:'button',title:'Выбрать цель и бросить спасбросок',onclick:()=>castCond(t,c,spell,sl.value==='ritual'?'ritual':Number(sl.value),ctx)},'🎯 На цель'):null,
         areaOf(spell)?h('button',{class:'btn sm',type:'button',title:'Поставить шаблон на карте и бросить спасброски всем в области',onclick:()=>placeArea(t,c,spell,sl.value==='ritual'?'ritual':Number(sl.value),ctx)},'🎯 Разместить область'):null):h('div',{class:'sp-meta'},'Нет свободных ячеек — нужен отдых.')))}
     kids.push(body)}
   return h('div',{class:'sp-item'},...kids)}

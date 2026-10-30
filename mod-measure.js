@@ -56,7 +56,13 @@ const css=document.createElement('style');css.textContent=`
 .mm-nm small{color:var(--warn,#e8c46a);font-size:11px;overflow-wrap:anywhere}
 .mm-n{font-family:var(--f-mono,monospace);text-align:right}
 .mm-ok{color:var(--ok,#8fcf8a)}.mm-bad{color:var(--danger,#e58a80)}
-.mm-log .mm-res{margin-top:6px}.mm-log .mm-row{margin-top:6px}
+.mm-log .mm-res{margin-top:6px}
+.mm-cnd{color:var(--sea,#8fd1c4)!important}
+.mm-cond{font-size:13px;color:var(--muted,#8e9e9b);border:1px dashed var(--line,#243235);border-radius:8px;padding:6px 8px}.mm-cond b{color:var(--sea,#8fd1c4)}
+.mm-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:4px;max-height:200px;overflow:auto}
+.mm-pk{display:flex;align-items:center;gap:6px;border:1px solid var(--line,#243235);border-radius:8px;padding:4px 8px;min-height:36px;cursor:pointer;min-width:0}
+.mm-pk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mm-pk input{width:18px;height:18px;margin:0;accent-color:var(--brass,#d9b36c);flex:0 0 auto}
+@media (max-width:600px){.mm-pk{min-height:40px}.mm-pk input{width:22px;height:22px}}.mm-log .mm-row{margin-top:6px}
 @media (max-width:600px){.mm-hit .btn,.mm-dlg .btn,.mm-log .btn{min-height:40px;min-width:40px}.mm-fl input,.mm-fl select{min-height:40px;font-size:16px}
   .mm-tr input[type=checkbox]{width:22px;height:22px}.mm-res.gm .mm-tr{grid-template-columns:26px minmax(0,1fr) 30px 50px 36px}.mm-tr{grid-template-columns:minmax(0,1fr) 30px 50px 36px;min-height:36px}
   .mm-dlg{padding:10px;align-self:flex-end}.mm-ov{align-items:flex-end}}`;
@@ -158,7 +164,7 @@ function originFor(wx,wy){const m=V.mapInfo();if(!m.grid)return[wx,wy];
 async function saveShape(p){if(V.readOnly)return null;const id=V.store.newId('shapes');const s={...p,by:V.myId,who:V.whoAmI(),ts:Date.now()};await V.store.set('shapes/'+id,s);
   const n=tokensIn(p,V.mapInfo()).filter(t=>V.canSee(t)).length;V.toast(`${KNAME[p.kind]} ${p.size} фт ${p.kind==='sphere'||p.kind==='line'?'поставлена':'поставлен'}${n?` · в области: ${n}`:''}`);
   const shape={...s,id},eff=aoe.pending;aoe.pending=null;aoe.self=null;
-  if(eff&&(eff.dice||eff.save))openEffect(shape,eff);else showHits(shape);return shape}
+  if(eff&&(eff.dice||eff.save||eff.cond))openEffect(shape,eff);else showHits(shape);return shape}
 function hitShape(wx,wy){const r=18/V.cam.z,id=V.st().map;return shapes.slice().reverse().find(s=>s.map===id&&Math.hypot(s.x-wx,s.y-wy)<=r)}
 function closeMenu(){if(menu){menu.remove();menu=null}}
 function openMenu(s,sx,sy){closeMenu();const m=V.mapInfo(),mine=s.by===V.myId||V.isOwner;
@@ -228,30 +234,58 @@ function defenses(t,type,magic){const src=t.kind==='monster'?bestOf(t):V.S.chars
   for(const [f,mult,n] of [['immune',0,'иммунитет'],['resist',.5,'сопротивление'],['vuln',2,'уязвимость']]){const hk=hit(f);if(!hk.length)continue;
     if(hk.length===keys.length)return{mult,note:n};return{mult:1,note:`${n} к части урона — учтите вручную`}}
   return{mult:1,note:''}}
-function resolveEffect(eff,targets){const dr=eff.dice?V.roll(eff.dice):null;if(eff.dice&&!dr){V.toast('Не понял кубы урона: '+eff.dice);return null}
+// состояние при провале (eff.cond): иммунитет по BESTIARY.condImmune (там русские слова), фильтр по типу существа (eff.only, напр. «гуманоид»)
+const CIMM={'Без сознания':/бессозн/,'Опутан':/опутан/,'Парализован':/парал/,'Испуган':/испуг/,'Ослеплён':/ослеп/,'Очарован':/очаров/,'Отравлен':/отравл/,'Сбит с ног':/сбива/,'Ошеломлён':/ошелом/,'Схвачен':/захват/,'Недееспособен':/недеесп/};
+function condBlock(t,eff){const bx=bestOf(t),ci=lc([].concat(bx&&bx.condImmune||[]).join(' ')),ty=lc(bx&&bx.type);
+  if(eff.only&&t.kind==='monster'&&ty&&!ty.includes(eff.only))return'не '+eff.only+' — не действует';
+  if(CIMM[eff.cond]&&CIMM[eff.cond].test(ci))return'иммунитет к состоянию';
+  if(eff.charm&&/очаров/.test(ci))return'иммунитет к очарованию';
+  if(eff.noUndead&&/нежить/.test(ty))return'нежить — не действует';
+  if(V.has(t,eff.cond))return'уже: '+eff.cond.toLowerCase();
+  return''}
+const hideOf=t=>!!(t.hidden||V.has(t,'Невидим')||!V.canSee(t));// скрыт от игроков: в журнале его видит только Мастер
+function resolveEffect(eff,targets){const dr=eff.dice?V.roll(eff.dice):null;if(eff.dice&&!dr){V.toast('Не понял кубы: '+eff.dice);return null}
   const base=dr?Math.max(0,dr.total):0;
-  const rows=targets.map(t=>{const r={tid:t.id,name:t.name,h:!!(t.hidden||V.has(t,'Невидим')||!V.canSee(t))};// h — скрыт от игроков: в журнале его видит только Мастер
+  const rows=targets.map(t=>{const r={tid:t.id,name:t.name,h:hideOf(t)};
     if(eff.save){const auto=(eff.save==='str'||eff.save==='dex')&&AUTO_FAIL.find(c=>V.has(t,c));
       if(auto){r.ok=false;r.roll=null;r.note=auto+' — авто-провал'}
       else{const b=saveBonus(t,eff.save),mode=eff.save==='dex'&&V.has(t,'Опутан')?'dis':null,x=V.roll('1d20'+sg(b),mode);r.roll=x.total;r.det=x.det+(mode?' помеха (опутан)':'');r.ok=x.total>=eff.dc}}
     if(eff.dice){let d=base;if(eff.save&&r.ok)d=eff.half?Math.floor(base/2):0;const df=defenses(t,eff.type,!!eff.spell);if(df.mult!==1)d=Math.floor(d*df.mult);if(df.note)r.note=(r.note?r.note+'; ':'')+df.note;r.dmg=d}
+    if(eff.cond&&(!eff.save||r.ok===false)){const why=condBlock(t,eff);if(why)r.note=(r.note?r.note+'; ':'')+why;else{r.cond=true;r.note=(r.note?r.note+'; ':'')+'→ '+eff.cond}}
     return r});
   return{base,det:dr?dr.det:'',rows}}
-function effText(e){return[e.dice?`урон ${e.dice}${e.type?' '+e.type:''}`:null,e.save?`спасбросок ${SAVEN[e.save]} СЛ ${e.dc}${e.dice?', при успехе '+(e.half?'половина':'урона нет'):''}`:'без спасброска'].filter(Boolean).join(' · ')}
+// «Сон», «Сверкающие брызги»: пул хитов, начиная с существа с наименьшими текущими хитами. Хиты монстров знает только Мастер.
+const hpOf=t=>t.kind==='monster'?(V.S.gm&&V.S.gm[t.id]?Number(V.S.gm[t.id].hp):null):Number(t.hp);
+const needGM=(eff,targets)=>!!eff.pool&&!V.isGM()&&targets.some(t=>t.kind==='monster');
+function poolRows(eff,targets,pool){let left=pool,stop=false;const rows=targets.map(t=>({tid:t.id,name:t.name,h:hideOf(t),t}));const cand=[];
+  for(const r of rows){const t=r.t,hp=hpOf(t);const why=condBlock(t,eff)||(hp==null?'хиты неизвестны':hp<=0||V.has(t,'Без сознания')?'без сознания — не действует':'');if(why)r.note=why;else cand.push(r)}
+  cand.sort((a,b)=>hpOf(a.t)-hpOf(b.t));
+  for(const r of cand){const hp=hpOf(r.t);if(!stop&&hp<=left){left-=hp;r.cond=true;r.note='→ '+eff.cond}else{stop=true;r.note='пула не хватило'}}
+  for(const r of rows)delete r.t;return rows}
+function fxOf(eff,rows){const ids=rows.filter(r=>r.cond).map(r=>r.tid);return eff.cond&&ids.length?{targets:ids,cond:eff.cond,glow:eff.glow||0,src:eff.src||null,spell:eff.spell||null}:null}
+async function resolvePoolGM(m){if(!V.isGM())return;const cur=(V.S.log||[]).find(x=>x.id===m.id)||m;if(!cur.aoe.pending)return V.toast('Уже распределено.');
+  const a=cur.aoe,targets=(a.tids||[]).map(id=>V.S.tokens[id]).filter(Boolean),rows=poolRows(a,targets,a.base),fx=fxOf(a,rows);
+  await V.store.update('log/'+m.id,{aoe:{...a,rows,pending:false}});
+  await V.post({kind:'sys',text:`${a.spell?'«'+a.spell+'»':'Эффект'}: ${rows.filter(r=>r.cond).map(r=>r.name).join(', ')||'никто'} — ${a.cond.toLowerCase()}`,...(fx?{fx}:{})})}
+function effText(e){if(e.pool)return`пул хитов ${e.dice} → ${e.cond.toLowerCase()}`;return[e.dice?`урон ${e.dice}${e.type?' '+e.type:''}`:null,e.save?`спасбросок ${SAVEN[e.save]} СЛ ${e.dc}${e.dice?', при успехе '+(e.half?'половина':'урона нет'):''}`:'без спасброска',e.cond?`при провале — ${e.cond}${e.glow?`, свечение ${e.glow} фт`:''}`:null].filter(Boolean).join(' · ')}
 const skips=new Map();// снятые Мастером галочки: id записи журнала → Set(id фишек)
 const skipOf=id=>{if(!skips.has(id))skips.set(id,new Set());return skips.get(id)};
 async function applyAoe(m){if(!V.isGM())return V.toast('Урон наносит Мастер.');const cur=(V.S.log||[]).find(x=>x.id===m.id)||m;if(cur.aoeDone)return V.toast('Урон по этой области уже нанесён.');
   const sk=skipOf(m.id),rows=m.aoe.rows.filter(r=>!sk.has(r.tid)&&r.dmg>0&&V.S.tokens[r.tid]);m.aoeDone=true;
   await V.store.update('log/'+m.id,{aoeDone:true,aoeApplied:rows.map(r=>r.tid)});
   for(const r of rows)await V.applyHp(r.tid,r.dmg,'dmg');V.toast(rows.length?`Урон нанесён: ${rows.length}`:'Некому наносить урон')}
-function resultView(m){const a=m.aoe,gm=V.isGM(),done=!!m.aoeDone,sk=skipOf(m.id);const rows=gm?a.rows:a.rows.filter(r=>!r.h);const hidden=a.rows.length-rows.length;
-  const box=h('div',{class:'mm-res'+(gm&&!done&&a.dice?' gm':'')}),chk=gm&&!done&&a.dice;
-  box.append(h('div',{class:'mm-tr mm-th'},chk?h('span',{}):null,h('span',{},'Кто'),h('span',{},a.save?'к20':''),h('span',{},a.save?'Итог':''),h('span',{},a.dice?'Урон':'')));
+function resultView(m){const a=m.aoe,gm=V.isGM(),done=!!m.aoeDone,sk=skipOf(m.id);
+  if(a.pending)return h('div',{class:'mm-res'},h('div',{class:'mm-sub'},`Пул ${a.base} хитов: кто ${a.cond==='Без сознания'?'уснёт':'поддастся'}, решит Мастер — он знает хиты существ.`),
+    gm&&!V.readOnly?h('div',{class:'mm-row'},h('button',{class:'btn pri',type:'button',onclick:async e=>{e.currentTarget.disabled=true;await resolvePoolGM(m);if(effBox&&effBox.dataset.mid===m.id)closeEffect()}},'Распределить пул')):null);
+  const rows=gm?a.rows:a.rows.filter(r=>!r.h);const hidden=a.rows.length-rows.length;
+  const box=h('div',{class:'mm-res'+(gm&&!done&&a.dice&&!a.pool?' gm':'')}),chk=gm&&!done&&a.dice&&!a.pool;
+  box.append(h('div',{class:'mm-tr mm-th'},chk?h('span',{}):null,h('span',{},'Кто'),h('span',{},a.save?'к20':''),h('span',{},a.save?'Итог':''),h('span',{},a.dice&&!a.pool?'Урон':'')));
   for(const r of rows){const cb=chk?h('input',{type:'checkbox',checked:!sk.has(r.tid),'aria-label':'Наносить урон: '+r.name,onchange:e=>{e.target.checked?sk.delete(r.tid):sk.add(r.tid)}}):null;
-    box.append(h(chk?'label':'div',{class:'mm-tr'+(done&&a.dice&&!(m.aoeApplied||[]).includes(r.tid)?' off':'')},cb,h('span',{class:'mm-nm',title:r.det||''},h('span',{},r.name+(r.h&&gm?' (скрыт)':'')),r.note?h('small',{},r.note):null),
-      h('span',{class:'mm-n',title:r.det||''},a.save?(r.roll==null?'—':String(r.roll)):''),h('span',{class:a.save?(r.ok?'mm-ok':'mm-bad'):''},a.save?(r.ok?'успех':'провал'):''),h('b',{class:'mm-n'},a.dice?String(r.dmg):'')))}
+    box.append(h(chk?'label':'div',{class:'mm-tr'+(done&&a.dice&&!(m.aoeApplied||[]).includes(r.tid)?' off':'')},cb,h('span',{class:'mm-nm',title:r.det||''},h('span',{},r.name+(r.h&&gm?' (скрыт)':'')),r.note?h('small',{class:r.cond?'mm-cnd':''},r.note):null),
+      h('span',{class:'mm-n',title:r.det||''},a.save?(r.roll==null?'—':String(r.roll)):''),h('span',{class:a.save?(r.ok?'mm-ok':'mm-bad'):''},a.save?(r.ok?'успех':'провал'):''),h('b',{class:'mm-n'},a.dice&&!a.pool?String(r.dmg):'')))}
   if(hidden>0)box.append(h('div',{class:'mm-sub'},`и ещё ${hidden} — видит Мастер`));
-  if(gm&&a.dice&&!V.readOnly)box.append(done?h('div',{class:'mm-sub'},'✔ Урон нанесён'):h('div',{class:'mm-row'},h('button',{class:'btn pri',type:'button',onclick:async e=>{e.currentTarget.disabled=true;await applyAoe(m);if(effBox&&effBox.dataset.mid===m.id)closeEffect()}},'Нанести всем')));
+  if(a.cond&&rows.some(r=>r.cond))box.append(h('div',{class:'mm-sub'},`Состояние «${a.cond}» Мастер ставит автоматически${a.src?' — снимется, когда заклинатель потеряет концентрацию':''}.`));
+  if(a.pool);else if(gm&&a.dice&&!V.readOnly)box.append(done?h('div',{class:'mm-sub'},'✔ Урон нанесён'):h('div',{class:'mm-row'},h('button',{class:'btn pri',type:'button',onclick:async e=>{e.currentTarget.disabled=true;await applyAoe(m);if(effBox&&effBox.dataset.mid===m.id)closeEffect()}},'Нанести всем')));
   else if(a.dice&&!done)box.append(h('div',{class:'mm-sub'},'Урон нанесёт Мастер.'));
   return box}
 V.addLogRenderer(m=>{if(!m||!m.aoe||!Array.isArray(m.aoe.rows))return null;
@@ -261,37 +295,55 @@ V.addLogRenderer(m=>{if(!m||!m.aoe||!Array.isArray(m.aoe.rows))return null;
 let effBox=null;
 function closeEffect(){if(effBox){effBox.remove();effBox=null}if(!hitBox){hl.shape=null;hl.ids=[]}V.requestDraw()}
 addEventListener('keydown',e=>{if(e.key==='Escape'&&effBox)closeEffect()});
-function openEffect(s,pre){closeEffect();closeHits();const m=V.mapInfo();const targets=tokensIn(s,m);const vis=V.isGM()?targets:targets.filter(t=>V.canSee(t));
-  hl.shape=s;hl.ids=vis.map(t=>t.id);V.requestDraw();pre=pre||{};
-  const dice=h('input',{type:'text',value:pre.dice||'',placeholder:'8d6',autocomplete:'off','aria-label':'Урон, кубы'});
+// s — шаблон области; s=null — цели выбираются из списка видимых (pre.maxTargets, по умолчанию 1)
+function openEffect(s,pre){closeEffect();closeHits();const m=V.mapInfo();pre=pre||{};
+  const pickList=s?null:V.tokList().filter(t=>t.map===m.id&&V.canSee(t)&&t.id!==pre.src);const maxT=Math.max(1,pre.maxTargets||1);const picked=new Set();
+  const areaT=s?tokensIn(s,m):[];const getTargets=()=>s?areaT:pickList.filter(t=>picked.has(t.id));
+  const vis=V.isGM()?areaT:areaT.filter(t=>V.canSee(t));
+  hl.shape=s;hl.ids=vis.map(t=>t.id);V.requestDraw();
+  const pool=!!pre.pool;
+  const dice=h('input',{type:'text',value:pre.dice||'',placeholder:pool?'5d8':'8d6',autocomplete:'off','aria-label':pool?'Пул хитов, кубы':'Урон, кубы'});
   const type=h('input',{type:'text',value:pre.type||'',placeholder:'огонь','aria-label':'Тип урона'});
   const sv=h('select',{'aria-label':'Спасбросок'},h('option',{value:''},'без спасброска'),...SAVES.map(([k,n])=>h('option',{value:k,selected:pre.save===k},n)));
   const dc=h('input',{type:'number',min:1,max:30,value:pre.dc||13,'aria-label':'Сложность'});
   const half=h('select',{'aria-label':'При успехе'},h('option',{value:'1',selected:pre.half!==false},'половина'),h('option',{value:'0',selected:pre.half===false},'ничего'));
   const lab=(t,el,cls)=>h('label',{class:'mm-fl'+(cls?' '+cls:'')},h('span',{},t),el);
-  const sync=()=>{const on=!!sv.value;dc.disabled=!on;half.disabled=!on};sv.onchange=sync;sync();
+  const sync=()=>{const on=!!sv.value;dc.disabled=!on;half.disabled=!on||!!pre.cond&&!dice.value.trim()};sv.onchange=sync;dice.oninput=sync;sync();
   const title=pre.spell?`«${pre.spell}»`:'Эффект по области';
   const body=h('div',{class:'mm-db'});
-  body.append(h('div',{class:'mm-form'},lab('Урон (кубы)',dice),lab('Тип урона',type),lab('Спасбросок',sv),lab('СЛ',dc),lab('При успехе',half,'w2')),
-    h('div',{class:'mm-sub'},vis.length?'Цели: '+vis.map(t=>t.name).join(', '):'В области никого нет.'));
-  const go=h('button',{class:'btn pri',type:'button',disabled:!targets.length||V.readOnly},'🎲 Бросить');
+  const go=h('button',{class:'btn pri',type:'button',disabled:true},'🎲 Бросить');
+  const canGo=()=>{go.disabled=V.readOnly||!getTargets().length};
+  const form=pool?h('div',{class:'mm-form'},lab('Пул хитов (кубы)',dice,'w2')):pre.cond&&!pre.dice?h('div',{class:'mm-form'},lab('Спасбросок',sv),lab('СЛ',dc)):h('div',{class:'mm-form'},lab('Урон (кубы)',dice),lab('Тип урона',type),lab('Спасбросок',sv),lab('СЛ',dc),pre.cond?null:lab('При успехе',half,'w2'));
+  body.append(form);
+  if(pre.cond)body.append(h('div',{class:'mm-cond'},`${pool?'Поддаются':'При провале'}: `,h('b',{},pre.cond),pre.glow?` · тусклое свечение ${pre.glow} фт`:'',pre.only?` · только: ${pre.only}`:'',pre.src?' · концентрация':''));
+  if(pickList){const cnt=h('span',{class:'mm-sub'},`выбрано 0 из ${maxT}`);
+    body.append(h('div',{class:'mm-sub'},maxT>1?`Цели (до ${maxT}):`:'Цель:'),pickList.length?h('div',{class:'mm-pick'},...pickList.map(t=>h('label',{class:'mm-pk'},h('input',{type:maxT>1?'checkbox':'radio',name:'mm-tg',onchange:e=>{if(maxT===1)picked.clear();if(e.target.checked){if(picked.size>=maxT){e.target.checked=false;return V.toast(`Не больше ${maxT}.`)}picked.add(t.id)}else picked.delete(t.id);cnt.textContent=`выбрано ${picked.size} из ${maxT}`;canGo()}}),h('span',{},t.name)))):h('div',{class:'mm-sub'},'На карте нет видимых целей.'),...(maxT>1?[cnt]:[]))}
+  else body.append(h('div',{class:'mm-sub'},vis.length?'Цели: '+vis.map(t=>t.name).join(', '):'В области никого нет.'));
+  canGo();
   const foot=h('div',{class:'mm-row mm-foot'},go,h('button',{class:'btn',type:'button',onclick:closeEffect},'Отмена'));
-  go.onclick=async()=>{const eff={dice:dice.value.trim().replace(/к/gi,'d').replace(/\s+/g,''),type:type.value.trim().slice(0,40),save:sv.value||null,dc:Math.max(1,Math.min(30,Number(dc.value)||10)),half:half.value==='1',spell:pre.spell||null,caster:pre.caster||null};
-    if(!eff.dice&&!eff.save)return V.toast('Укажите урон или спасбросок.');
-    if(V.readOnly)return;const res=resolveEffect(eff,targets);if(!res)return;go.disabled=true;
-    const id=V.store.newId('log'),seen=res.rows.filter(r=>!r.h);
+  go.onclick=async()=>{const targets=getTargets();
+    const eff={dice:dice.value.trim().replace(/к/gi,'d').replace(/\s+/g,''),type:pool?'':type.value.trim().slice(0,40),save:pool?null:sv.value||null,dc:Math.max(1,Math.min(30,Number(dc.value)||10)),half:half.value==='1',spell:pre.spell||null,caster:pre.caster||null,
+      cond:pre.cond||null,glow:pre.glow||0,src:pre.src||null,only:pre.only||null,charm:!!pre.charm,noUndead:!!pre.noUndead,pool};
+    if(pool&&!eff.dice)return V.toast('Укажите кубы пула хитов.');
+    if(!eff.dice&&!eff.save&&!eff.cond)return V.toast('Укажите урон или спасбросок.');
+    if(V.readOnly||!targets.length)return;let res,fx=null,pending=false;
+    if(pool){const r=V.roll(eff.dice);if(!r)return V.toast('Не понял кубы: '+eff.dice);pending=needGM(eff,targets);res={base:r.total,det:r.det,rows:pending?[]:poolRows(eff,targets,r.total)}}
+    else{res=resolveEffect(eff,targets);if(!res)return}
+    if(!pending)fx=fxOf(eff,res.rows);go.disabled=true;
+    const id=V.store.newId('log'),seen=res.rows.filter(r=>!r.h),where=s?`${KNAME[s.kind].toLowerCase()} ${s.size} фт, в области ${s?areaT.filter(t=>!hideOf(t)).length:0}`:`цели: ${targets.filter(t=>!hideOf(t)).map(t=>t.name).join(', ')}`;
     const entry={ts:Date.now(),who:V.whoAmI(),by:V.myId,kind:'roll',
-      text:`🎯 ${pre.caster?pre.caster+': ':''}${title} — ${KNAME[s.kind].toLowerCase()} ${s.size} фт, в области ${seen.length}${eff.save?` · провалили ${seen.filter(r=>r.ok===false).length}`:''}`,
-      total:eff.dice?res.base:eff.dc,det:(eff.dice?`${res.det}${eff.type?' '+eff.type:''} · `:'')+(eff.save?`спасбросок ${SAVEN[eff.save]} СЛ ${eff.dc}${eff.dice?', при успехе '+(eff.half?'половина':'урона нет'):''}`:'без спасброска'),
-      aoe:{...eff,base:res.base,rows:res.rows,shape:s.id}};
+      text:`🎯 ${pre.caster?pre.caster+': ':''}${title} — ${where}${eff.save?` · провалили ${seen.filter(r=>r.ok===false).length}`:''}${eff.cond&&!pending?` · ${eff.cond.toLowerCase()}: ${seen.filter(r=>r.cond).length}`:''}`,
+      total:eff.dice?res.base:eff.dc,det:pool?`пул хитов ${res.det}`:(eff.dice?`${res.det}${eff.type?' '+eff.type:''} · `:'')+(eff.save?`спасбросок ${SAVEN[eff.save]} СЛ ${eff.dc}${eff.dice?', при успехе '+(eff.half?'половина':'урона нет'):''}`:'без спасброска'),
+      aoe:{...eff,base:res.base,rows:res.rows,shape:s?s.id:null,pending,tids:targets.map(t=>t.id)}};
+    if(fx)entry.fx=fx;
     await V.store.set('log/'+id,entry);
     const msg={...entry,id};if(!effBox)return;effBox.dataset.mid=id;
     body.replaceChildren(h('div',{class:'mm-sum'},eff.dice?h('b',{class:'mm-big'},String(res.base)):null,h('span',{},effText(eff))),resultView(msg));
     foot.replaceChildren(h('button',{class:'btn',type:'button',onclick:closeEffect},'Закрыть'));
-    if(!V.isGM())V.toast('Результат в журнале — урон нанесёт Мастер.')};
+    if(!V.isGM())V.toast(pending?'Результат в журнале — пул распределит Мастер.':eff.dice?'Результат в журнале — урон нанесёт Мастер.':'Результат в журнале.')};
   effBox=h('div',{class:'mm-ov',onclick:e=>{if(e.target===effBox)closeEffect()}},h('div',{class:'mm-dlg',role:'dialog','aria-modal':'true','aria-label':'Применить эффект'},
-    h('div',{class:'mm-hh'},h('b',{},title),h('span',{class:'mm-sub'},`${KNAME[s.kind]} ${s.size} фт · в области ${vis.length}`),h('button',{class:'btn sm mm-x',type:'button','aria-label':'Закрыть',onclick:closeEffect},'✕')),body,foot));
-  document.body.append(effBox);setTimeout(()=>{try{(pre.dice?go:dice).focus({preventScroll:true})}catch(e){}},30)}
+    h('div',{class:'mm-hh'},h('b',{},title),h('span',{class:'mm-sub'},s?`${KNAME[s.kind]} ${s.size} фт · в области ${vis.length}`:maxT>1?`до ${maxT} целей`:'одна цель'),h('button',{class:'btn sm mm-x',type:'button','aria-label':'Закрыть',onclick:closeEffect},'✕')),body,foot));
+  document.body.append(effBox);setTimeout(()=>{try{(pre.dice||pre.cond?go:dice).focus({preventScroll:true})}catch(e){}},30)}
 
 /* ---------- для других модулей: V.aoe.start({kind,size,from,effect}) ---------- */
 const TYPE_COL=[[/огон|огн|пламен|излуч/,'#e8734a'],[/холод|мороз/,'#6fb7e8'],[/яд|кислот|некрот/,'#9fd36a']];

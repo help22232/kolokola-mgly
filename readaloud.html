@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тексты для чтения вслух</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#0f1617; --paper:#162022; --ink:#e3ebe8; --muted:#97a6a6; --line:#2b3a3c;
+  --sea:#7fc1b9; --sea-soft:#1c3332; --brass:#d9a74c; --gold:#d9b36c;
+  --f-display:"Alegreya SC", Georgia, "Times New Roman", serif;
+  --f-body:"Alegreya", Georgia, "Times New Roman", serif;
+  --f-mono:"IBM Plex Mono", Consolas, monospace;
+  color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.6;
+  padding:0 max(16px,env(safe-area-inset-right,0px)) 60px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px}
+header.hero{grid-column:1/-1;padding:28px 0 18px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:500;font-size:clamp(30px,6vw,44px);line-height:1.1;margin:6px 0 8px;color:var(--gold)}
+.lead{color:var(--muted);margin:0 0 14px;max-width:62ch}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:6px 14px;border-radius:9px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;font-size:16px;cursor:pointer;text-decoration:none}
+.btn:hover,.btn:focus-visible{border-color:var(--sea);outline:none}
+.btn.pri{border-color:rgba(217,179,108,.6);color:var(--gold)}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+nav.toc{position:sticky;top:20px;align-self:start;font-size:15px;max-height:calc(100vh - 40px);overflow:auto;padding-top:20px}
+nav.toc .lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+nav.toc a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;min-height:32px}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--sea-soft);outline:none}
+nav.toc a.s{font-family:var(--f-display);color:var(--gold);font-size:17px}
+nav.toc a.sub{padding-left:22px;color:var(--muted);font-size:14px}
+main{min-width:0;padding-top:12px}
+h2{font-family:var(--f-display);font-weight:500;font-size:30px;color:var(--gold);margin:34px 0 4px;scroll-margin-top:16px}
+h3{font-family:var(--f-display);font-weight:500;font-size:21px;margin:26px 0 10px;padding-bottom:4px;border-bottom:1px solid var(--line);scroll-margin-top:16px}
+.ra{border:1px solid var(--line);border-left:4px solid var(--tc,var(--gold));border-radius:12px;background:var(--paper);padding:14px 18px;margin:14px 0;break-inside:avoid}
+.ra .t{font-family:var(--f-display);font-size:21px;line-height:1.2;margin:0 0 8px}
+.ra .when{font-size:15px;line-height:1.4;background:rgba(217,179,108,.09);border:1px solid rgba(217,179,108,.28);border-radius:8px;padding:6px 10px;margin-bottom:10px}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11px;font-weight:500;border-radius:999px;padding:2px 9px;color:#10181a;background:var(--tc,var(--gold));margin-right:8px;vertical-align:2px}
+.ra .x{white-space:pre-wrap;font-size:19px;line-height:1.6}
+.ra .var{border-top:1px dashed var(--line);margin-top:12px;padding-top:10px}
+.ra .var b{display:block;font-size:15px;color:var(--gold);margin-bottom:4px}
+.ra .note{margin-top:12px;font-size:15px;line-height:1.45;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.ra .note::before{content:'Мастеру: ';font-weight:600}
+.ra .meta{margin-top:8px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.missing{color:var(--muted)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:0}
+  nav.toc{position:static;max-height:none;border-bottom:1px solid var(--line);padding-bottom:12px}
+  nav.toc a{min-height:40px;display:flex;align-items:center}
+  nav.toc .subs{display:none}
+}
+@media (max-width:600px){
+  body{font-size:17px}
+  .ra{padding:12px 13px}.ra .x{font-size:17px;line-height:1.55}.ra .t{font-size:19px}
+  h2{font-size:26px}
+}
+@media print{
+  :root{--bg:#fff;--paper:#fff;--ink:#111;--muted:#555;--line:#bbb;--gold:#6b4a10;color-scheme:light}
+  body{font-size:12pt;padding:0}
+  nav.toc,.bar{display:none}
+  .wrap{display:block;max-width:none}
+  .ra{border-left-width:3px;padding:8px 12px;margin:8px 0}
+  .ra .x{font-size:12.5pt;line-height:1.45}
+  .ra .when{background:none}
+  .tag{color:#000;background:none;border:1px solid #777}
+  h2{break-before:page;font-size:22pt}h2:first-of-type{break-before:auto}
+  h3{break-after:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Только для Мастера · Колокола Солёной Мглы</div>
+    <h1>Тексты для чтения вслух</h1>
+    <p class="lead">Всё, что Мастер читает игрокам, в том порядке, в каком это случается в игре. У каждого текста указано, когда его читать; заметки Мастеру вслух не читаются.</p>
+    <div class="bar"><button class="btn pri" type="button" onclick="window.print()">🖨 Печать</button><a class="btn" href="index.html">Журнал Мастера</a><a class="btn" href="table.html">🗺 Онлайн-стол</a></div>
+  </header>
+  <nav class="toc" id="toc" aria-label="Оглавление"></nav>
+  <main id="main"><p class="missing">Загружаю тексты…</p></main>
+</div>
+<script src="readaloud-data.js"></script>
+<script>
+(function(){
+const D=window.READALOUD,main=document.getElementById('main'),toc=document.getElementById('toc');
+if(!D){main.innerHTML='<p class="missing">Не нашёл файл readaloud-data.js рядом со страницей.</p>';return}
+const TRIG={'начало сессии':'#8fd1c4','вход в локацию':'#7fb0e0','встреча NPC':'#d9b36c','начало боя':'#e58a80','после боя':'#b0a0d8','находка':'#8fcf8a','катсцена':'#e0a0c8','развязка':'#f0c070','конец сессии':'#8fd1c4'};
+const CUT={intro:'Пролог',c1:'1. Голос из моря',c2:'2. Отплытие «Цапли»',c3:'3. Отлив',c4:'4. Купол на дне',c5:'5. Спуск в Ис-Мерин',c6:'6. Певчая на троне',c7:'7. Рассвет',c8:'8. Город поднимается'};
+const TITLES={1:'Туман над Солтхейвеном',2:'Монастырь Отлива',3:'Колокол Ис-Мерина'};
+const el=(t,a,...k)=>{const e=document.createElement(t);for(const x in a||{})x==='class'?e.className=a[x]:x==='style'?e.style.cssText=a[x]:e.setAttribute(x,a[x]);for(const c of k.flat())if(c!=null)e.append(c);return e};
+main.textContent='';toc.append(el('div',{class:'lbl'},'Оглавление'));
+let sc=0;
+for(const s of [1,2,3]){const L=D.filter(e=>e.session===s);if(!L.length)continue;
+  const sid='s'+s;main.append(el('h2',{id:sid},`Сессия ${s}. ${TITLES[s]}`));toc.append(el('a',{class:'s',href:'#'+sid},`Сессия ${s}`));
+  const subs=el('div',{class:'subs'});toc.append(subs);
+  for(const scene of [...new Set(L.map(e=>e.scene))]){const id='sc'+(++sc);main.append(el('h3',{id},scene));subs.append(el('a',{class:'sub',href:'#'+id},scene));
+    for(const e of L.filter(x=>x.scene===scene)){const tc=TRIG[e.trigger]||'#d9b36c';
+      main.append(el('article',{class:'ra',id:e.id,style:'--tc:'+tc},
+        el('div',{class:'t'},e.title),
+        el('div',{class:'when'},el('span',{class:'tag'},e.trigger),'🕐 Когда: '+e.when),
+        el('div',{class:'x'},e.text),
+        ...(e.variants||[]).map(v=>el('div',{class:'var'},el('b',{},'▸ '+v.if),el('div',{class:'x'},v.text))),
+        e.notes?el('div',{class:'note'},e.notes):null,
+        (e.cutscene||e.map)?el('div',{class:'meta'},[e.cutscene?'🎬 катсцена: '+(CUT[e.cutscene]||e.cutscene):null,e.map?'🗺 карта: '+e.map:null].filter(Boolean).join(' · ')):null))}}}
+if(location.hash){const t=document.querySelector(location.hash);if(t)t.scrollIntoView()}
+})();
+</script>
+</body>
+</html>
